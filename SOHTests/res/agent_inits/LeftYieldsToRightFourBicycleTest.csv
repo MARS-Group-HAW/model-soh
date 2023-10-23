@@ -1,0 +1,5 @@
+length,maxAcceleration,maxDeceleration,maxSpeed,driveMode,startLat,startLon,stableId,route,height,width,mass,weightLoad,bicycleType,velocity,driverType,isEBike
+2,3,5,9,6,53.581086,10.011879,64eae14b-3976-4dd1-b324-e73f1e70a001,[22;41],1.1,0.6,60,0,City,0,Normal,false
+2,3,5,9,6,53.582319,10.012500,64eae14b-3976-4dd1-b324-e73f1e70a002,[12;31],1.1,0.6,60,0,City,0,Normal,false
+2,3,5,9,6,53.581507,10.009734,64eae14b-3976-4dd1-b324-e73f1e70a003,[32;11],1.1,0.6,60,0,City,0,Normal,false
+2,3,5,9,6,53.582691,10.010505,64eae14b-3976-4dd1-b324-e73f1e70a004,[42;21],1.1,0.6,60,0,City,0,Normal,false

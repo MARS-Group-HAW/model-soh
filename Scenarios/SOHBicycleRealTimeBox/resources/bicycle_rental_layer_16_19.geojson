@@ -1,0 +1,335 @@
+{
+   "type":"FeatureCollection",
+   "features":[
+      {
+         "type":"Feature",
+         "geometry":{
+            "type":"Point",
+            "coordinates":[
+               9.969487,
+               53.460622
+            ]
+         },
+         "properties":{
+            "type":"observation",
+            "locationId":"134",
+            "name":"StadtRad-Station Denickestraße / TUHH",
+            "dataDescription":"Die Rohdaten der verfügbaren Stadträder an einer StadtRad-Station werden alle 5 Minuten abgefragt und aufsummiert.",
+            "streamId":"398",
+            "propertyDefinition":"http://defs.opengis.net/elda-common/ogc-def/resource?uri=http://www.opengis.net/def/ogc-om/OM_CountObservation ",
+            "thingDescription":"StadtRad-Station Denickestraße / TUHH",
+            "thingId":"134",
+            "time":"2020-12-17T19:37:39.926+01:00",
+            "Anzahl":10
+         }
+      },
+      {
+         "type":"Feature",
+         "geometry":{
+            "type":"Point",
+            "coordinates":[
+               9.969487,
+               53.460622
+            ]
+         },
+         "properties":{
+            "type":"observation",
+            "locationId":"134",
+            "name":"StadtRad-Station Denickestraße / TUHH",
+            "dataDescription":"Die Rohdaten der verfügbaren Stadträder an einer StadtRad-Station werden alle 5 Minuten abgefragt und aufsummiert.",
+            "streamId":"398",
+            "propertyDefinition":"http://defs.opengis.net/elda-common/ogc-def/resource?uri=http://www.opengis.net/def/ogc-om/OM_CountObservation ",
+            "thingDescription":"StadtRad-Station Denickestraße / TUHH",
+            "thingId":"134",
+            "time":"2020-12-17T17:43:07.6+01:00",
+            "Anzahl":11
+         }
+      },
+      {
+         "type":"Feature",
+         "geometry":{
+            "type":"Point",
+            "coordinates":[
+               9.983319,
+               53.460407
+            ]
+         },
+         "properties":{
+            "type":"observation",
+            "locationId":"133",
+            "name":"StadtRad-Station Herbert-Wehner-Platz / Großer Schippsee",
+            "dataDescription":"Die Rohdaten der verfügbaren Stadträder an einer StadtRad-Station werden alle 5 Minuten abgefragt und aufsummiert.",
+            "streamId":"395",
+            "propertyDefinition":"http://defs.opengis.net/elda-common/ogc-def/resource?uri=http://www.opengis.net/def/ogc-om/OM_CountObservation ",
+            "thingDescription":"StadtRad-Station Herbert-Wehner-Platz / Großer Schippsee",
+            "thingId":"133",
+            "time":"2020-12-17T19:49:35.849+01:00",
+            "Anzahl":7
+         }
+      },
+      {
+         "type":"Feature",
+         "geometry":{
+            "type":"Point",
+            "coordinates":[
+               9.983319,
+               53.460407
+            ]
+         },
+         "properties":{
+            "type":"observation",
+            "locationId":"133",
+            "name":"StadtRad-Station Herbert-Wehner-Platz / Großer Schippsee",
+            "dataDescription":"Die Rohdaten der verfügbaren Stadträder an einer StadtRad-Station werden alle 5 Minuten abgefragt und aufsummiert.",
+            "streamId":"395",
+            "propertyDefinition":"http://defs.opengis.net/elda-common/ogc-def/resource?uri=http://www.opengis.net/def/ogc-om/OM_CountObservation ",
+            "thingDescription":"StadtRad-Station Herbert-Wehner-Platz / Großer Schippsee",
+            "thingId":"133",
+            "time":"2020-12-17T18:26:57.71+01:00",
+            "Anzahl":6
+         }
+      },
+      {
+         "type":"Feature",
+         "geometry":{
+            "type":"Point",
+            "coordinates":[
+               9.983319,
+               53.460407
+            ]
+         },
+         "properties":{
+            "type":"observation",
+            "locationId":"133",
+            "name":"StadtRad-Station Herbert-Wehner-Platz / Großer Schippsee",
+            "dataDescription":"Die Rohdaten der verfügbaren Stadträder an einer StadtRad-Station werden alle 5 Minuten abgefragt und aufsummiert.",
+            "streamId":"395",
+            "propertyDefinition":"http://defs.opengis.net/elda-common/ogc-def/resource?uri=http://www.opengis.net/def/ogc-om/OM_CountObservation ",
+            "thingDescription":"StadtRad-Station Herbert-Wehner-Platz / Großer Schippsee",
+            "thingId":"133",
+            "time":"2020-12-17T17:13:10.42+01:00",
+            "Anzahl":5
+         }
+      },
+      {
+         "type":"Feature",
+         "geometry":{
+            "type":"Point",
+            "coordinates":[
+               9.987994,
+               53.457286
+            ]
+         },
+         "properties":{
+            "type":"observation",
+            "locationId":"212",
+            "name":"StadtRad-Station Bahnhof Harburg / Moorstraße",
+            "dataDescription":"Die Rohdaten der verfügbaren Stadträder an einer StadtRad-Station werden alle 5 Minuten abgefragt und aufsummiert.",
+            "streamId":"632",
+            "propertyDefinition":"http://defs.opengis.net/elda-common/ogc-def/resource?uri=http://www.opengis.net/def/ogc-om/OM_CountObservation ",
+            "thingDescription":"StadtRad-Station Bahnhof Harburg / Moorstraße",
+            "thingId":"212",
+            "time":"2020-12-17T19:12:43.46+01:00",
+            "Anzahl":16
+         }
+      },
+      {
+         "type":"Feature",
+         "geometry":{
+            "type":"Point",
+            "coordinates":[
+               9.987994,
+               53.457286
+            ]
+         },
+         "properties":{
+            "type":"observation",
+            "locationId":"212",
+            "name":"StadtRad-Station Bahnhof Harburg / Moorstraße",
+            "dataDescription":"Die Rohdaten der verfügbaren Stadträder an einer StadtRad-Station werden alle 5 Minuten abgefragt und aufsummiert.",
+            "streamId":"632",
+            "propertyDefinition":"http://defs.opengis.net/elda-common/ogc-def/resource?uri=http://www.opengis.net/def/ogc-om/OM_CountObservation ",
+            "thingDescription":"StadtRad-Station Bahnhof Harburg / Moorstraße",
+            "thingId":"212",
+            "time":"2020-12-17T17:13:10.846+01:00",
+            "Anzahl":14
+         }
+      },
+      {
+         "type":"Feature",
+         "geometry":{
+            "type":"Point",
+            "coordinates":[
+               9.982275,
+               53.453704
+            ]
+         },
+         "properties":{
+            "type":"observation",
+            "locationId":"213",
+            "name":"StadtRad-Station Maretstraße / Baererstraße",
+            "dataDescription":"Die Rohdaten der verfügbaren Stadträder an einer StadtRad-Station werden alle 5 Minuten abgefragt und aufsummiert.",
+            "streamId":"635",
+            "propertyDefinition":"http://defs.opengis.net/elda-common/ogc-def/resource?uri=http://www.opengis.net/def/ogc-om/OM_CountObservation ",
+            "thingDescription":"StadtRad-Station Maretstraße / Baererstraße",
+            "thingId":"213",
+            "time":"2020-12-17T18:47:56.877+01:00",
+            "Anzahl":7
+         }
+      },
+      {
+         "type":"Feature",
+         "geometry":{
+            "type":"Point",
+            "coordinates":[
+               9.982275,
+               53.453704
+            ]
+         },
+         "properties":{
+            "type":"observation",
+            "locationId":"213",
+            "name":"StadtRad-Station Maretstraße / Baererstraße",
+            "dataDescription":"Die Rohdaten der verfügbaren Stadträder an einer StadtRad-Station werden alle 5 Minuten abgefragt und aufsummiert.",
+            "streamId":"635",
+            "propertyDefinition":"http://defs.opengis.net/elda-common/ogc-def/resource?uri=http://www.opengis.net/def/ogc-om/OM_CountObservation ",
+            "thingDescription":"StadtRad-Station Maretstraße / Baererstraße",
+            "thingId":"213",
+            "time":"2020-12-17T18:41:55.256+01:00",
+            "Anzahl":6
+         }
+      },
+      {
+         "type":"Feature",
+         "geometry":{
+            "type":"Point",
+            "coordinates":[
+               9.982275,
+               53.453704
+            ]
+         },
+         "properties":{
+            "type":"observation",
+            "locationId":"213",
+            "name":"StadtRad-Station Maretstraße / Baererstraße",
+            "dataDescription":"Die Rohdaten der verfügbaren Stadträder an einer StadtRad-Station werden alle 5 Minuten abgefragt und aufsummiert.",
+            "streamId":"635",
+            "propertyDefinition":"http://defs.opengis.net/elda-common/ogc-def/resource?uri=http://www.opengis.net/def/ogc-om/OM_CountObservation ",
+            "thingDescription":"StadtRad-Station Maretstraße / Baererstraße",
+            "thingId":"213",
+            "time":"2020-12-17T17:52:30.846+01:00",
+            "Anzahl":5
+         }
+      },
+      {
+         "type":"Feature",
+         "geometry":{
+            "type":"Point",
+            "coordinates":[
+               9.980675,
+               53.447625
+            ]
+         },
+         "properties":{
+            "type":"observation",
+            "locationId":"140",
+            "name":"StadtRad-Station Gotthelfweg / Außenmühlenteich",
+            "dataDescription":"Die Rohdaten der verfügbaren Stadträder an einer StadtRad-Station werden alle 5 Minuten abgefragt und aufsummiert.",
+            "streamId":"416",
+            "propertyDefinition":"http://defs.opengis.net/elda-common/ogc-def/resource?uri=http://www.opengis.net/def/ogc-om/OM_CountObservation ",
+            "thingDescription":"StadtRad-Station Gotthelfweg / Außenmühlenteich",
+            "thingId":"140",
+            "time":"2020-12-17T18:39:00.72+01:00",
+            "Anzahl":2
+         }
+      },
+      {
+         "type":"Feature",
+         "geometry":{
+            "type":"Point",
+            "coordinates":[
+               9.980675,
+               53.447625
+            ]
+         },
+         "properties":{
+            "type":"observation",
+            "locationId":"140",
+            "name":"StadtRad-Station Gotthelfweg / Außenmühlenteich",
+            "dataDescription":"Die Rohdaten der verfügbaren Stadträder an einer StadtRad-Station werden alle 5 Minuten abgefragt und aufsummiert.",
+            "streamId":"416",
+            "propertyDefinition":"http://defs.opengis.net/elda-common/ogc-def/resource?uri=http://www.opengis.net/def/ogc-om/OM_CountObservation ",
+            "thingDescription":"StadtRad-Station Gotthelfweg / Außenmühlenteich",
+            "thingId":"140",
+            "time":"2020-12-17T18:31:19.031+01:00",
+            "Anzahl":3
+         }
+      },
+      {
+         "type":"Feature",
+         "geometry":{
+            "type":"Point",
+            "coordinates":[
+               9.984148,
+               53.4665
+            ]
+         },
+         "properties":{
+            "type":"observation",
+            "locationId":"126",
+            "name":"StadtRad-Station Kanalplatz / Harburger Schlossstraße",
+            "dataDescription":"Die Rohdaten der verfügbaren Stadträder an einer StadtRad-Station werden alle 5 Minuten abgefragt und aufsummiert.",
+            "streamId":"374",
+            "propertyDefinition":"http://defs.opengis.net/elda-common/ogc-def/resource?uri=http://www.opengis.net/def/ogc-om/OM_CountObservation ",
+            "thingDescription":"StadtRad-Station Kanalplatz / Harburger Schlossstraße",
+            "thingId":"126",
+            "time":"2020-12-17T17:03:03.535+01:00",
+            "Anzahl":8
+         }
+      },
+      {
+         "type":"Feature",
+         "geometry":{
+            "type":"Point",
+            "coordinates":[
+               9.9775729,
+               53.4606874
+            ]
+         },
+         "properties":{
+            "type":"observation",
+            "locationId":"132",
+            "name":"StadtRad-Station Harburger Ring / Neue Straße",
+            "dataDescription":"Die Rohdaten der verfügbaren Stadträder an einer StadtRad-Station werden alle 5 Minuten abgefragt und aufsummiert.",
+            "streamId":"392",
+            "propertyDefinition":"http://defs.opengis.net/elda-common/ogc-def/resource?uri=http://www.opengis.net/def/ogc-om/OM_CountObservation ",
+            "thingDescription":"StadtRad-Station Harburger Ring / Neue Straße",
+            "thingId":"132",
+            "time":"2020-12-17T18:17:28.186+01:00",
+            "Anzahl":15
+         }
+      },
+      {
+         "type":"Feature",
+         "geometry":{
+            "type":"Point",
+            "coordinates":[
+               9.96541,
+               53.45452
+            ]
+         },
+         "properties":{
+            "type":"observation",
+            "locationId":"26516404",
+            "name":"StadtRad-Station Göhlbachtal / Berufliche Schule Harburg",
+            "dataDescription":"Die Rohdaten der verfügbaren Stadträder an einer StadtRad-Station werden alle 5 Minuten abgefragt und aufsummiert.",
+            "streamId":"10490",
+            "propertyDefinition":"http://defs.opengis.net/elda-common/ogc-def/resource?uri=http://www.opengis.net/def/ogc-om/OM_CountObservation ",
+            "thingDescription":"StadtRad-Station Göhlbachtal / Berufliche Schule Harburg",
+            "thingId":"5157",
+            "time":"2020-12-17T18:11:42.916+01:00",
+            "Anzahl":1
+         }
+      }
+   ]
+}

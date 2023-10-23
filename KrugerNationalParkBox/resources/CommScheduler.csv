@@ -1,0 +1,2 @@
+startTime,endTime,spawningIntervalInMinutes,spawningAmount,gateName,workDuration,source,destination
+4:00,10:00,20,3,Crocodile Bridge Gate,120,POINT (31.893563 -25.358438),"MULTIPOINT (31.45122 -25.42001, 31.91594 -25.11983, 31.51095 -25.47712, 31.59263 -24.98984, 31.26872 -25.16923)"

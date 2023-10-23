@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns"  
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key attr.name="length" attr.type="string" for="edge" id="d13" />
+  <key attr.name="lsa" attr.type="bool" for="node" id="d14" />
+  <key attr.name="y" attr.type="string" for="node" id="d1"/>
+  <key attr.name="x" attr.type="string" for="node" id="d2"/>
+  <key attr.name="name" attr.type="string" for="edge" id="d3"/>
+  <key attr.name="osmid" attr.type="string" for="edge" id="d5"/>
+  <graph id="G" edgedefault="directed">
+    <node id="n0">
+    	<data key="d14">true</data>
+        <data key="d1">53.5819</data>
+        <data key="d2">10.01121</data>
+    </node>
+    <node id="n1">
+    	<data key="d14">true</data>
+        <data key="d1">53.58106</data>
+        <data key="d2">10.01196</data>
+    </node>
+    <node id="n2">
+    	<data key="d14">true</data>
+        <data key="d1">53.58168</data>
+        <data key="d2">10.01388</data>
+    </node>
+    <node id="n3">
+    	<data key="d14">true</data>
+        <data key="d1">53.58252</data>
+        <data key="d2">10.01312</data>
+    </node>
+    <edge id="e0" source="n0" target="n1">
+    	<data key="d13">105</data>
+        <data key="d3">Muehlenkamp</data>
+        <data key="d5">1</data>
+    </edge>
+    <edge id="e1" source="n1" target="n2">
+    	<data key="d13">146</data>
+        <data key="d3">Gertigstrasse</data>
+        <data key="d5">2</data>
+    </edge>
+    <edge id="e2" source="n2" target="n3">
+    	<data key="d13">107</data>
+        <data key="d3">Schinkelstrasse</data>
+        <data key="d5">3</data>
+	</edge>
+    <edge id="e3" source="n3" target="n0">
+    	<data key="d13">145</data>
+        <data key="d3">Preystrasse</data>
+        <data key="d5">4</data>
+    </edge>
+  </graph>
+</graphml>

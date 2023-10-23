@@ -1,0 +1,6 @@
+line,startTime,endTime,spawningIntervalInMinutes,waitingInSeconds,spawningAmount
+61,7:00,18:00,30,110,1
+62,5:00,14:00,60,120,1
+71,16:00,23:00,60,140,2
+60,9:00,20:00,10,130,1
+50,0:00,18:00,2000,110,1

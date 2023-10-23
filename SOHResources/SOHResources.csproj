@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>default</LangVersion>
+    </PropertyGroup>
+
+      <ItemGroup>
+          <Content Include="res\**\*.*">
+              <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+          </Content>
+          <Content Include="res\SimulationTest\**\*.*">
+              <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+          </Content>
+      </ItemGroup>
+
+</Project>

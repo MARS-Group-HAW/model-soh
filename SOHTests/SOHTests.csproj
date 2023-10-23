@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <IsPackable>false</IsPackable>
+        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+        <LangVersion>10</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0"/>
+        <PackageReference Include="Moq" Version="4.17.2"/>
+        <PackageReference Include="xunit" Version="2.4.1"/>
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.4">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\SOHBusModel\SOHBusModel.csproj"/>
+        <ProjectReference Include="..\SOHMultimodalModel\SOHMultimodalModel.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="res\**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Remove="SimulationTests\BicycleTests\**"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Remove="SimulationTests\BicycleTests\**"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Remove="SimulationTests\BicycleTests\**"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="res\data_inits"/>
+        <Folder Include="SimulationTests\CarDrivingTests\LaneChangingTests"/>
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,2 @@
+line,startTime,endTime,spawningIntervalInMinutes,minimumBoardingTimeInSeconds,spawningAmount,reversedRoute
+U1,5:00,18:00,10,20,1,false

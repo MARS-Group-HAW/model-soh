@@ -1,0 +1,64 @@
+{
+  "globals": {
+    "deltaT": 1,
+    "startPoint": "2020-09-01T06:00:00",
+    "endPoint": "2020-09-01T10:00:00",
+    "deltaTUnit": "seconds",
+    "console": true
+  },
+  "agents": [
+    {
+      "name": "DockWorker",
+      "individual": [
+        {
+          "value": true,
+          "parameter": "ResultTrajectoryEnabled"
+        }
+      ],
+      "outputFilter": [
+        {
+          "parameter": "StoreTickResult",
+          "operator": "in",
+          "values": [
+            true
+          ]
+        }
+      ]
+    },
+    {
+      "name": "FerryDriver"
+    }
+  ],
+  "layers": [
+    {
+      "name": "DockWorkerLayer",
+      "file": "resources/hamburg_south_graph_filtered.geojson"
+    },
+    {
+      "name": "DockWorkerSchedulerLayer",
+      "file": "resources/dock_worker.csv"
+    },
+    {
+      "name": "FerryStationLayer",
+      "file": "resources/hamburg_ferry_stations.geojson"
+    },
+    {
+      "name": "FerryRouteLayer",
+      "file": "resources/ferry_line.csv"
+    },
+    {
+      "name": "FerryLayer",
+      "file": "resources/hamburg_ferry_graph.geojson"
+    },
+    {
+      "name": "FerrySchedulerLayer",
+      "file": "resources/ferry_driver.csv"
+    }
+  ],
+  "entities": [
+    {
+      "name": "Ferry",
+      "file": "resources/ferry.csv"
+    }
+  ]
+}

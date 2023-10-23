@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <LangVersion>10</LangVersion>
+        <Nullable>disable</Nullable>
+        <PackageIcon>icon.png</PackageIcon>
+
+        <RootNamespace>SOHCarModel</RootNamespace>
+        <AssemblyName>SOHCarModel</AssemblyName>
+        <Title>Mars.Life.SOHCarModel</Title>
+        <Authors>Daniel Glake</Authors>
+        <Description>SOHCarModel</Description>
+        <Copyright>MARS GROUP 2023</Copyright>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\SOHDomain\SOHDomain.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\Build\icon.png" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+</Project>

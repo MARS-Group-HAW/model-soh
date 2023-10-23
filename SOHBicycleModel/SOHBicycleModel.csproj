@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <LangVersion>10</LangVersion>
+        <PackageIcon>icon.png</PackageIcon>
+
+        <RootNamespace>SOHBicycleModel</RootNamespace>
+        <AssemblyName>SOHBicycleModel</AssemblyName>
+        <Title>Mars.Life.SOHBicycleModel</Title>
+        <Authors>Daniel Glake</Authors>
+        <Description>SOHBicycleModel</Description>
+        <Copyright>MARS GROUP 2023</Copyright>
+
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\SOHCarModel\SOHCarModel.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\Build\icon.png" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+</Project>

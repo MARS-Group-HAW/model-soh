@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns"  
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key attr.name="length" attr.type="string" for="edge" id="d13" />
+  <key attr.name="lsa" attr.type="bool" for="node" id="d14" />
+  <key attr.name="y" attr.type="string" for="node" id="d1"/>
+  <key attr.name="x" attr.type="string" for="node" id="d2"/>
+  <key attr.name="name" attr.type="string" for="edge" id="d3"/>
+  <key attr.name="osmid" attr.type="string" for="edge" id="d5"/>
+  <graph id="G" edgedefault="directed">
+    <node id="n0">
+        <data key="d1">53.581882</data>
+        <data key="d2">10.011173</data>
+    </node>
+    <node id="n1">
+        <data key="d1">53.582319</data>
+        <data key="d2">10.012500</data>
+    </node>
+    <node id="n2">
+        <data key="d1">53.581086</data>
+        <data key="d2">10.011879</data>
+    </node>
+    <node id="n3">
+        <data key="d1">53.581507</data>
+        <data key="d2">10.009794</data>
+    </node>
+    <node id="n4">
+        <data key="d1">53.582691</data>
+        <data key="d2">10.010505</data>
+    </node>
+    <edge id="e12" source="n1" target="n0">
+    	<data key="d13">100</data>
+        <data key="d3">Preystrasse West</data>
+        <data key="d5">12</data>
+    </edge>
+    <edge id="e11" source="n0" target="n1">
+        <data key="d13">100</data>
+        <data key="d3">Preystrasse Ost</data>
+        <data key="d5">11</data>
+    </edge>
+    <edge id="e22" source="n2" target="n0">
+        <data key="d13">100</data>
+        <data key="d3">Mühlenkamp 1 Nord</data>
+        <data key="d5">22</data>
+    </edge>
+    <edge id="e21" source="n0" target="n2">
+        <data key="d13">100</data>
+        <data key="d3">Mühlenkamp 1 Süd</data>
+        <data key="d5">21</data>
+    </edge>
+    <edge id="e31" source="n0" target="n3">
+        <data key="d13">100</data>
+        <data key="d3">Poelchaukamp West</data>
+        <data key="d5">31</data>
+    </edge>
+    <edge id="e32" source="n3" target="n0">
+        <data key="d13">100</data>
+        <data key="d3">Poelchaukamp Ost</data>
+        <data key="d5">32</data>
+    </edge>
+    <edge id="e41" source="n0" target="n4">
+        <data key="d13">100</data>
+        <data key="d3">Mühlenkamp 2 Nord</data>
+        <data key="d5">41</data>
+    </edge>
+    <edge id="e42" source="n4" target="n0">
+        <data key="d13">100</data>
+        <data key="d3">Mühlenkamp 2 Süd</data>
+        <data key="d5">42</data>
+    </edge>
+  </graph>
+</graphml>

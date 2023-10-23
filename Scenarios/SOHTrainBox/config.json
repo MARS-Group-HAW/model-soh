@@ -1,0 +1,96 @@
+{
+  "globals": {
+    "deltaT": 1,
+    "startPoint": "2022-09-01T06:00:00",
+    "endPoint": "2022-09-01T07:00:00",
+    "deltaTUnit": "seconds",
+    "console": true
+  },
+  "agents": [
+    {
+      "name": "PassengerTraveler",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": [
+              "ActiveCapability"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "TrainDriver",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": [
+              "LoadPercentage"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "name": "PassengerTravelerLayer"
+    },
+    {
+      "name": "SpatialGraphMediatorLayer",
+      "inputs": [
+        {
+          "file": "resources/hamburg_rail_station_areas_drive_graph.geojson",
+          "inputConfiguration": {
+            "modalities": [
+              "Walking"
+            ],
+            "isBidirectedGraph": true
+          }
+        },
+        {
+          "file": "resources/hamburg_u1_north_graph.geojson",
+          "inputConfiguration": {
+            "modalities": [
+              "TrainDriving"
+            ],
+            "isBidirectedGraph": true,
+            "noHelperNodes": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "PassengerTravelerSchedulerLayer",
+      "file": "resources/passenger_traveler_schedule.csv"
+    },
+    {
+      "name": "TrainStationLayer",
+      "file": "resources/hamburg_u1_north_stations.geojson"
+    },
+    {
+      "name": "TrainRouteLayer",
+      "file": "resources/train_u1_line.csv"
+    },
+    {
+      "name": "TrainGtfsRouteLayer",
+      "file": "resources/HVV_GTFS"
+    },
+    {
+      "name": "TrainLayer",
+      "file": "resources/hamburg_u1_north_graph.geojson"
+    },
+    {
+      "name": "TrainSchedulerLayer",
+      "file": "resources/train_driver_schedule.csv"
+    }
+  ],
+  "entities": [
+    {
+      "name": "Train",
+      "file": "resources/train.csv"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "gender": "Male",
+  "worker": true,
+  "partTimeWorker": "false",
+  "tour": [
+    {
+      "tripReason": "Work",
+      "startTime": "2020-01-01T08:00:00",
+      "position": {
+        "x": "9.9423436",
+        "y": "53.5488809"
+      }
+    },
+    {
+      "tripReason": "Home",
+      "startTime": "2020-01-01T09:00:00",
+      "position": {
+        "x": "9.9823436",
+        "y": "53.5888809"
+      }
+    }
+  ]
+}

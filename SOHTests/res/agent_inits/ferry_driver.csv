@@ -1,0 +1,7 @@
+line,startTime,endTime,spawningIntervalInMinutes,minimumBoardingTimeInSeconds,spawningAmount
+61,5:00,18:00,10,20,1
+62,5:02,18:00,10,20,1
+64,5:04,18:00,10,20,1
+72,5:06,18:00,10,20,1
+73,5:08,18:00,10,20,1
+75,5:10,18:00,10,20,1

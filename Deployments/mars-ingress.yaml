@@ -1,0 +1,90 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mars-ingress
+  namespace: mars
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  rules:
+  - host: mars.haw-hamburg.de
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mars-documentation-svc
+            port: 
+              number: 80
+  - host: mars-group.org
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mars-group-wordpress
+            port: 
+              number: 80
+  - host: www.mars-group.org
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mars-group-wordpress
+            port: 
+              number: 80
+  - host: www.smartopenhamburg.de
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: smartopenhamburg-wordpress
+            port: 
+              number: 80
+  - host: smartopenhamburg.de
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: smartopenhamburg-wordpress
+            port: 
+              number: 80
+  - host: www.ars-africae.org
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ars-africae-wordpress
+            port: 
+              number: 80
+  - host: ars-africae.org
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ars-africae-wordpress
+            port: 
+              number: 80
+  tls:
+  - hosts:
+    - mars-group.org
+    - www.mars-group.org
+    - ars-africae.org
+    - www.ars-africae.org
+    - www.smartopenhamburg.de
+    - smartopenhamburg.de
+    - mars.haw-hamburg.de
+    secretName: mars-haw-hamburg-de-ingress-secret

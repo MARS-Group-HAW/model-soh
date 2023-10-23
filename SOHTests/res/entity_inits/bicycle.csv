@@ -1,0 +1,2 @@
+type,driverMass,weigthLoad,bicycleWeigth,maxAcceleration,maxDeceleration,length,maxSpeed,trafficCode,height,width
+city,75,0,0,3.00,3.00,1.90,8.33,german,1.00,0.60

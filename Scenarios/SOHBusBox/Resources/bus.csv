@@ -1,0 +1,3 @@
+type,passengerCapacity,maxAcceleration,maxDeceleration,maxSpeed,length,height,width,trafficCode,velocity,mass
+Citaro12m,105,0.73,1.67,13.89,12.135,3.12,2.55,german,0,19000
+CapaCityL,125,0.73,1.67,13.89,20.995,3.095,2.55,german,0,32000

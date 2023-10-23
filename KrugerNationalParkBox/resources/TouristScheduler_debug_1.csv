@@ -1,0 +1,2 @@
+startTime,endTime,spawningIntervalInMinutes,spawningAmount,gateName,source,destination
+6:00,8:20,10,1,Phabeni Gate,POINT (31.240647 -25.02469),"MULTIPOINT (31.28163172149577 -25.0153934)"

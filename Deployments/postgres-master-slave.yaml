@@ -1,0 +1,35 @@
+﻿version: '2'
+
+# Scale up- and down the number slaves to "3" 
+# docker compose up --detach --scale postgresql-master=1 --scale postgresql-slave=3
+
+services:
+  postgresql-master:
+    image: 'bitnami/postgresql:latest'
+    ports:
+      - '5432'
+    volumes:
+      - 'postgresql_master_data:/bitnami/postgresql'
+    environment:
+      - POSTGRESQL_REPLICATION_MODE=master
+      - POSTGRESQL_REPLICATION_USER=mars
+      - POSTGRESQL_REPLICATION_PASSWORD=poly2021
+      - POSTGRESQL_USERNAME=mars
+      - POSTGRESQL_PASSWORD=poly2021
+      - POSTGRESQL_DATABASE=mars
+  postgresql-slave:
+    image: 'bitnami/postgresql:latest'
+    ports:
+      - '5432'
+    depends_on:
+      - postgresql-master
+    environment:
+      - POSTGRESQL_REPLICATION_MODE=slave
+      - POSTGRESQL_REPLICATION_USER=mars
+      - POSTGRESQL_REPLICATION_PASSWORD=poly2021
+      - POSTGRESQL_MASTER_HOST=postgresql-master
+      - POSTGRESQL_PASSWORD=my_password
+      - POSTGRESQL_MASTER_PORT_NUMBER=5432
+
+volumes:
+  postgresql_master_data:

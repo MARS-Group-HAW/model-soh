@@ -1,0 +1,391 @@
+{
+  "globals": {
+    "startPoint": "2020-01-01T07:00:00",
+    "endPoint": "2020-01-01T12:00:00",
+    "deltaTUnit": "seconds",
+    "console": true,
+    "pythonVisualization": false
+  },
+  "agents": [
+    {
+      "count": 0,
+      //      "file": "resources\\citizen_init_10k.csv",
+      "inputs": [
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        },
+        {
+          "file": "resources\\citizen_init_10k.csv"
+        }
+      ],
+      "output": "trips",
+      "individual": [
+        {
+          "value": true,
+          "parameter": "ResultTrajectoryEnabled"
+        },
+        {
+          "value": true,
+          "parameter": "CapabilityDriving"
+        },
+        {
+          "parameter": "CapabilityCycling",
+          "value": true
+        }
+      ],
+      //      "outputFilter": [{"parameter": "StoreTickResult", "operator": "in", "values": [true] } ],
+      "name": "Citizen"
+    }
+  ],
+  "layers": [
+    {
+      "file": "resources\\traffic_lights_altona.zip",
+      "name": "TrafficLightLayer"
+    },
+    {
+      "file": "resources\\buildings_hamburg_center.geojson",
+      "name": "VectorBuildingsLayer"
+    },
+    {
+      "file": "resources\\landuse_hamburg_center.geojson",
+      "name": "VectorLanduseLayer"
+    },
+    {
+      "file": "resources\\pois_hamburg_center.geojson",
+      "name": "VectorPoiLayer"
+    },
+    {
+      "file": "resources\\drive_graph_hamburg_center.geojson",
+      "name": "StreetLayer"
+    },
+    {
+      "file": "resources\\walk_graph_hamburg_center.geojson",
+      "name": "SidewalkLayer"
+    },
+    {
+      "file": "resources\\parking_hamburg_center.geojson",
+      "name": "CarParkingLayer"
+    },
+    {
+      "file": "resources\\citizen.csv",
+      "name": "CitizenSchedulerLayer"
+    },
+    {
+      "file": "resources\\bicycle_rental_hamburg_center.geojson",
+      "name": "BicycleRentalLayer"
+    },
+    {
+      "individual": [
+        {
+          "value": 0.779,
+          "parameter": "ParkingOccupancy"
+        }
+      ],
+      "name": "CitizenLayer"
+    }
+  ],
+  "entities": [
+    {
+      "file": "resources\\bicycle.csv",
+      "name": "RentalBicycle"
+    },
+    {
+      "file": "resources\\car.csv",
+      "name": "Car"
+    }
+  ]
+}

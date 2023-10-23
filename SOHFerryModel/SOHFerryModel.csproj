@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <LangVersion>10</LangVersion>
+        <PackageIcon>icon.png</PackageIcon>
+
+        <RootNamespace>SOHFerryModel</RootNamespace>
+        <AssemblyName>SOHFerryModel</AssemblyName>
+        <Title>Mars.Life.SOHFerryModel</Title>
+        <Authors>Daniel Glake</Authors>
+        <Description>SOHFerryModel</Description>
+        <Copyright>MARS GROUP 2023</Copyright>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\SOHDomain\SOHDomain.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\Build\icon.png" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+</Project>

@@ -1,0 +1,17 @@
+{
+"type": "FeatureCollection",
+"name": "hamburg_u1_north_stations",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "id": 36901, "lines": "U1", "linekat": "U-Bahn", "lineshortkat": "U", "short_name": "Richtweg" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 9.989658084136734, 53.695632164118948 ] ] } },
+{ "type": "Feature", "properties": { "id": 36902, "lines": "U1", "linekat": "U-Bahn", "lineshortkat": "U", "short_name": "Garstedt" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 9.986043441642838, 53.685436847324333 ] ] } },
+{ "type": "Feature", "properties": { "id": 36961, "lines": "U1,A2", "linekat": "U-Bahn,AKN", "lineshortkat": "U,A", "short_name": "Norderstedt Mitte" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 9.992526960470466, 53.707522758822648 ] ] } },
+{ "type": "Feature", "properties": { "id": 71900, "lines": "U1", "linekat": "U-Bahn", "lineshortkat": "U", "short_name": "Fuhlsbüttel Nord" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.016779558889224, 53.639345902556371 ] ] } },
+{ "type": "Feature", "properties": { "id": 71901, "lines": "U1", "linekat": "U-Bahn", "lineshortkat": "U", "short_name": "Fuhlsbüttel" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.026968574892507, 53.632430040744154 ] ] } },
+{ "type": "Feature", "properties": { "id": 71902, "lines": "U1", "linekat": "U-Bahn", "lineshortkat": "U", "short_name": "Klein Borstel" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.033215961967981, 53.628260969521563 ] ] } },
+{ "type": "Feature", "properties": { "id": 92900, "lines": "U1", "linekat": "U-Bahn", "lineshortkat": "U", "short_name": "Ochsenzoll" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.001596987033423, 53.678146488328245 ] ] } },
+{ "type": "Feature", "properties": { "id": 92901, "lines": "U1", "linekat": "U-Bahn", "lineshortkat": "U", "short_name": "Kiwittsmoor" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.015963944974061, 53.67521301516198 ] ] } },
+{ "type": "Feature", "properties": { "id": 92902, "lines": "U1", "linekat": "U-Bahn", "lineshortkat": "U", "short_name": "Langenhorn Nord" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.017567977097436, 53.660778064163487 ] ] } },
+{ "type": "Feature", "properties": { "id": 92903, "lines": "U1", "linekat": "U-Bahn", "lineshortkat": "U", "short_name": "Langenhorn Markt" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.017317039133372, 53.649108335692894 ] ] } }
+]
+}
