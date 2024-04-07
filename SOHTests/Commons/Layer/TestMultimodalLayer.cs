@@ -2,14 +2,14 @@ using System.Linq;
 using Mars.Interfaces;
 using Mars.Interfaces.Annotations;
 using Mars.Interfaces.Environments;
-using SOHBicycleModel.Rental;
-using SOHCarModel.Rental;
-using SOHDomain.Graph;
-using SOHDomain.Model;
-using SOHFerryModel.Station;
-using SOHMultimodalModel.Multimodal;
-using SOHMultimodalModel.Routing;
-using SOHTrainModel.Station;
+using SOHModel.Bicycle.Rental;
+using SOHModel.Car.Rental;
+using SOHModel.Domain.Graph;
+using SOHModel.Domain.Model;
+using SOHModel.Ferry.Station;
+using SOHModel.Multimodal.Multimodal;
+using SOHModel.Multimodal.Routing;
+using SOHModel.Train.Station;
 
 namespace SOHTests.Commons.Layer;
 

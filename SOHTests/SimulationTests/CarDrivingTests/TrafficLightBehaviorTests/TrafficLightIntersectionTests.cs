@@ -5,8 +5,8 @@ using Mars.Common.Core.Logging;
 using Mars.Common.IO.Csv;
 using Mars.Components.Starter;
 using Mars.Interfaces.Model;
-using SOHCarModel.Model;
-using SOHMultimodalModel.Layers.TrafficLight;
+using SOHModel.Car.Model;
+using SOHModel.Multimodal.Layers.TrafficLight;
 using Xunit;
 
 namespace SOHTests.SimulationTests.CarDrivingTests.TrafficLightBehaviorTests;

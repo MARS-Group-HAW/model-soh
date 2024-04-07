@@ -1,0 +1,75 @@
+{
+  "globals": {
+    "deltaT": 1,
+    "startPoint": "2022-09-01T06:00:00",
+    "endPoint": "2022-09-01T07:00:00",
+    "deltaTUnit": "seconds",
+    "console": true
+  },
+  "agents": [
+    {
+      "name": "PassengerTraveler",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": [
+              "ActiveCapability"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "BusDriver"
+    }
+  ],
+  "layers": [
+    {
+      "name": "PassengerTravelerLayer"
+    },
+    {
+      "name": "SpatialGraphMediatorLayer",
+      "inputs": [
+        {
+          "file": "resources/altona_altstadt_walk_graph.graphml",
+          "inputConfiguration": {
+            "modalities": [
+              "Walking"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "PassengerTravelerSchedulerLayer",
+      "file": "resources/passenger_traveler_schedule.csv"
+    },
+    {
+      "name": "BusStationLayer",
+      "file": "resources/hamburg_bus_113_stations.geojson"
+    },
+    {
+      "name": "BusRouteLayer",
+      "file": "resources/bus_113_line.csv"
+    },
+    {
+      "name": "BusGtfsRouteLayer",
+      "file": "resources/HVV_GTFS"
+    },
+    {
+      "name": "BusLayer",
+      "file": "resources/altona_altstadt_walk_graph.graphml",
+    },
+    {
+      "name": "BusSchedulerLayer",
+      "file": "resources/bus_driver_schedule.csv"
+    }
+  ],
+  "entities": [
+    {
+      "name": "Bus",
+      "file": "resources/bus.csv"
+    }
+  ]
+}

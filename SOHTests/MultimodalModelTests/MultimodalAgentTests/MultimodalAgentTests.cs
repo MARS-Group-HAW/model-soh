@@ -1,6 +1,6 @@
 using Mars.Interfaces.Environments;
-using SOHDomain.Graph;
-using SOHMultimodalModel.Multimodal;
+using SOHModel.Domain.Graph;
+using SOHModel.Multimodal.Multimodal;
 using SOHTests.Commons.Agent;
 using SOHTests.Commons.Environment;
 using SOHTests.Commons.Layer;

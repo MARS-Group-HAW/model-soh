@@ -3,7 +3,7 @@ using Mars.Core.Data;
 using Mars.Interfaces;
 using Mars.Interfaces.Data;
 using Moq;
-using SOHCarModel.Model;
+using SOHModel.Car.Model;
 using SOHTests.Commons.Environment;
 using Xunit;
 
@@ -15,6 +15,7 @@ public class CarLayerTests
     public void InitDataEnvironmentOverwritesConstructorEnvironment()
     {
         var environment = new FourNodeGraphEnv().GraphEnvironment;
+        
         var carLayer = new CarLayer(environment);
         Assert.Equal(environment, carLayer.Environment);
 

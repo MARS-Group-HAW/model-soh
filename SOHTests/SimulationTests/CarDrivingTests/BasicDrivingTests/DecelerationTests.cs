@@ -4,7 +4,7 @@ using System.IO;
 using Mars.Common.IO.Csv;
 using Mars.Components.Starter;
 using Mars.Interfaces.Model;
-using SOHCarModel.Model;
+using SOHModel.Car.Model;
 using SOHTests.Commons;
 using SOHTests.Commons.Environment;
 using Xunit;

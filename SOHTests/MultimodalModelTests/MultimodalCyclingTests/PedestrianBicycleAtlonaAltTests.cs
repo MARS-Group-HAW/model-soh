@@ -4,7 +4,7 @@ using Mars.Components.Environments;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Model;
 using Mars.Interfaces.Model.Options;
-using SOHMultimodalModel.Multimodal;
+using SOHModel.Multimodal.Multimodal;
 using SOHTests.Commons.Agent;
 using SOHTests.Commons.Layer;
 using Xunit;

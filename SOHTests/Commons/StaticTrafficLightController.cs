@@ -4,7 +4,7 @@ using Mars.Common.Core;
 using Mars.Interfaces.Data;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Layers;
-using SOHCarModel.Model;
+using SOHModel.Car.Model;
 
 namespace SOHTests.Commons;
 

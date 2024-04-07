@@ -8,8 +8,8 @@ using Mars.Components.Environments;
 using Mars.Components.Starter;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Model;
-using SOHCarModel.Model;
-using SOHMultimodalModel.Layers.TrafficLight;
+using SOHModel.Car.Model;
+using SOHModel.Multimodal.Layers.TrafficLight;
 using SOHTests.SimulationTests.CarDrivingTests.IntersectionBehaviorTests;
 using Xunit;
 

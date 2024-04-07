@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <IsPackable>false</IsPackable>
         <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
         <LangVersion>10</LangVersion>
@@ -18,8 +18,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\SOHBusModel\SOHBusModel.csproj"/>
-        <ProjectReference Include="..\SOHMultimodalModel\SOHMultimodalModel.csproj"/>
+        <ProjectReference Include="..\SOHModel\SOHModel.csproj" />
     </ItemGroup>
 
     <ItemGroup>

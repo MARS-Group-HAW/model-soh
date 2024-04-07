@@ -1,6 +1,6 @@
 using Mars.Interfaces.Environments;
-using SOHFerryModel.Model;
-using SOHTrainModel.Model;
+using SOHModel.Ferry.Model;
+using SOHModel.Train.Model;
 
 namespace SOHTests.Commons.Agent;
 

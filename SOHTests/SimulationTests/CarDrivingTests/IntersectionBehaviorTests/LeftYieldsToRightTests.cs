@@ -8,8 +8,8 @@ using Mars.Common.IO.Csv;
 using Mars.Components.Environments;
 using Mars.Components.Starter;
 using Mars.Interfaces.Model;
-using SOHCarModel.Model;
-using SOHDomain.Common;
+using SOHModel.Car.Model;
+using SOHModel.Domain.Common;
 using Xunit;
 
 namespace SOHTests.SimulationTests.CarDrivingTests.IntersectionBehaviorTests;

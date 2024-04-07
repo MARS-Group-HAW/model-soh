@@ -1,6 +1,6 @@
 using System.Linq;
 using Mars.Interfaces.Model;
-using SOHFerryModel.Model;
+using SOHModel.Ferry.Model;
 using Xunit;
 
 namespace SOHTests.FerryModelTests;

@@ -5,10 +5,10 @@ using Mars.Core.Data.Wrapper.Memory;
 using Mars.Interfaces;
 using Mars.Interfaces.Agents;
 using Mars.Interfaces.Environments;
-using SOHCarModel.Model;
-using SOHCarModel.Steering;
-using SOHDomain.Steering.Common;
-using SOHMultimodalModel.Output.Trips;
+using SOHModel.Car.Model;
+using SOHModel.Car.Steering;
+using SOHModel.Domain.Steering.Common;
+using SOHModel.Multimodal.Output.Trips;
 using Xunit;
 
 namespace SOHTests.Commons.Agent;

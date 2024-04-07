@@ -6,7 +6,7 @@ using Mars.Interfaces;
 using Mars.Interfaces.Data;
 using Mars.Interfaces.Model;
 using Moq;
-using SOHFerryModel.Model;
+using SOHModel.Ferry.Model;
 using SOHTests.Commons.Layer;
 using Xunit;
 

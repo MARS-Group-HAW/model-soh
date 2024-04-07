@@ -1,8 +1,8 @@
 using Mars.Components.Environments;
 using Mars.Interfaces.Data;
 using Mars.Interfaces.Environments;
-using SOHBicycleModel.Rental;
-using SOHDomain.Graph;
+using SOHModel.Bicycle.Rental;
+using SOHModel.Domain.Graph;
 using Xunit;
 
 namespace SOHTests.BicycleModelTests;

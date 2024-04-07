@@ -1,8 +1,8 @@
 using System;
 using Mars.Interfaces.Data;
-using SOHBusModel.Model;
-using SOHBusModel.Route;
-using SOHBusModel.Station;
+using SOHModel.Bus.Model;
+using SOHModel.Bus.Route;
+using SOHModel.Bus.Station;
 
 namespace SOHTests.Commons.Layer;
 

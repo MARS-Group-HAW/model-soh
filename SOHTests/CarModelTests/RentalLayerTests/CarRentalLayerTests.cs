@@ -1,6 +1,6 @@
 using Mars.Interfaces.Environments;
-using SOHCarModel.Model;
-using SOHCarModel.Rental;
+using SOHModel.Car.Model;
+using SOHModel.Car.Rental;
 using SOHTests.Commons.Layer;
 using Xunit;
 

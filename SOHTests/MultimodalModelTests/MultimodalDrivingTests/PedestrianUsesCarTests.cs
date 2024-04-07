@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using Mars.Interfaces.Environments;
-using SOHCarModel.Model;
+using SOHModel.Car.Model;
 using SOHTests.Commons.Agent;
 using SOHTests.Commons.Environment;
 using SOHTests.Commons.Layer;

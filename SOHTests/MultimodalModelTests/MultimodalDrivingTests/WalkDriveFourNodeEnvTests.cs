@@ -1,7 +1,7 @@
 using Mars.Interfaces;
-using SOHCarModel.Model;
-using SOHCarModel.Parking;
-using SOHDomain.Graph;
+using SOHModel.Car.Model;
+using SOHModel.Car.Parking;
+using SOHModel.Domain.Graph;
 using SOHTests.Commons.Agent;
 using SOHTests.Commons.Environment;
 using SOHTests.Commons.Layer;

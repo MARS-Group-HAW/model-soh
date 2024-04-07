@@ -1,6 +1,6 @@
 using Mars.Interfaces.Environments;
-using SOHMultimodalModel.Model;
-using SOHMultimodalModel.Routing;
+using SOHModel.Multimodal.Model;
+using SOHModel.Multimodal.Routing;
 using SOHTests.Commons.Layer;
 using Xunit;
 

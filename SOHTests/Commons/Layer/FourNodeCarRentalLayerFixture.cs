@@ -7,9 +7,9 @@ using Mars.Interfaces.Model;
 using Moq;
 using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
-using SOHCarModel.Model;
-using SOHCarModel.Rental;
-using SOHDomain.Graph;
+using SOHModel.Car.Model;
+using SOHModel.Car.Rental;
+using SOHModel.Domain.Graph;
 using SOHTests.Commons.Environment;
 
 namespace SOHTests.Commons.Layer;

@@ -8,9 +8,9 @@ using Mars.Core.Data;
 using Mars.Interfaces;
 using Mars.Interfaces.Model;
 using Mars.Interfaces.Model.Options;
-using SOHFerryModel.Model;
-using SOHFerryModel.Route;
-using SOHFerryModel.Station;
+using SOHModel.Ferry.Model;
+using SOHModel.Ferry.Route;
+using SOHModel.Ferry.Station;
 using SOHTests.Commons.Layer;
 using Xunit;
 

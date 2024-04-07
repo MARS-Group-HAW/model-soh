@@ -1,11 +1,11 @@
 using System.Linq;
 using Mars.Components.Environments;
 using Mars.Interfaces.Environments;
-using SOHDomain.Common;
-using SOHDomain.Steering.Handles;
-using SOHMultimodalModel.Model;
-using SOHMultimodalModel.Multimodal;
-using SOHMultimodalModel.Routing;
+using SOHModel.Domain.Common;
+using SOHModel.Domain.Steering.Handles;
+using SOHModel.Multimodal.Model;
+using SOHModel.Multimodal.Multimodal;
+using SOHModel.Multimodal.Routing;
 using SOHTests.Commons.Agent;
 using SOHTests.Commons.Environment;
 using SOHTests.Commons.Layer;

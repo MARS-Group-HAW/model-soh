@@ -3,7 +3,7 @@ using System.Linq;
 using Mars.Components.Environments;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Model;
-using SOHBicycleModel.Parking;
+using SOHModel.Bicycle.Parking;
 using SOHTests.Commons.Layer;
 using Xunit;
 

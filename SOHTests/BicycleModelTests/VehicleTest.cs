@@ -9,12 +9,12 @@ using Mars.Numerics.Statistics;
 using Moq;
 using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
-using SOHBicycleModel.Common;
-using SOHBicycleModel.Model;
-using SOHBicycleModel.Rental;
-using SOHBicycleModel.Steering;
-using SOHDomain.Graph;
-using SOHDomain.Steering.Common;
+using SOHModel.Bicycle.Common;
+using SOHModel.Bicycle.Model;
+using SOHModel.Bicycle.Rental;
+using SOHModel.Bicycle.Steering;
+using SOHModel.Domain.Graph;
+using SOHModel.Domain.Steering.Common;
 using Xunit;
 using Position = Mars.Interfaces.Environments.Position;
 
@@ -88,8 +88,8 @@ internal class TestBicycleDriver : IBicycleSteeringCapable
     public double DriverRandom => HandleDriverType.DetermineDriverRand(DriverType);
     public DriverType DriverType => DriverType.Normal;
 
-    public double CyclingPower { get; } =
-        new FastGaussianDistributionD(75, 3).Next(RandomHelper.Random);
+    public double CyclingPower { get; } = new FastGaussianDistribution(75, 3)
+        .Next(RandomHelper.Random);
 
     public double Mass { get; } = 80;
     public double Gradient { get; } = 0;

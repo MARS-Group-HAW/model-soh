@@ -1,6 +1,6 @@
 using Mars.Common.IO.Csv;
 using Mars.Core.Data;
-using SOHCarModel.Model;
+using SOHModel.Car.Model;
 using Xunit;
 
 namespace SOHTests.CarModelTests;

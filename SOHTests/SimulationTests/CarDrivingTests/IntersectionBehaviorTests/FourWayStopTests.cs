@@ -5,7 +5,7 @@ using System.Linq;
 using Mars.Common.IO.Csv;
 using Mars.Components.Starter;
 using Mars.Interfaces.Model;
-using SOHCarModel.Model;
+using SOHModel.Car.Model;
 using Xunit;
 
 namespace SOHTests.SimulationTests.CarDrivingTests.IntersectionBehaviorTests;

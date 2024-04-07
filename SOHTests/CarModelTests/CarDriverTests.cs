@@ -3,7 +3,7 @@ using Mars.Interfaces;
 using Mars.Interfaces.Agents;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Layers;
-using SOHCarModel.Model;
+using SOHModel.Car.Model;
 using SOHTests.Commons.Environment;
 using SOHTests.Commons.Layer;
 using Xunit;

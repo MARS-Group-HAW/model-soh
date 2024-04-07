@@ -1,5 +1,5 @@
 using Mars.Interfaces.Environments;
-using SOHMultimodalModel.Model;
+using SOHModel.Multimodal.Model;
 using SOHTests.Commons.Layer;
 using Xunit;
 

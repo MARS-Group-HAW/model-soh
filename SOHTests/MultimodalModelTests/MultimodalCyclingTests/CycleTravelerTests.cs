@@ -6,10 +6,10 @@ using Mars.Interfaces.Data;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Layers;
 using Mars.Interfaces.Model;
-using SOHBicycleModel.Rental;
-using SOHDomain.Graph;
-using SOHMultimodalModel.Model;
-using SOHMultimodalModel.Routing;
+using SOHModel.Bicycle.Rental;
+using SOHModel.Domain.Graph;
+using SOHModel.Multimodal.Model;
+using SOHModel.Multimodal.Routing;
 using Xunit;
 
 namespace SOHTests.MultimodalModelTests.MultimodalCyclingTests;

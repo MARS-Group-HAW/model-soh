@@ -8,7 +8,7 @@ using Mars.Interfaces.Model;
 using Mars.Interfaces.Model.Options;
 using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
-using SOHDomain.Graph;
+using SOHModel.Domain.Graph;
 using SOHTests.Commons.Agent;
 using SOHTests.Commons.Layer;
 using Xunit;

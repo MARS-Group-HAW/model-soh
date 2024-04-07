@@ -4,9 +4,9 @@ using Mars.Components.Environments;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Model;
 using Mars.Interfaces.Model.Options;
-using SOHBicycleModel.Rental;
-using SOHCarModel.Model;
-using SOHDomain.Graph;
+using SOHModel.Bicycle.Rental;
+using SOHModel.Car.Model;
+using SOHModel.Domain.Graph;
 using SOHTests.Commons.Layer;
 using Xunit;
 
@@ -97,9 +97,10 @@ public class MultimodalResolverConsumeTests
     [Fact]
     public void TestConsumesForDriving()
     {
-        var carParkingSpace =
-            _multimodalLayer.CarParkingLayer.Nearest(Position.CreateGeoPosition(9.9528571, 53.5505072));
+        var carParkingSpace = _multimodalLayer.CarParkingLayer.Nearest(
+                Position.CreateGeoPosition(9.9528571, 53.5505072));
         var nearestNode = _environment.NearestNode(carParkingSpace.Position);
+        
         Assert.False(carParkingSpace.Occupied);
         Assert.True(_multimodalLayer.Consumes(ModalChoice.CarDriving, nearestNode));
 

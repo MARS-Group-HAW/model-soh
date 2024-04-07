@@ -6,9 +6,9 @@ using Mars.Components.Starter;
 using Mars.Core.Simulation;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Model;
-using SOHDomain.Graph;
-using SOHMultimodalModel.Layers;
-using SOHMultimodalModel.Model;
+using SOHModel.Domain.Graph;
+using SOHModel.Multimodal.Layers;
+using SOHModel.Multimodal.Model;
 using Xunit;
 
 namespace SOHTests.SimulationTests.DailyRoutineTests;

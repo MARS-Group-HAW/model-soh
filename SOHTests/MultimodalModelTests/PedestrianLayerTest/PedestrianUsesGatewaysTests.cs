@@ -1,8 +1,8 @@
 using Mars.Components.Environments;
 using Mars.Interfaces.Data;
 using Mars.Interfaces.Environments;
-using SOHMultimodalModel.Multimodal;
-using SOHMultimodalModel.Routing;
+using SOHModel.Multimodal.Multimodal;
+using SOHModel.Multimodal.Routing;
 using SOHTests.Commons.Agent;
 using SOHTests.Commons.Layer;
 using Xunit;

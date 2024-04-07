@@ -1,6 +1,6 @@
-using SOHCarModel.Steering;
-using SOHMultimodalModel.Model;
-using SOHMultimodalModel.Multimodal;
+using SOHModel.Car.Steering;
+using SOHModel.Multimodal.Model;
+using SOHModel.Multimodal.Multimodal;
 using SOHTests.Commons.Layer;
 
 namespace SOHTests.Commons.Agent;

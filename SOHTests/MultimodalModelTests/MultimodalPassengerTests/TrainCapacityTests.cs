@@ -6,11 +6,11 @@ using Mars.Core.Data;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Model;
 using Mars.Interfaces.Model.Options;
-using SOHMultimodalModel.Multimodal;
+using SOHModel.Multimodal.Multimodal;
+using SOHModel.Train.Model;
+using SOHModel.Train.Station;
 using SOHTests.Commons.Agent;
 using SOHTests.Commons.Layer;
-using SOHTrainModel.Model;
-using SOHTrainModel.Station;
 using Xunit;
 
 namespace SOHTests.MultimodalModelTests.MultimodalPassengerTests;

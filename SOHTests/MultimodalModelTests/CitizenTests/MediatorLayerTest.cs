@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Mars.Interfaces.Environments;
-using SOHDomain.Common;
-using SOHMultimodalModel.Layers;
+using SOHModel.Domain.Common;
+using SOHModel.Multimodal.Layers;
 using SOHTests.Commons.Layer;
 using Xunit;
 

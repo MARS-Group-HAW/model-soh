@@ -4,8 +4,8 @@ using Mars.Core.Data;
 using Mars.Interfaces;
 using Mars.Interfaces.Data;
 using Moq;
-using SOHCarModel.Parking;
-using SOHDomain.Graph;
+using SOHModel.Car.Parking;
+using SOHModel.Domain.Graph;
 
 namespace SOHTests.Commons.Layer;
 

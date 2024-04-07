@@ -7,7 +7,7 @@ using Mars.Interfaces.Data;
 using Mars.Interfaces.Model;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
-using SOHMultimodalModel.Model;
+using SOHModel.Multimodal.Model;
 using Xunit;
 
 namespace SOHTests.FerryModelTests;

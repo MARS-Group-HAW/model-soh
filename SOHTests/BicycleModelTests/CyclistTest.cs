@@ -1,8 +1,8 @@
 using System;
 using Mars.Common.IO.Csv;
 using Mars.Core.Data;
-using SOHBicycleModel.Common;
-using SOHBicycleModel.Model;
+using SOHModel.Bicycle.Common;
+using SOHModel.Bicycle.Model;
 using Xunit;
 
 namespace SOHTests.BicycleModelTests;

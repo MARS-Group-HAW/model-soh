@@ -1,7 +1,7 @@
 using System;
 using Mars.Components.Environments;
 using Mars.Interfaces.Environments;
-using SOHMultimodalModel.Routing;
+using SOHModel.Multimodal.Routing;
 using SOHTests.Commons.Environment;
 using Xunit;
 

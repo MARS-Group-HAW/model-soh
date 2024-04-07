@@ -9,9 +9,9 @@ using Mars.Interfaces.Data;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Layers;
 using Mars.Interfaces.Model;
-using SOHDomain.Graph;
-using SOHMultimodalModel.Model;
-using SOHMultimodalModel.Multimodal;
+using SOHModel.Domain.Graph;
+using SOHModel.Multimodal.Model;
+using SOHModel.Multimodal.Multimodal;
 using SOHTests.Commons.Environment;
 using Xunit;
 

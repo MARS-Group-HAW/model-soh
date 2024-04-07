@@ -7,10 +7,10 @@ using Mars.Core.Data;
 using Mars.Interfaces;
 using Mars.Interfaces.Model;
 using Mars.Interfaces.Model.Options;
+using SOHModel.Train.Model;
+using SOHModel.Train.Route;
+using SOHModel.Train.Station;
 using SOHTests.Commons.Layer;
-using SOHTrainModel.Model;
-using SOHTrainModel.Route;
-using SOHTrainModel.Station;
 using Xunit;
 
 namespace SOHTests.TrainModelTests;

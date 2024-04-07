@@ -2,7 +2,7 @@ using System;
 using Mars.Components.Environments;
 using Mars.Interfaces.Data;
 using Mars.Interfaces.Environments;
-using SOHMultimodalModel.Routing;
+using SOHModel.Multimodal.Routing;
 using Xunit;
 
 namespace SOHTests.MultimodalModelTests.RoutingTests;

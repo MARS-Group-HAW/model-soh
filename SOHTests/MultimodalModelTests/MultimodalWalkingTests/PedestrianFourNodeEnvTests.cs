@@ -1,5 +1,5 @@
 using Mars.Interfaces.Environments;
-using SOHMultimodalModel.Multimodal;
+using SOHModel.Multimodal.Multimodal;
 using SOHTests.Commons.Agent;
 using SOHTests.Commons.Environment;
 using SOHTests.Commons.Layer;

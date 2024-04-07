@@ -1,6 +1,6 @@
 using Mars.Interfaces.Environments;
-using SOHCarModel.Model;
-using SOHCarModel.Steering;
+using SOHModel.Car.Model;
+using SOHModel.Car.Steering;
 using SOHTests.Commons.Environment;
 using Xunit;
 

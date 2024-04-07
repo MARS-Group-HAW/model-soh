@@ -5,10 +5,10 @@ using Mars.Components.Environments;
 using Mars.Interfaces.Agents;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Model.Options;
-using SOHBicycleModel.Model;
-using SOHCarModel.Model;
-using SOHCarModel.Steering;
-using SOHDomain.Steering.Common;
+using SOHModel.Bicycle.Model;
+using SOHModel.Car.Model;
+using SOHModel.Car.Steering;
+using SOHModel.Domain.Steering.Common;
 using Xunit;
 
 namespace SOHTests.CarModelTests.OvertakingTests;

@@ -1,7 +1,7 @@
 using System;
 using Mars.Interfaces.Data;
-using SOHFerryModel.Route;
-using SOHFerryModel.Station;
+using SOHModel.Ferry.Route;
+using SOHModel.Ferry.Station;
 
 namespace SOHTests.Commons.Layer;
 

@@ -1,5 +1,5 @@
 using System;
-using SOHMultimodalModel.Layers;
+using SOHModel.Multimodal.Layers;
 using Xunit;
 
 namespace SOHTests.Commons.Layer;

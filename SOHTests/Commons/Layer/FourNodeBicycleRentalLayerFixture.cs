@@ -4,8 +4,8 @@ using Mars.Interfaces.Data;
 using Mars.Interfaces.Model;
 using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
-using SOHBicycleModel.Rental;
-using SOHDomain.Graph;
+using SOHModel.Bicycle.Rental;
+using SOHModel.Domain.Graph;
 using SOHTests.Commons.Environment;
 
 namespace SOHTests.Commons.Layer;

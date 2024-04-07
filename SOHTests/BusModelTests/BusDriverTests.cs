@@ -7,9 +7,9 @@ using Mars.Core.Data;
 using Mars.Interfaces;
 using Mars.Interfaces.Model;
 using Mars.Interfaces.Model.Options;
-using SOHBusModel.Model;
-using SOHBusModel.Route;
-using SOHBusModel.Station;
+using SOHModel.Bus.Model;
+using SOHModel.Bus.Route;
+using SOHModel.Bus.Station;
 using SOHTests.Commons.Layer;
 using Xunit;
 
@@ -23,8 +23,9 @@ public class BusDriverTests : IClassFixture<BusRouteLayerFixture>
     public BusDriverTests(BusRouteLayerFixture routeLayerFixture)
     {
         _routeLayerFixture = routeLayerFixture;
-        _layer = new BusLayer(routeLayerFixture.BusRouteLayer)
+        _layer = new BusLayer
         {
+            BusRouteLayer = routeLayerFixture.BusRouteLayer,
             Context = SimulationContext.Start2020InSeconds,
             EntityManager = new EntityManagerImpl(CsvReader.MapData(ResourcesConstants.BusCsv)),
             GraphEnvironment = new SpatialGraphEnvironment(new SpatialGraphOptions
@@ -55,6 +56,7 @@ public class BusDriverTests : IClassFixture<BusRouteLayerFixture>
         };
 
         Assert.True(_layer.BusRouteLayer.TryGetRoute(line, out var schedule));
+        Assert.NotNull(schedule);
         var unvisitedStationEntries = schedule.Entries.ToList();
         Assert.Equal(7, unvisitedStationEntries.Count);
         for (var tick = 0; tick < 9000; tick++, _layer.Context.UpdateStep())
@@ -217,8 +219,9 @@ public class BusDriverTests : IClassFixture<BusRouteLayerFixture>
 
         var manager = new EntityManagerImpl(CsvReader.MapData(ResourcesConstants.BusCsv));
 
-        var layer = new BusLayer(_routeLayerFixture.BusRouteLayer)
+        var layer = new BusLayer
         {
+            BusRouteLayer = _routeLayerFixture.BusRouteLayer,
             EntityManager = manager,
             GraphEnvironment = environment,
             Context = SimulationContext.Start2020InSeconds

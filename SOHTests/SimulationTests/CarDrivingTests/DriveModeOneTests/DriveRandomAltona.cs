@@ -4,7 +4,7 @@ using Mars.Common.Core.Logging;
 using Mars.Components.Environments;
 using Mars.Components.Starter;
 using Mars.Interfaces.Model;
-using SOHCarModel.Model;
+using SOHModel.Car.Model;
 using SOHTests.SimulationTests.CarDrivingTests.IntersectionBehaviorTests;
 using Xunit;
 

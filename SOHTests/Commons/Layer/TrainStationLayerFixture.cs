@@ -1,8 +1,8 @@
 using System;
 using Mars.Interfaces.Data;
-using SOHTrainModel.Model;
-using SOHTrainModel.Route;
-using SOHTrainModel.Station;
+using SOHModel.Train.Model;
+using SOHModel.Train.Route;
+using SOHModel.Train.Station;
 
 namespace SOHTests.Commons.Layer;
 

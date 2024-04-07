@@ -4,12 +4,12 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Mars.Interfaces.Agents;
 using Mars.Interfaces.Environments;
-using SOHBicycleModel.Common;
-using SOHBicycleModel.Model;
-using SOHBicycleModel.Steering;
-using SOHCarModel.Model;
-using SOHCarModel.Steering;
-using SOHDomain.Steering.Common;
+using SOHModel.Bicycle.Common;
+using SOHModel.Bicycle.Model;
+using SOHModel.Bicycle.Steering;
+using SOHModel.Car.Model;
+using SOHModel.Car.Steering;
+using SOHModel.Domain.Steering.Common;
 
 namespace SOHTests.Commons.Agent;
 

@@ -4,7 +4,7 @@ using Mars.Interfaces;
 using Mars.Interfaces.Data;
 using Mars.Interfaces.Environments;
 using Moq;
-using SOHCarModel.Model;
+using SOHModel.Car.Model;
 
 namespace SOHTests.Commons.Layer;
 
@@ -13,7 +13,7 @@ public class CarLayerFixture
     public CarLayerFixture(ISpatialGraphEnvironment environment = null)
     {
         var simulationContext = SimulationContext.Start2020InSeconds;
-        CarLayer = new CarLayer { Environment = environment };
+        CarLayer = new CarLayer(environment);
 
         var dataTable = CsvReader.MapData(ResourcesConstants.CarCsv);
         var manager = new EntityManagerImpl(dataTable);

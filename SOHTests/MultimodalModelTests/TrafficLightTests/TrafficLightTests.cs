@@ -1,5 +1,5 @@
 using Mars.Interfaces.Environments;
-using SOHMultimodalModel.Layers.TrafficLight;
+using SOHModel.Multimodal.Layers.TrafficLight;
 using Xunit;
 
 namespace SOHTests.MultimodalModelTests.TrafficLightTests;

@@ -1,7 +1,7 @@
 using System.Linq;
+using SOHModel.Train.Route;
+using SOHModel.Train.Station;
 using SOHTests.Commons.Layer;
-using SOHTrainModel.Route;
-using SOHTrainModel.Station;
 using Xunit;
 
 namespace SOHTests.TrainModelTests;

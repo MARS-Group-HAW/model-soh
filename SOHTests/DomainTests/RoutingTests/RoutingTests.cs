@@ -3,8 +3,8 @@ using Mars.Common.IO.Csv;
 using Mars.Core.Data;
 using Mars.Interfaces.Data;
 using Mars.Interfaces.Environments;
-using SOHBicycleModel.Model;
-using SOHCarModel.Model;
+using SOHModel.Bicycle.Model;
+using SOHModel.Car.Model;
 using Xunit;
 
 namespace SOHTests.DomainTests.RoutingTests;

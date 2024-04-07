@@ -1,5 +1,5 @@
 using Mars.Interfaces.Data;
-using SOHMultimodalModel.Layers;
+using SOHModel.Multimodal.Layers;
 
 namespace SOHTests.Commons.Layer;
 

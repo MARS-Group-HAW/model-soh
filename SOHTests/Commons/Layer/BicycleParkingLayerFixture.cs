@@ -5,8 +5,8 @@ using Mars.Interfaces;
 using Mars.Interfaces.Data;
 using Mars.Interfaces.Environments;
 using Moq;
-using SOHBicycleModel.Parking;
-using SOHDomain.Graph;
+using SOHModel.Bicycle.Parking;
+using SOHModel.Domain.Graph;
 
 namespace SOHTests.Commons.Layer;
 
