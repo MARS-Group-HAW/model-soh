@@ -35,7 +35,7 @@
           "file": "resources/altona_altstadt_walk_graph.graphml",
           "inputConfiguration": {
             "modalities": [
-              "Walking"
+              "Walking", "CarDriving"
             ]
           }
         }
@@ -59,7 +59,17 @@
     },
     {
       "name": "BusLayer",
-      "file": "resources/altona_altstadt_walk_graph.graphml",
+      "inputs": [
+        {
+          "file": "resources/altona_altstadt_walk_graph.graphml",
+          "inputConfiguration": {
+            "isBidirectedGraph": true,
+            "modalities": [
+              "CarDriving"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "BusSchedulerLayer",
