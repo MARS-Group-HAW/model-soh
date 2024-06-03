@@ -27,7 +27,7 @@ cd SOHTravellingBox
 dotnet run
 ```
 
-This runs the simulation and creates a file call `trips.geojson`. Open [kepler.gl](https://kepler.gl/demo) and import the file via drag & drop. See the trajectories which were computed by the simulation.
+This runs the simulation and creates a file call `HumanTraveler_trips.geojson`. Open [kepler.gl](https://kepler.gl/demo) and import the file via drag & drop. See the trajectories which were computed by the simulation.
 
 ---
 ## SOH modeling introduction
