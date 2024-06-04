@@ -66,7 +66,7 @@ Although there are different modal choices, some of these share the same environ
 
 For movement we need a [graph](https://www.mars-group.org/docs/tutorial/development/layers#vector-layer) because all transportation devices require it. The graph is stored in the [`SpatialGraphEnvironment`](https://www.mars-group.org/docs/tutorial/development/environments/spatialgraphenv) (`SGE`) that provides route searching capabilities and supervises movement concerning validity constraints like collision detection.
 
-![railroad_graph](README_images/s-bahn-hh.png)
+![railroad_graph](https://www.mars-group.org/assets/images/s-bahn-hh-9959647534f628d49aeb340d9a24d227.png)
 
 The environment is initialized by graphs that can be imported in either `graphml` or `geojson` format. For multimodal route searching, we require to integrate all relevant graphs in one SGE. So use the `inputs` configuration in the simulation config and add an import configuration to define that edges (later transformed to lanes) of this file can be used by a set of modalities (spatial modality types).
 
@@ -93,14 +93,14 @@ The environment is initialized by graphs that can be imported in either `graphml
 ```
 
 
-![walk_drive_graph](README_images/walk_drive_graph.png)
+![walk_drive_graph](https://www.mars-group.org/assets/images/walk_drive_graph-801821fd5fc0203418d889e88df06e1f.png)
 
 ### Handle concept
 
-The usage of transportation devices follows a [handle concept](https://mars.haw-hamburg.de/articles/soh/steering.html) that is a contract between agent and vehicle. If the agent provides the required capabilities, then a vehicle can provide a handle for usage.
+The usage of transportation devices follows a [handle concept](https://www.mars-group.org/docs/tutorial/soh/steering) that is a contract between agent and vehicle. If the agent provides the required capabilities, then a vehicle can provide a handle for usage.
 
-![contract](README_images/contract_schema.png)
+![contract](contract_schema.png)
 
 Every vehicle type defines a steering handle that is provided by the respective vehicle on entrance. The handle takes care about the concrete movement logic and so capsulates the movement behavior by following traffic rules (like driving a car without actively thinking how to do it). The handle requires the agent to have certain capabilities that are required to use the vehicle. These are defined in the respective `ISteeringCapabable`. After leaving a vehicle the handle is invalidated and exchanged with the default `WalkingSteeringHandle`.
 
-![car_steering_handle_concept](README_images/uml_car_steering.png)
+![car_steering_handle_concept](https://www.mars-group.org/assets/images/uml_car_steering-8f3a1ab6c51f2859739861a231c118c6.png)
