@@ -36,13 +36,13 @@ The SOH model provides urban mobility functionality for agents. Agents can there
 
 ### Agent types
 
-The model provides two main types of [agents](https://mars.haw-hamburg.de/articles/soh/agents.html) that have a mobility desire (besides pure driver agents that fulfill the role of public transport).
+The model provides two main types of [agents](https://www.mars-group.org/docs/tutorial/soh/agents/) that have a mobility desire (besides pure driver agents that fulfill the role of public transport).
 
-[`Traveller` agents](https://mars.haw-hamburg.de/articles/soh/agents/traveler.html) have a start and a goal and they try to reach their goal by using available transportation devices, which we call their movement `capabilities`. They can be easily spawned by an `AgentSchedulerLayer` randomly within an area and find random goals within a target area. They are the simple solution to create mobility demand.
+[`Traveller` agents](https://www.mars-group.org/docs/tutorial/soh/agents/traveler) have a start and a goal and they try to reach their goal by using available transportation devices, which we call their movement `capabilities`. They can be easily spawned by an `AgentSchedulerLayer` randomly within an area and find random goals within a target area. They are the simple solution to create mobility demand.
 
-[`Citizen` agents](https://mars.haw-hamburg.de/articles/soh/agents/citizen.html) have a daily schedule that cause their mobility demand. The schedule is dependent on their employment status. They can also choose between the modalities that are generally provided in the respective scenario and that are especially available or reasonable for the particular agent and its current location.
+[`Citizen` agents](https://www.mars-group.org/docs/tutorial/soh/agents/citizen) have a daily schedule that cause their mobility demand. The schedule is dependent on their employment status. They can also choose between the modalities that are generally provided in the respective scenario and that are especially available or reasonable for the particular agent and its current location.
 
-![traveler_zones](README_images/harbug_green4bikes.png)
+![traveler_zones](https://www.mars-group.org/assets/images/harbug_green4bikes-f03fbc7cde934b63b9740a2abb247d31.png)
 
 ### Modalities
 
@@ -64,9 +64,9 @@ The model provides a variety of modalities that can be used. We call them `Modal
 
 Although there are different modal choices, some of these share the same environment, for instance bikes might also use the streets like cars. We therefore have the `SpatialModalityType` discriminator that describes which lanes can be used by which transportation devices.
 
-For movement we need a [graph](https://mars.haw-hamburg.de/articles/soh/layers/vector_layer.html#modality-networks) because all transportation devices require it. The graph is stored in the `SpatialGraphEnvironment` (`SGE`) that provides route searching capabilities and supervises movement concerning validity constraints like collision detection.
+For movement we need a [graph](https://www.mars-group.org/docs/tutorial/development/layers#vector-layer) because all transportation devices require it. The graph is stored in the [`SpatialGraphEnvironment`](https://www.mars-group.org/docs/tutorial/development/environments/spatialgraphenv) (`SGE`) that provides route searching capabilities and supervises movement concerning validity constraints like collision detection.
 
-![railroad_graph](README_images/s-bahn-hh.png)
+![railroad_graph](https://www.mars-group.org/assets/images/s-bahn-hh-9959647534f628d49aeb340d9a24d227.png)
 
 The environment is initialized by graphs that can be imported in either `graphml` or `geojson` format. For multimodal route searching, we require to integrate all relevant graphs in one SGE. So use the `inputs` configuration in the simulation config and add an import configuration to define that edges (later transformed to lanes) of this file can be used by a set of modalities (spatial modality types).
 
@@ -93,14 +93,14 @@ The environment is initialized by graphs that can be imported in either `graphml
 ```
 
 
-![walk_drive_graph](README_images/walk_drive_graph.png)
+![walk_drive_graph](https://www.mars-group.org/assets/images/walk_drive_graph-801821fd5fc0203418d889e88df06e1f.png)
 
 ### Handle concept
 
-The usage of transportation devices follows a [handle concept](https://mars.haw-hamburg.de/articles/soh/steering.html) that is a contract between agent and vehicle. If the agent provides the required capabilities, then a vehicle can provide a handle for usage.
+The usage of transportation devices follows a [handle concept](https://www.mars-group.org/docs/tutorial/soh/steering) that is a contract between agent and vehicle. If the agent provides the required capabilities, then a vehicle can provide a handle for usage.
 
-![contract](README_images/contract_schema.png)
+![contract](contract_schema.png)
 
 Every vehicle type defines a steering handle that is provided by the respective vehicle on entrance. The handle takes care about the concrete movement logic and so capsulates the movement behavior by following traffic rules (like driving a car without actively thinking how to do it). The handle requires the agent to have certain capabilities that are required to use the vehicle. These are defined in the respective `ISteeringCapabable`. After leaving a vehicle the handle is invalidated and exchanged with the default `WalkingSteeringHandle`.
 
-![car_steering_handle_concept](README_images/uml_car_steering.png)
+![car_steering_handle_concept](https://www.mars-group.org/assets/images/uml_car_steering-8f3a1ab6c51f2859739861a231c118c6.png)
