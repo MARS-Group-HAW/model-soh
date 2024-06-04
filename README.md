@@ -42,7 +42,7 @@ The model provides two main types of [agents](https://www.mars-group.org/docs/tu
 
 [`Citizen` agents](https://www.mars-group.org/docs/tutorial/soh/agents/citizen) have a daily schedule that cause their mobility demand. The schedule is dependent on their employment status. They can also choose between the modalities that are generally provided in the respective scenario and that are especially available or reasonable for the particular agent and its current location.
 
-![traveler_zones](README_images/harbug_green4bikes.png)
+![traveler_zones](scenarios/harbug_green4bikes.png)
 
 ### Modalities
 
