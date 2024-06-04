@@ -36,11 +36,11 @@ The SOH model provides urban mobility functionality for agents. Agents can there
 
 ### Agent types
 
-The model provides two main types of [agents](https://mars.haw-hamburg.de/articles/soh/agents.html) that have a mobility desire (besides pure driver agents that fulfill the role of public transport).
+The model provides two main types of [agents](https://www.mars-group.org/docs/tutorial/soh/agents/) that have a mobility desire (besides pure driver agents that fulfill the role of public transport).
 
-[`Traveller` agents](https://mars.haw-hamburg.de/articles/soh/agents/traveler.html) have a start and a goal and they try to reach their goal by using available transportation devices, which we call their movement `capabilities`. They can be easily spawned by an `AgentSchedulerLayer` randomly within an area and find random goals within a target area. They are the simple solution to create mobility demand.
+[`Traveller` agents](https://www.mars-group.org/docs/tutorial/soh/agents/traveler) have a start and a goal and they try to reach their goal by using available transportation devices, which we call their movement `capabilities`. They can be easily spawned by an `AgentSchedulerLayer` randomly within an area and find random goals within a target area. They are the simple solution to create mobility demand.
 
-[`Citizen` agents](https://mars.haw-hamburg.de/articles/soh/agents/citizen.html) have a daily schedule that cause their mobility demand. The schedule is dependent on their employment status. They can also choose between the modalities that are generally provided in the respective scenario and that are especially available or reasonable for the particular agent and its current location.
+[`Citizen` agents](https://www.mars-group.org/docs/tutorial/soh/agents/citizen) have a daily schedule that cause their mobility demand. The schedule is dependent on their employment status. They can also choose between the modalities that are generally provided in the respective scenario and that are especially available or reasonable for the particular agent and its current location.
 
 ![traveler_zones](README_images/harbug_green4bikes.png)
 
@@ -64,7 +64,7 @@ The model provides a variety of modalities that can be used. We call them `Modal
 
 Although there are different modal choices, some of these share the same environment, for instance bikes might also use the streets like cars. We therefore have the `SpatialModalityType` discriminator that describes which lanes can be used by which transportation devices.
 
-For movement we need a [graph](https://mars.haw-hamburg.de/articles/soh/layers/vector_layer.html#modality-networks) because all transportation devices require it. The graph is stored in the `SpatialGraphEnvironment` (`SGE`) that provides route searching capabilities and supervises movement concerning validity constraints like collision detection.
+For movement we need a [graph](https://www.mars-group.org/docs/tutorial/development/layers#vector-layer) because all transportation devices require it. The graph is stored in the [`SpatialGraphEnvironment`](https://www.mars-group.org/docs/tutorial/development/environments/spatialgraphenv) (`SGE`) that provides route searching capabilities and supervises movement concerning validity constraints like collision detection.
 
 ![railroad_graph](README_images/s-bahn-hh.png)
 
