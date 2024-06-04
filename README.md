@@ -1,4 +1,4 @@
-<h1 align="center">SmartOpenHH | <a href="https://mars.haw-hamburg.de">Website</a></h1>
+<h1 align="center">SmartOpenHH | <a href="https://www.mars-group.org/projects/smartopenhamburg">Website</a></h1>
 
 The SmartOpenHamburg model is an agent-based simulation model for the representation of a digital twin. It calculates multi-modal path dynamics and simulates a defined daily routine of a citizen.
 
@@ -9,7 +9,7 @@ Start and adjusting the model requires the following steps.
 Clone the Git Repo:
 
 ```
-git clone https://git.haw-hamburg.de/mars/model-soh.git
+git clone https://github.com/MARS-Group-HAW/model-soh.git
 ```
 [Program.cs](SOHTravellingBox%2FProgram.cs)
 Download and install the SDK for NetCore from the official [website](https://dotnet.microsoft.com/download/dotnet-core/).  Navigate into the cloned directory and make sure that all required dependencies are installed automatically by building the model in the directory where the SOHModel.sln file is located:
