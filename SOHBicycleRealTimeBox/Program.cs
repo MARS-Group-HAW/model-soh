@@ -38,10 +38,10 @@ internal static class Program
 
         GlobalConfig.OutputFrequency = 60;
 
-        //var config = ScenarioRealtime.Get();
+        var config = ScenarioRealtime.Get();
 
         var configuration = CommandParser.ParseAndEvaluateArguments(description, args);
-        var config = configuration.SimulationConfig;
+        //var config = configuration.SimulationConfig;
 
         var layerMapping = config.LayerMappings.First(mapping => mapping.Name == "BicycleRentalLayer");
         if (string.IsNullOrEmpty(layerMapping.File))

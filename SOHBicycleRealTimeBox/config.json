@@ -58,7 +58,7 @@
           "inputConfiguration": {
             "temporalJoinAttribute": "thingId",
             "validTimeAtAttribute": "time",
-            "mqttTopicPattern": "v1.1/Datastreams(${DataStreamId})/Observations",
+            "mqttTopicPattern": "v1.0/Things?$filter=Datastreams/properties/serviceName%20eq%20%27HH_STA_StadtRad%27&$count=true&$expand=Locations,Datastreams($expand=Observations($orderby=phenomenonTime%20desc;$top=3),Sensor,ObservedProperty)",
             "mqttBrokerHostName": "iot.hamburg.de"
           }
         }
