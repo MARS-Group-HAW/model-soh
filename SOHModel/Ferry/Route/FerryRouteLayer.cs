@@ -18,8 +18,8 @@ public class FerryRouteLayer : AbstractLayer
 
     public override bool InitLayer(
         LayerInitData layerInitData,
-        RegisterAgent registerAgentHandle = null,
-        UnregisterAgent unregisterAgent = null)
+        RegisterAgent? registerAgentHandle = null,
+        UnregisterAgent? unregisterAgent = null)
     {
         base.InitLayer(layerInitData, registerAgentHandle, unregisterAgent);
         FerryRoutes = FerryRouteReader.Read(Mapping.File, StationLayer);

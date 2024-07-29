@@ -19,7 +19,7 @@ public class TrafficLightLayer : AbstractActiveLayer
     public TrafficLightLayer(CarLayer carLayer)
     {
         _carLayer = carLayer;
-        _trafficLightControllers = new List<TrafficLightController>();
+        _trafficLightControllers = [];
     }
 
     public override bool InitLayer(

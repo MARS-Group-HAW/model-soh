@@ -44,7 +44,7 @@ public class RightBeforeLeftIntersectionHandle<TSteeringCapable, TPassengerCapab
         if (_currentEdge == null || _currentEdge != edgeExplore.Edge)
         {
             _currentEdge = edgeExplore.Edge;
-            _orderOfArrival = new List<Guid>();
+            _orderOfArrival = [];
         }
 
         //reduce speed for intersection

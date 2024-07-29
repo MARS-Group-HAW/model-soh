@@ -16,14 +16,14 @@ public class FerryRouteEntry : IEquatable<FerryRouteEntry>
 
     public int Minutes { get; }
 
-    public bool Equals(FerryRouteEntry other)
+    public bool Equals(FerryRouteEntry? other)
     {
         if (ReferenceEquals(null, other)) return false;
         if (ReferenceEquals(this, other)) return true;
         return Equals(From, other.From) && Equals(To, other.To) && Minutes == other.Minutes;
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (ReferenceEquals(null, obj)) return false;
         if (ReferenceEquals(this, obj)) return true;

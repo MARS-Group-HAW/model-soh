@@ -6,7 +6,7 @@ public class FerryRoute : IEnumerable<FerryRouteEntry>
 {
     public FerryRoute()
     {
-        Entries = new List<FerryRouteEntry>();
+        Entries = [];
     }
 
     public List<FerryRouteEntry> Entries { get; set; }

@@ -12,6 +12,7 @@
       <Folder Include="Car\" />
       <Folder Include="Domain\" />
       <Folder Include="Ferry\" />
+      <Folder Include="Flood\" />
       <Folder Include="Multimodal\" />
       <Folder Include="Train\" />
     </ItemGroup>

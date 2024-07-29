@@ -9,7 +9,7 @@ namespace SOHModel.Multimodal.Multimodal;
 public interface IMultimodalRouteFinder
 {
     /// <summary>
-    ///     Provides the possibility to search for a <code>MultimodalRoute</code> for a given capability only.
+    ///     Provides the possibility to search for a <c>MultimodalRoute</c> for a given capability only.
     /// </summary>
     /// <param name="agent">For whom the search is performed. May hold modal specific information.</param>
     /// <param name="start">Start point of search.</param>

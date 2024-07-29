@@ -6,24 +6,20 @@ using SOHModel.Train.Station;
 
 namespace SOHModel.Train.Route;
 
-public class TrainRouteLayer : AbstractLayer, ITrainRouteLayer
+public class TrainRouteLayer(TrainStationLayer stationLayer) : AbstractLayer, ITrainRouteLayer
 {
-    private Dictionary<string, TrainRoute> _trainRoutes;
+    private Dictionary<string, TrainRoute> _trainRoutes = new();
 
-    public TrainRouteLayer(TrainStationLayer stationLayer)
-    {
-        TrainStationLayer = stationLayer;
-    }
-
-    public bool TryGetRoute(string line, out TrainRoute trainRoute)
+    public bool TryGetRoute(string line, out TrainRoute? trainRoute)
     {
         return _trainRoutes.TryGetValue(line, out trainRoute);
     }
 
-    public TrainStationLayer TrainStationLayer { get; }
+    public TrainStationLayer TrainStationLayer { get; } = stationLayer;
 
-    public override bool InitLayer(LayerInitData layerInitData, RegisterAgent registerAgentHandle = null,
-        UnregisterAgent unregisterAgent = null)
+    public override bool InitLayer(LayerInitData layerInitData, 
+        RegisterAgent? registerAgentHandle = null,
+        UnregisterAgent? unregisterAgent = null)
     {
         base.InitLayer(layerInitData, registerAgentHandle, unregisterAgent);
         _trainRoutes = TrainRouteReader.Read(Mapping.File, TrainStationLayer);

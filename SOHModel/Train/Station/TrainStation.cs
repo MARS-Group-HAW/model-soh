@@ -66,7 +66,7 @@ public class TrainStation : IVectorFeature
 
         Lines = data.Data.ContainsKey("lines")
             ? data.Data["lines"].Value<string>().Split(',').ToSet()
-            : new HashSet<string>();
+            : [];
     }
 
     /// <summary>

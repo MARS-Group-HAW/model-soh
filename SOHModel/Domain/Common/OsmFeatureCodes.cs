@@ -290,8 +290,8 @@ public static class OsmFeatureCodes
     public const int Wetland = 8221;
 
 
-    public static List<int> TypesAsList = new()
-    {
+    public static List<int> TypesAsList =
+    [
         Place, City, Town, Village, Hamlet, NationalCapital, Suburb, Island, FarmPalce, Dwelling, Region, Country,
         Locality, Public, Police, FireStation, Postbox, Postoffice, Telephone, Library, Townhall, Courthouse,
         Prison, Embassy, CommunityCenter, NursingHome,
@@ -326,21 +326,21 @@ public static class OsmFeatureCodes
         NatureReserve, RecreationGround, Retail, Military, Quarry, Orchard, Vineyard, Scrub, Grass, HealthLanduse,
         NationalPark, Water, Reservoir, River, Dock, GlacierLanduse,
         Wetland
-    };
+    ];
 }
 
 public static class OsmGroups
 {
-    public static readonly List<int> Eat = new()
-    {
+    public static readonly List<int> Eat =
+    [
         OsmFeatureCodes.Catering, OsmFeatureCodes.Restaurant, OsmFeatureCodes.FastFood,
         OsmFeatureCodes.Cafe, OsmFeatureCodes.Pub,
         OsmFeatureCodes.Bar, OsmFeatureCodes.Bakery, OsmFeatureCodes.FoodCourt,
         OsmFeatureCodes.Biergarten
-    };
+    ];
 
-    public static readonly List<int> Errand = new()
-    {
+    public static readonly List<int> Errand =
+    [
         OsmFeatureCodes.Commercial, OsmFeatureCodes.Shopping, OsmFeatureCodes.Supermarket,
         OsmFeatureCodes.Bakery, OsmFeatureCodes.Kiosk, OsmFeatureCodes.Mall,
         OsmFeatureCodes.DepartmentStore,
@@ -359,10 +359,10 @@ public static class OsmGroups
         OsmFeatureCodes.School, OsmFeatureCodes.University, OsmFeatureCodes.College,
         OsmFeatureCodes.PublicBuilding, OsmFeatureCodes.Hospital, OsmFeatureCodes.Doctors,
         OsmFeatureCodes.Pharmacy, OsmFeatureCodes.Dentist, OsmFeatureCodes.Veterinary
-    };
+    ];
 
-    public static readonly List<int> FreeTime = new()
-    {
+    public static readonly List<int> FreeTime =
+    [
         OsmFeatureCodes.Buildings, OsmFeatureCodes.Theatre, OsmFeatureCodes.Nightclub,
         OsmFeatureCodes.Cinema,
         OsmFeatureCodes.ParkPoi, OsmFeatureCodes.Playground, OsmFeatureCodes.DogPark,
@@ -392,5 +392,5 @@ public static class OsmGroups
         OsmFeatureCodes.Commercial,
         OsmFeatureCodes.NatureReserve, OsmFeatureCodes.HealthLanduse,
         OsmFeatureCodes.NationalPark
-    };
+    ];
 }

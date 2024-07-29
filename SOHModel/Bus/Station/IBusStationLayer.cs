@@ -15,5 +15,5 @@ public interface IBusStationLayer : IModalLayer, IVectorLayer
     /// <param name="position">Start point to search by range.</param>
     /// <param name="predicate">Optional predicate to limit the result</param>
     /// <returns>The corresponding <see cref="BusStation" /> if one is found, null otherwise.</returns>
-    BusStation? Nearest(Position position, Func<BusStation, bool> predicate = null);
+    BusStation? Nearest(Position position, Func<BusStation, bool>? predicate = null);
 }

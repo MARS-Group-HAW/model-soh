@@ -84,8 +84,9 @@ public static class CarRouteFinder
             {
                 currentNode = environment.NearestNode(Position.CreateGeoPosition(startLon, startLat));
 
-                ISpatialNode goal = null;
-                while (route == null || goal.Equals(currentNode) || route.Count == 0)
+                ISpatialNode? goal = null;
+                
+                while (route == null || goal == null || goal.Equals(currentNode) || route.Count == 0)
                 {
                     goal = environment.GetRandomNode();
                     route = environment.FindRoute(currentNode, goal);

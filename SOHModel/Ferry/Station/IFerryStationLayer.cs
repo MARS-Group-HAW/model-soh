@@ -15,7 +15,7 @@ public interface IFerryStationLayer : IModalLayer, IVectorLayer
     /// <param name="position">Start point to search by range.</param>
     /// <param name="predicate">Optional predicate to limit the result</param>
     /// <returns>The corresponding <see cref="FerryStation" /> if one is found, null otherwise.</returns>
-    FerryStation Nearest(Position position, Func<FerryStation, bool> predicate = null);
+    FerryStation Nearest(Position position, Func<FerryStation, bool>? predicate = null);
 
     /// <summary>
     ///     Executes a point query at the specified position to get all limited order of features
@@ -27,5 +27,5 @@ public interface IFerryStationLayer : IModalLayer, IVectorLayer
     /// <param name="predicate">The optional predicate to filter out specific features</param>
     /// <returns>A collection with distance based order of the explored features.</returns>
     public IEnumerable<FerryStation> Explore(double[] position, double radius = -1,
-        Func<FerryStation, bool> predicate = null);
+        Func<FerryStation, bool>? predicate = null);
 }

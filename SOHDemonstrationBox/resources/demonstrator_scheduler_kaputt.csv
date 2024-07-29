@@ -1,0 +1,3 @@
+startTime,endTime,spawningIntervalInMinutes,spawningAmount,source,destination,isRadical
+10:30,10:50,1,10,POINT (9.9560834,53.5703474),POINT (9.9528599,53.5453619),false
+10:30,10:50,10,5,POINT (9.9560834,53.5703474),POINT (9.9528599,53.5453619),true

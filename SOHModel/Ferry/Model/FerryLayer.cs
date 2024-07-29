@@ -31,8 +31,8 @@ public class FerryLayer : VectorLayer
 
         GraphEnvironment = new SpatialGraphEnvironment(new SpatialGraphOptions
         {
-            GraphImports = new List<Input>
-            {
+            GraphImports =
+            [
                 new()
                 {
                     File = layerInitData.LayerInitConfig.File,
@@ -41,7 +41,7 @@ public class FerryLayer : VectorLayer
                         IsBiDirectedImport = true
                     }
                 }
-            }
+            ]
         });
 
         Driver = AgentManager.SpawnAgents<FerryDriver>(

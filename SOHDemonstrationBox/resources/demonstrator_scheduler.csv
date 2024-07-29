@@ -1,0 +1,4 @@
+startTime,endTime,spawningIntervalInMinutes,spawningAmount,sourceX,sourceY,destinationX,destinationY,isRadical
+10:30,10:50,1,70,9.955743,53.570198,9.952852,53.545340,false
+10:30,11:00,2,6,9.955743,53.570198,9.952852,53.545340,true
+
