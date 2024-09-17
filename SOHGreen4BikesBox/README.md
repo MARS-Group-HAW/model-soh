@@ -1,8 +1,8 @@
-<h1 align="center">SmartOpenHH Green4Bikes</h1>
+# SmartOpenHH Green4Bikes
 
 Green4Bikes is a model that focuses on the following section of the district Harburg in Hamburg, Germany:
 
-![harburg_zentrum](../../Documentation/images/docu/harburg_zentrum.PNG)
+![harburg_zentrum](images/harburg.png)
 
 The `Program.cs` contains the simulation configuration for the model logic defined in a given model of the project
 structure. Here, a simulation of the model can be configured and executed. The configuration of a model is defined

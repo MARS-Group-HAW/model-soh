@@ -1,12 +1,10 @@
-# Bus transfer
+ # Bus transfer
 
 The _SOHBusBox_ scenario creates some walking agents that spawn within a specified source area a move to a specified
 target area. They move within walking distance and use available bus services that stop at the bus stops at regular
 intervals.
-The default setup is shown in the following figure.
-
-TODO missing image
-![Default scenario](images/bus_driving_scenario.png)
+The default setup is shown in the following figure.  
+![Mixed modality scenario, walking and taking a bus](images/bus_driving_scenario.png)
 
 Busses move along the bus line and passengers can use public sidewalks as well. Timings of busses, new or re/moved bus
 stations can be investigated to optimize the flow of passengers.
@@ -29,7 +27,7 @@ scenario as simple as possible.
 * To describe spawning location and the moving target, the scheduler offers two different parameterizations:
     * A concrete source and destination coordinate can be defined in ``WGS84:4326`` notation via the
       fields ``sourceX`` (longitude) and ``sourceY`` (latitude) for the source or ``destinationX``(longitude)
-      and ``destinationY`` (latitude) for defining the movement target (e.g. ``9.95253, 53.54907``).
+      and `v hu`destinationY`` (latitude) for defining the movement target (e.g. ``9.95253, 53.54907``).
     * A source geometry can be defined via the ``source`` field (see polygon areas in the figure above) using
       the ``WKT`` (well-known-text) format with ``WGS84:4326`` notation. It designates areas, lines, and points in the
       simulation world (e.g.

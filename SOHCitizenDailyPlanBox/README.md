@@ -1,4 +1,6 @@
-<h1 align="center">SmartOpenHH ModelStarter</h1>
+# SOHCitizenDailyPlanBox
+
+TODO: Describe the goal and the structure of this scenario
 
 The `Program.cs` contains the simulation configuration for the model logic defined in a given model of the project
 structure. Here, a simulation of the model can be configured and executed. The configuration of a model is defined
