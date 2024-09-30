@@ -25,7 +25,7 @@ public class SpatialGraphMediatorLayer : AbstractLayer, ISpatialGraphLayer, IDat
         {
             Environment = new SpatialGraphEnvironment(new SpatialGraphOptions
             {
-                GraphImports = inputs
+                GraphImports = inputs,
             });
         }
         else

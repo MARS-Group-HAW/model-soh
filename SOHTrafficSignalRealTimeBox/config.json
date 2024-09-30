@@ -1,0 +1,124 @@
+﻿{
+  "globals": {
+    "deltaT": 1,
+    "startPoint": "2020-12-03T16:00:00",
+    "endPoint": "2020-12-10T20:00:00",
+    // future time to get and process input from sensors. 
+    "deltaTUnit": "seconds",
+    "csvOptions": {
+      "outputPath": "results"
+    },
+    "console": true
+  },
+  "agents": [
+    {
+      "name": "CycleTraveler",
+      "output": "csv",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": [
+              "ActiveCapability"
+            ]
+          }
+        }
+      ],
+      "individual": [
+        {
+          "value": true,
+          "parameter": "ResultTrajectoryEnabled"
+        },
+        {
+          "value": true,
+          "parameter": "CapabilityCycling"
+        }
+      ],
+      "outputFilter": [
+        {
+          "parameter": "StoreTickResult",
+          "operator": "in",
+          "values": [
+            true
+          ]
+        }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "name": "SidewalkLayer",
+      "file": "resources/harburg_walk_graph.geojson"
+    },
+    {
+      "name": "TrafficSignalLayer"
+    },
+    {
+      "name": "SpatialGraphMediatorLayer",
+      "inputs": [
+        {
+          "file": "resources/harburg_walk_graph.geojson",
+          "inputConfiguration": {
+            "modalities": [
+              "Cycling",
+              "Walking"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "BicycleLayer",
+      "file": "resources/harburg_bike_graph.geojson"
+    },
+    {
+      "name": "GatewayLayer",
+      "file": "resources/hamburg_sbahn_stations.geojson"
+    },
+    {
+      "name": "CycleTravelerSchedulerLayer",
+      "file": "resources/cycle_traveler.csv"
+    },
+    {
+      "name": "BicycleRentalLayer",
+      "output": "geojson",
+      "outputFrequency": 1000,
+//      "file": "resources/harburg_rental_stations.geojson",
+      "inputs": [
+        {
+          // Collected real-data for past run 2020
+          "file": "resources/bicycle_rental_layer_complete.geojson",
+
+          // Endpoint configuration
+          "inputConfiguration": {
+            "temporalJoinAttribute": "thingId",
+            "validTimeAtAttribute": "time",
+            "mqttTopicPattern": "v1.1/Datastreams(${DataStreamId})/Observations",
+            "mqttBrokerHostName": "iot.hamburg.de"
+          }
+        }
+      ],
+      "individual": [
+        {
+          "name": "synchronizeAlwaysSince",
+          "value": "2020-12-14T15:00:00"
+        
+          
+//          "name": "synchronizations",
+//          "value": [
+//            "2021-03-30T17:00:00",
+//            "2021-03-30T18:00:00",
+//            "2021-03-30T19:00:00"
+//          ]
+        }
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "name": "RentalBicycle",
+      "output": "none",
+      "file": "resources/bicycle.csv"
+    }
+  ]
+}

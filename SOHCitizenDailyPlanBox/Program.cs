@@ -130,8 +130,8 @@ internal static class Program
                 new LayerMapping
                 {
                     Name = nameof(SpatialGraphMediatorLayer),
-                    Inputs =
-                    [
+                    Inputs = new List<Input>
+                    {
                         new Input
                         {
                             File = Path.Combine("resources", "drive_graph_altona_altstadt.graphml"),
@@ -143,18 +143,16 @@ internal static class Program
                                 }
                             }
                         },
-
                         new Input
                         {
                             File = Path.Combine("resources", "walk_graph_altona_altstadt.graphml"),
                             InputConfiguration = new InputConfiguration
                             {
-                                Modalities = new HashSet<SpatialModalityType> { SpatialModalityType.Walking }
+                                Modalities = new HashSet<SpatialModalityType>{ SpatialModalityType.Walking }
                             }
-                        }
-
-
-                    ]
+                        },
+                        
+                    }
                 },
                 new LayerMapping
                 {
@@ -184,19 +182,19 @@ internal static class Program
                     InstanceCount = 10000,
                     OutputTarget = OutputTargetType.SqLite,
                     File = Path.Combine("resources", "citizen_init_10k.csv"),
-                    Outputs =
-                    [
+                    Outputs = new List<Output>
+                    {
                         new Output
                         {
                             OutputTarget = OutputTargetType.Trips
                         }
-                    ],
+                    },
                     OutputFilter =
                     {
                         new OutputFilter
                         {
                             Name = "StoreTickResult",
-                            Values = [true],
+                            Values = new object[] { true },
                             Operator = ContainsOperator.In
                         }
                     },

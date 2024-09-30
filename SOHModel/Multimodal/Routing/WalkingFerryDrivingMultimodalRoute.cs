@@ -38,7 +38,7 @@ public class WalkingFerryDrivingMultimodalRoute : MultimodalRoute
 
     private (FerryStation, Route) FindStartFerryStationAndWalkingRoute(HashSet<FerryStation> unreachable = null)
     {
-        unreachable ??= [];
+        unreachable ??= new HashSet<FerryStation>();
         var ferryStation = _ferryStationLayer.Nearest(_start, station => !unreachable.Contains(station));
         if (ferryStation == null)
             throw new ApplicationException($"No reachable ferry station found for route from {_start} to {_goal}");
@@ -77,7 +77,7 @@ public class WalkingFerryDrivingMultimodalRoute : MultimodalRoute
 
     private (FerryStation, Route) FindGoalFerryStationAndFinalWalkingRoute(HashSet<FerryStation> unreachable = null)
     {
-        unreachable ??= [];
+        unreachable ??= new HashSet<FerryStation>();
         var ferryStation = _ferryStationLayer.Nearest(_goal, station => !unreachable.Contains(station));
         if (ferryStation == null)
             throw new ApplicationException(

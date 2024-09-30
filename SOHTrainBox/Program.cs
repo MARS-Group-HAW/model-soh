@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using Mars.Common.Core.Logging;
 using Mars.Components.Layers;
 using Mars.Components.Starter;
@@ -26,9 +27,11 @@ internal static class Program
         description.AddLayer<TrainLayer>();
         description.AddLayer<TrainSchedulerLayer>();
         description.AddLayer<TrainStationLayer>();
-        description.AddLayer<TrainRouteLayer>(new[] { typeof(ITrainRouteLayer) });
-        // description.AddLayer<TrainGtfsRouteLayer>(new[] {typeof(ITrainRouteLayer)});
         
+        // Change this type to switch from static route layer to time-dependent GTFS-based layer and vice versa.
+        // description.AddLayer<TrainRouteLayer>(new[] { typeof(ITrainRouteLayer) });
+        description.AddLayer<TrainGtfsRouteLayer>(new[] {typeof(ITrainRouteLayer)});
+
         description.AddLayer<PassengerTravelerLayer>();
         description.AddLayer<AgentSchedulerLayer<PassengerTraveler, PassengerTravelerLayer>>(
             "PassengerTravelerSchedulerLayer");

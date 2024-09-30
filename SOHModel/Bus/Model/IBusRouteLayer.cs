@@ -1,15 +1,9 @@
 using SOHModel.Bus.Route;
-using SOHModel.Bus.Station;
 
 namespace SOHModel.Bus.Model;
 
 public interface IBusRouteLayer
 {
-    /// <summary>
-    ///     Provides access to all stations
-    /// </summary>
-    public BusStationLayer BusStationLayer { get; }
-
     /// <summary>
     ///     Tries to find a route for given line.
     /// </summary>

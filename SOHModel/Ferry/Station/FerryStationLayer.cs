@@ -13,7 +13,7 @@ public class FerryStationLayer : VectorLayer<FerryStation>, IFerryStationLayer
     private Position AnyPosition => _anyPosition ??= Nearest(Position.CreatePosition(0, 0)).Position;
 
 
-    public FerryStation Nearest(Position position, Func<FerryStation, bool>? predicate = null)
+    public FerryStation Nearest(Position position, Func<FerryStation, bool> predicate = null)
     {
         return Nearest(position != null ? position.PositionArray : AnyPosition.PositionArray, predicate);
     }

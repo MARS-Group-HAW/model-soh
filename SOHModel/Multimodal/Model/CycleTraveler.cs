@@ -29,7 +29,10 @@ public class CycleTraveler : Traveler<CycleTravelerLayer>
         EnableCapability(ModalChoice.CyclingRentalBike);
         EnableCapability(ModalChoice.CyclingOwnBike);
 
-        if (HasBike) Bicycle = _cycleTravelerLayer.EntityManager.Create<RentalBicycle>("type", "city");
+        if (HasBike)
+        {
+            Bicycle = _cycleTravelerLayer.EntityManager.Create<RentalBicycle>("type", "city");
+        }
     }
 
     protected override MultimodalRoute FindMultimodalRoute()
@@ -59,7 +62,10 @@ public class CycleTraveler : Traveler<CycleTravelerLayer>
     protected override bool EnterModalType(ModalChoice modalChoice, Route route)
     {
         var success = base.EnterModalType(modalChoice, route);
-        if (success && modalChoice == ModalChoice.CyclingRentalBike) _cycleTravelerLayer.RentalCount++;
+        if (success && modalChoice == ModalChoice.CyclingRentalBike)
+        {
+            _cycleTravelerLayer.RentalCount++;
+        }
         return success;
     }
 }

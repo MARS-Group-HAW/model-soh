@@ -26,14 +26,14 @@ public static class SensorThingsImporter
         Console.WriteLine("Retrieving initial data from sensor-network for initial phase ...");
 
         var harburg = envelopeInput ?? new Envelope(9.9354367, 10.0275171, 53.4219923, 53.4700337);
-        var from = fromInput ?? new DateTime(2020, 11, 20, 00, 0, 0);
-        var to = toInput ?? new DateTime(2020, 12, 20, 00, 00, 0);
+        var from = fromInput ?? new DateTime(2024, 01, 20, 00, 0, 0);
+        var to = toInput ?? new DateTime(2024, 12, 20, 00, 00, 0);
 
         Console.WriteLine(
             $"Retrieving initial data from sensor-network for time range [{from.ToUniversalTime()}...{to.ToUniversalTime()} ...");
         Console.WriteLine($"for the area [{harburg}]");
-        //var features = GetObservations(harburg, from, to, "StadtRad", out var observations);
-        var features = GetObservations(harburg, from, to, "Transportation and traffic", out var observations);
+        var features = GetObservations(harburg, from, to, "StadtRad", out var observations);
+        // var features = GetObservations(harburg, from, to, "Transportation and traffic", out var observations);
         
         
         // var geojson = Writer.Write(features);
@@ -206,7 +206,8 @@ public static class SensorThingsImporter
                 // collection.Add(interestFeature);
             }
 
-            Console.WriteLine(location.Name);
+            Console.WriteLine($"{location.Name} - {location.Description}");
+            
             Console.WriteLine("##############################");
         }
 

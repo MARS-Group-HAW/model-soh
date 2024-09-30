@@ -1,4 +1,4 @@
-"service_id","date","exception_type"
+service_id,date,exception_type
 1,20201221,2
 1,20201228,2
 1,20210104,2

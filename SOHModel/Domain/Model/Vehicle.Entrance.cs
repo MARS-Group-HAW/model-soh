@@ -12,7 +12,7 @@ public abstract partial class Vehicle<TSteeringCapable, TPassengerCapable, TStee
     /// </summary>
     public List<IPassengerCapable> Passengers
     {
-        get => _passengers ??= [];
+        get => _passengers ??= new List<IPassengerCapable>();
         set => _passengers = value;
     }
 

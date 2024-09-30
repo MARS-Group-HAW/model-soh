@@ -41,7 +41,7 @@ public class WalkingTrainDrivingMultimodalRoute : MultimodalRoute
 
     private (TrainStation, Route) FindStartTrainStationAndWalkingRoute(HashSet<TrainStation> unreachable = null)
     {
-        unreachable ??= [];
+        unreachable ??= new HashSet<TrainStation>();
         var trainStation = _trainStationLayer.Nearest(_start, station => !unreachable.Contains(station));
         if (trainStation == null)
             throw new ApplicationException($"No reachable Train station found for route from {_start} to {_goal}");
@@ -80,7 +80,7 @@ public class WalkingTrainDrivingMultimodalRoute : MultimodalRoute
 
     private (TrainStation, Route) FindGoalTrainStationAndFinalWalkingRoute(HashSet<TrainStation> unreachable = null)
     {
-        unreachable ??= [];
+        unreachable ??= new HashSet<TrainStation>();
         var trainStation = _trainStationLayer.Nearest(_goal, station => !unreachable.Contains(station));
         if (trainStation == null)
             throw new ApplicationException(

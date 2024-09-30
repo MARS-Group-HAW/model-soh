@@ -9,14 +9,14 @@ namespace SOHModel.Multimodal.Multimodal;
 public interface IMultimodalRouteFinder
 {
     /// <summary>
-    ///     Provides the possibility to search for a <c>MultimodalRoute</c> for a given capability only.
+    ///     Provides the possibility to search for a <code>MultimodalRoute</code> for a given capability only.
     /// </summary>
     /// <param name="agent">For whom the search is performed. May hold modal specific information.</param>
     /// <param name="start">Start point of search.</param>
     /// <param name="goal">End point of search.</param>
     /// <param name="modalChoice">Define which modal type is used.</param>
     /// <returns>The multimodal route for given capability.</returns>
-    MultimodalRoute? Search(IModalCapabilitiesAgent agent, Position start, Position goal, ModalChoice modalChoice);
+    MultimodalRoute Search(IModalCapabilitiesAgent agent, Position start, Position goal, ModalChoice modalChoice);
 
     /// <summary>
     ///     Provides the possibility to search for a <code>MultimodalRoute</code> for given capabilities.
@@ -27,6 +27,6 @@ public interface IMultimodalRouteFinder
     /// <param name="goal">End point of search.</param>
     /// <param name="capabilities">Define which modal type is used.</param>
     /// <returns>The fastest multimodal route from start to goal and given capabilities.</returns>
-    MultimodalRoute? Search(IModalCapabilitiesAgent agent, Position start, Position goal,
+    MultimodalRoute Search(IModalCapabilitiesAgent agent, Position start, Position goal,
         IEnumerable<ModalChoice> capabilities);
 }

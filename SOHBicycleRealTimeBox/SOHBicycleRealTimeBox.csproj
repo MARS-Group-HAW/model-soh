@@ -18,11 +18,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\SOHModel\SOHModel.csproj" />
-    </ItemGroup>
-    
-    <ItemGroup>
         <PackageReference Include="Geodan.SensorThings.SDK" Version="0.4.1"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\SOHModel\SOHModel.csproj" />
     </ItemGroup>
 
 </Project>
