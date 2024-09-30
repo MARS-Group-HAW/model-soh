@@ -10,7 +10,6 @@
   "agents": [
     {
       "name": "CycleTraveler",
-      "output": "csv",
       "outputs":[
         {
           "kind": "trips",
@@ -53,6 +52,7 @@
         {
           "file": "resources/harburg_walk_graph.geojson",
           "inputConfiguration": {
+            "isBidirectedGraph": true,
             "modalities": [
               "Cycling",
               "Walking"

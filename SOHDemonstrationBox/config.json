@@ -1,0 +1,113 @@
+{
+  "id": "GeMAInsam Zukunft gestalten!",
+  "globals": {
+    "deltaT": 1,
+    "startPoint": "2022-05-01T10:30:00",
+    "endPoint": "2022-05-01T12:30:00",
+    "deltaTUnit": "seconds",
+    "console": true
+  },
+  "agents": [
+    {
+      "name": "Demonstrator",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": ["StableId"]
+          }
+        },
+        {
+          "kind": "csv"
+        }
+      ],
+      "individual": [
+        {"value": true, "parameter": "ResultTrajectoryEnabled"}
+      ]
+    },
+    {
+      "name": "RadicalDemonstrator",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": ["StableId"]
+          }
+        },
+        {
+          "kind": "csv"
+        }
+      ],
+      "individual": [
+        {"value": true, "parameter": "ResultTrajectoryEnabled"}
+      ]
+    },
+    {
+      "name": "Police",
+      "count": 30,
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": ["StableId"]
+          }
+        },
+        {
+          "kind": "csv"
+        }
+      ],
+      "individual": [
+        {"value": true, "parameter": "ResultTrajectoryEnabled"}
+      ]
+    },
+    {
+      "name": "PoliceChief",
+      "count": 1
+    }
+  ],
+  "layers": [
+    {
+      "name": "SpatialGraphMediatorLayer",
+      "inputs": [
+        {
+          "file": "resources/walk_graph.graphml",
+          "inputConfiguration": {
+            "modalities": [
+              "Walking"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "DemonstratorSchedulerLayer",
+      "file": "resources/demonstrator_scheduler.csv"
+    },
+    {
+      "name": "DemonstrationLayer",
+      "inputs": [
+        {
+          "name": "left",
+          "file": "resources/leftRoadblocks.geojson",
+          "inputConfiguration": {
+            "geometryAsNodesEnabled": true,
+            "isBiDirectedImport": true
+          }
+        },
+        {
+          "name": "right",
+          "file": "resources/rightRoadblocks.geojson",
+          "inputConfiguration": {
+            "geometryAsNodesEnabled": true,
+            "isBiDirectedImport": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "PoliceSchedulerLayer",
+      "file": "resources/police_scheduler.csv"
+      
+    }
+  ]
+}

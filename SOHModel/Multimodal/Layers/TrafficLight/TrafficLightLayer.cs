@@ -2,11 +2,33 @@ using Mars.Common.Core;
 using Mars.Common.Core.Logging;
 using Mars.Common.IO;
 using Mars.Components.Layers;
+using Mars.Interfaces.Annotations;
 using Mars.Interfaces.Data;
 using Mars.Interfaces.Layers;
 using SOHModel.Car.Model;
 
 namespace SOHModel.Multimodal.Layers.TrafficLight;
+
+public class TrafficSignalLayer : VectorLayer<SOHModel.Multimodal.Layers.TrafficLight.TrafficLight>
+{
+    public bool IsInitialized { get; set; }
+    
+    [PropertyDescription(Name = "synchronizations")]
+    public List<DateTime>? SynchronizationTimePoints { get; set; }
+
+    [PropertyDescription(Name = "synchronizeAlwaysSince")]
+    public DateTime? SynchronizeAlwaysSince { get; set; }
+    
+    public override bool InitLayer(
+        LayerInitData layerInitData, 
+        RegisterAgent? registerAgentHandle = null,
+        UnregisterAgent? unregisterAgent = null)
+    {
+        base.InitLayer(layerInitData, registerAgentHandle, unregisterAgent);
+        IsInitialized = true;
+        return IsInitialized;
+    }
+}
 
 public class TrafficLightLayer : AbstractActiveLayer
 {
@@ -16,6 +38,8 @@ public class TrafficLightLayer : AbstractActiveLayer
     private string _layerInitFile;
     private string[] _trafficLightPositions;
 
+    public bool IsInitialized { get; set; }
+    
     public TrafficLightLayer(CarLayer carLayer)
     {
         _carLayer = carLayer;

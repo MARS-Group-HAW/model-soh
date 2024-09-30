@@ -1,2 +1,0 @@
-pandas~=1.2.4
-matplotlib~=3.4.1

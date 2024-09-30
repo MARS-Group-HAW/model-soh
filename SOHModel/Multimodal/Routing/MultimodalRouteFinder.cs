@@ -26,8 +26,8 @@ public class MultimodalRouteFinder : IMultimodalRouteFinder
         _environmentMediatorLayer = environmentMediatorLayer;
     }
 
-    public MultimodalRoute? Search(
-        IModalCapabilitiesAgent agent, Position start, Position goal, ModalChoice modalChoice)
+    public MultimodalRoute Search(IModalCapabilitiesAgent agent, Position start, Position goal,
+        ModalChoice modalChoice)
     {
         try
         {
@@ -44,8 +44,8 @@ public class MultimodalRouteFinder : IMultimodalRouteFinder
                 case ModalChoice.Ferry:
                     return FindFerryRoute(agent, start, goal);
                 case ModalChoice.Bus:
-                return FindBusRoute(agent, start, goal);
-                case ModalChoice.Train: 
+                    return FindBusRoute(agent, start, goal);
+                case ModalChoice.Train:
                     return FindTrainRoute(agent, start, goal);
             }
         }
@@ -57,7 +57,7 @@ public class MultimodalRouteFinder : IMultimodalRouteFinder
         return FindWalkingRoute(start, goal);
     }
 
-    public MultimodalRoute? Search(IModalCapabilitiesAgent agent, Position start, Position goal,
+    public MultimodalRoute Search(IModalCapabilitiesAgent agent, Position start, Position goal,
         IEnumerable<ModalChoice> capabilities)
     {
         var travelTime = double.MaxValue;
@@ -65,22 +65,18 @@ public class MultimodalRouteFinder : IMultimodalRouteFinder
         foreach (var capability in capabilities)
         {
             var route = Search(agent, start, goal, capability);
-            if (route != null)
+            var expectedTravelTime = route.ExpectedTravelTime(agent);
+            if (expectedTravelTime < travelTime)
             {
-                var expectedTravelTime = route.ExpectedTravelTime(agent);
-                if (expectedTravelTime < travelTime)
-                {
-                    travelTime = expectedTravelTime;
-                    multimodalRoute = route;
-                }
+                travelTime = expectedTravelTime;
+                multimodalRoute = route;
             }
-            
         }
 
         return multimodalRoute ?? Search(agent, start, goal, ModalChoice.Walking);
     }
 
-    private MultimodalRoute? FindCyclingOwnBikeRoute(IModalCapabilitiesAgent agent, Position start, Position goal)
+    private MultimodalRoute FindCyclingOwnBikeRoute(IModalCapabilitiesAgent agent, Position start, Position goal)
     {
         if (agent is not IBicycleSteeringCapable cyclist)
             throw new ApplicationException($"The agent is not implementing '{typeof(IBicycleSteeringCapable)}'");
@@ -90,7 +86,7 @@ public class MultimodalRouteFinder : IMultimodalRouteFinder
         return new WalkingCyclingMultimodalRoute(_environmentMediatorLayer, cyclist.Bicycle, start, goal);
     }
 
-    private MultimodalRoute? FindCyclingRentalBikeRoute(IModalCapabilitiesAgent agent, Position start, Position goal)
+    private MultimodalRoute FindCyclingRentalBikeRoute(IModalCapabilitiesAgent agent, Position start, Position goal)
     {
         if (agent is IBicycleSteeringAndRentalCapable { BicycleRentalLayer: not null } bicycleSteeringAndRentalCapable)
             return new WalkingCyclingMultimodalRoute(_environmentMediatorLayer,
@@ -130,65 +126,42 @@ public class MultimodalRouteFinder : IMultimodalRouteFinder
     private MultimodalRoute? FindCarRentalDrivingRoute(IModalCapabilitiesAgent multimodalAgent, Position start,
         Position goal)
     {
-        if (multimodalAgent is not ICarRentalCapable capable)
-        {
-            throw new ApplicationException($"Agent needs to be {nameof(ICarRentalCapable)} to drive rental cars.");
-        }
+        if (multimodalAgent is ICarRentalCapable { CarRentalLayer: not null } capable)
+            return new WalkingCarDrivingRentalMultimodalRoute(_environmentMediatorLayer, capable.CarRentalLayer,
+                start, goal);
 
-        if (capable.CarRentalLayer == null!) return null;
-
-        return new WalkingCarDrivingRentalMultimodalRoute(_environmentMediatorLayer, capable.CarRentalLayer, start,
-            goal);
-
+        return null;
     }
 
     private MultimodalRoute? FindFerryRoute(IModalCapabilitiesAgent agent, Position start, Position goal)
     {
-        if (agent is not IFerryPassenger ferryPassenger)
-        {
-            throw new ApplicationException($"Agent needs to be {nameof(IFerryPassenger)} to drive ferry.");
-        }
-
-        if (ferryPassenger.FerryStationLayer == null! || ferryPassenger.FerryStationLayer.Features.Count != 0)
-        {
-            return null;
-        }
-        
-        return new WalkingFerryDrivingMultimodalRoute(_environmentMediatorLayer,
+        if (agent is IFerryPassenger { FerryStationLayer: not null } ferryPassenger)
+            return new WalkingFerryDrivingMultimodalRoute(_environmentMediatorLayer,
                 ferryPassenger.FerryStationLayer, start, goal);
+
+        return null;
     }
 
     private MultimodalRoute? FindTrainRoute(IModalCapabilitiesAgent agent, Position start, Position goal)
     {
-        if (agent is not ITrainPassenger trainPassenger)
-        {
-            throw new ApplicationException($"Agent needs to be {nameof(ITrainPassenger)} to drive train.");
-        }
-
-        if (trainPassenger.TrainStationLayer == null! || trainPassenger.TrainStationLayer.Features.Count != 0)
-        {
-            return null;
-        }
-        
-        return new WalkingTrainDrivingMultimodalRoute(_environmentMediatorLayer,
+        if (agent is ITrainPassenger { TrainStationLayer: not null } trainPassenger)
+            return new WalkingTrainDrivingMultimodalRoute(_environmentMediatorLayer,
                 trainPassenger.TrainStationLayer, start, goal);
 
+        return null;
     }
     
     private MultimodalRoute? FindBusRoute(IModalCapabilitiesAgent agent, Position start, Position goal)
     {
-        if (agent is not IBusPassenger busPassenger)
+        if (agent is IBusPassenger { BusStationLayer: not null } trainPassenger)
         {
-            throw new ApplicationException($"Agent needs to be {nameof(IBusPassenger)} to drive train.");
+            return new WalkingBusDrivingMultimodalRoute(
+                _environmentMediatorLayer, 
+                trainPassenger.BusStationLayer, 
+                start, goal);
         }
 
-        if (busPassenger.BusStationLayer == null! || busPassenger.BusStationLayer.Features.Count != 0)
-        {
-            return null;
-        }
-        
-        return new WalkingBusDrivingMultimodalRoute(_environmentMediatorLayer, busPassenger.BusStationLayer, start, goal);
-
+        return null;
     }
 
     private MultimodalRoute FindWalkingRoute(Position start, Position goal)

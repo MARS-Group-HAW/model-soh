@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using Mars.Common.Core.Logging;
 using Mars.Components.Layers;
@@ -18,7 +19,7 @@ using SOHModel.Car.Rental;
 using SOHModel.Domain.Graph;
 using SOHModel.Multimodal.Model;
 
-namespace SOHTravellingBox;
+namespace SOHKellinghusenBox;
 
 /// <summary>
 ///     This pre-defined starter program runs the the

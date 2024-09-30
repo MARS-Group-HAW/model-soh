@@ -39,7 +39,10 @@ public class BusLayer : VectorLayer
                     File = layerInitData.LayerInitConfig.File,
                     InputConfiguration = new InputConfiguration
                     {
-                        IsBiDirectedImport = true
+                        IsBiDirectedImport = true, Modalities = new HashSet<SpatialModalityType>
+                        {
+                            SpatialModalityType.CarDriving
+                        }
                     }
                 }
             ]

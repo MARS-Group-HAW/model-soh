@@ -13,8 +13,8 @@ namespace SOHModel.Train.Route;
 public class TrainGtfsRouteLayer : AbstractLayer, ITrainRouteLayer
 {
     private GTFSFeed? _feed;
+    private readonly Dictionary<string, TrainRoute> _routes = new();
     
-    public Dictionary<string, TrainRoute> Routes { get; private set; }
     public TrainStationLayer? TrainStationLayer { get; set; }
 
     public override bool InitLayer(LayerInitData layerInitData, 
@@ -22,9 +22,8 @@ public class TrainGtfsRouteLayer : AbstractLayer, ITrainRouteLayer
         UnregisterAgent? unregisterAgent = null)
     {
         var result = base.InitLayer(layerInitData, registerAgentHandle, unregisterAgent);
-        Routes = new Dictionary<string, TrainRoute>();
-
         var reader = new GTFSReader<GTFSFeed>();
+        
         _feed = Extensions.Read(reader, layerInitData.LayerInitConfig.File);
         
         return result;
@@ -32,12 +31,12 @@ public class TrainGtfsRouteLayer : AbstractLayer, ITrainRouteLayer
 
     public bool TryGetRoute(string line, out TrainRoute? trainRoute)
     {
-        if (!Routes.TryGetValue(line, out var value))
+        if (!_routes.TryGetValue(line, out var value))
         {
             trainRoute = FindTrainRoute(line);
             if (trainRoute == null) return false;
             value = trainRoute;
-            Routes.Add(line, value);
+            _routes.Add(line, value);
         }
 
         trainRoute = value;

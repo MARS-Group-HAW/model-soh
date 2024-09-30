@@ -66,9 +66,12 @@ public class BicycleRentalLayer : VectorLayer<BicycleRentalStation>, IBicycleRen
 
     private void PropagateSynchronization()
     {
-        Console.WriteLine($"{Context.CurrentTimePoint}: Apply synchronization for stations ... ");
         foreach (var vectorFeature in Features)
+        {
             if (vectorFeature is BicycleRentalStation rentalStation)
+            {
                 rentalStation.Synchronize();
+            }
+        }
     }
 }

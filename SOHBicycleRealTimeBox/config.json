@@ -1,35 +1,42 @@
 ﻿{
   "globals": {
     "deltaT": 1,
-    "startPoint": "2024-09-17T10:50:00",
-    "endPoint": "2024-09-17T11:00:00",
-    // future time to get and process input from sensors. 
+    // set the simulation time into the future to get real-time input from sensors
+    "startPoint": "2024-07-15T16:00:00",
+    "endPoint": "2024-07-16T20:00:00",
     "deltaTUnit": "seconds",
     "csvOptions": {
       "outputPath": "results"
     },
-    "console": false
+    "console": true
   },
   "agents": [
     {
       "name": "CycleTraveler",
+      "output": "csv",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": [
+              "ActiveCapability"
+            ]
+          }
+        }
+      ],
       "individual": [
         {
           "value": true,
-          "name": "ResultTrajectoryEnabled"
+          "parameter": "ResultTrajectoryEnabled"
         },
         {
           "value": true,
-          "name": "CapabilityDriving"
-        },
-        {
-          "value": true,
-          "name": "CapabilityCycling"
+          "parameter": "CapabilityCycling"
         }
       ],
       "outputFilter": [
         {
-          "name": "StoreTickResult",
+          "parameter": "StoreTickResult",
           "operator": "in",
           "values": [
             true
@@ -40,55 +47,75 @@
   ],
   "layers": [
     {
-      "file": "resources/harburg_walk_graph.geojson",
-      "name": "SidewalkLayer"
+      "name": "SidewalkLayer",
+      "file": "resources/harburg_walk_graph.geojson"
     },
     {
-      "file": "resources/harburg_bike_graph.geojson",
-      "name": "CyclePathLayer"
+      "name": "SpatialGraphMediatorLayer",
+      "inputs": [
+        {
+          "file": "resources/harburg_walk_graph.geojson",
+          "inputConfiguration": {
+            "modalities": [
+              "Cycling",
+              "Walking"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "BicycleLayer",
+      "file": "resources/harburg_bike_graph.geojson"
+    },
+    {
+      "name": "GatewayLayer",
+      "file": "resources/hamburg_sbahn_stations.geojson"
+    },
+    {
+      "name": "CycleTravelerSchedulerLayer",
+      "file": "resources/cycle_traveler.csv"
     },
     {
       "name": "BicycleRentalLayer",
+      "output": "geojson",
+      "outputFrequency": 1000,
+      // Use this file to import specific point instead of retrieving the actual ones from the MQTT broker.
+//      "file": "resources/harburg_rental_stations.geojson",
       "inputs": [
         {
           // Collected real-data for past run 2020
-          //"file": "resources/bicycle_rental_layer_complete.geojson",
+          "file": "resources/bicycle_rental_layer_complete.geojson",
 
           // Endpoint configuration
           "inputConfiguration": {
             "temporalJoinAttribute": "thingId",
             "validTimeAtAttribute": "time",
-            "mqttTopicPattern": "v1.0/Things?$filter=Datastreams/properties/serviceName%20eq%20%27HH_STA_StadtRad%27&$count=true&$expand=Locations,Datastreams($expand=Observations($orderby=phenomenonTime%20desc;$top=3),Sensor,ObservedProperty)",
+            "mqttTopicPattern": "v1.1/Datastreams(${DataStreamId})/Observations",
             "mqttBrokerHostName": "iot.hamburg.de"
           }
         }
       ],
-      "output": "csv",
       "individual": [
         {
-          "name": "synchronizations",
-          "value": [
-            "2021-03-30T17:00:00",
-            "2021-03-30T18:00:00",
-            "2021-03-30T19:00:00"
-          ]
+          "name": "synchronizeAlwaysSince",
+          "value": "2020-12-14T15:00:00"
+          
+//          "name": "synchronizations",
+//          "value": [
+//            "2021-03-30T17:00:00",
+//            "2021-03-30T18:00:00",
+//            "2021-03-30T19:00:00"
+//          ]
         }
-      ],
-      "outputFrequency": 60
-    },
-    {
-      "file": "resources/cycle_traveler.csv",
-      "name": "CycleTravelerSchedulerLayer"
-    },
-    {
-      "file": "resources/hamburg_sbahn_stations.geojson",
-      "name": "GatewayLayer"
+      ]
     }
   ],
   "entities": [
     {
-      "file": "resources/bicycle.csv",
-      "name": "RentalBicycle"
+      "name": "RentalBicycle",
+      "output": "none",
+      "file": "resources/bicycle.csv"
     }
   ]
 }

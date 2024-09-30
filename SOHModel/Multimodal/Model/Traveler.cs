@@ -49,10 +49,7 @@ public class Traveler<TLayer> : MultiCapableAgent<TLayer>
 
         base.Move();
 
-        if (GoalReached)
-        {
-            MultimodalLayer.UnregisterAgent(MultimodalLayer, this);
-        }
+        if (GoalReached) MultimodalLayer.UnregisterAgent(MultimodalLayer, this);
     }
 
     /// <summary>

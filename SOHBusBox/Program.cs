@@ -26,7 +26,7 @@ internal static class Program
         description.AddLayer<BusStationLayer>();
         description.AddLayer<BusRouteLayer>(new[] { typeof(IBusRouteLayer) });
         // description.AddLayer<BusGtfsRouteLayer>(new[] {typeof(IBusRouteLayer)});
-        
+
         description.AddLayer<PassengerTravelerLayer>();
         description.AddLayer<AgentSchedulerLayer<PassengerTraveler, PassengerTravelerLayer>>(
             "PassengerTravelerSchedulerLayer");
@@ -37,7 +37,7 @@ internal static class Program
         description.AddEntity<Bus>();
 
         ISimulationContainer application;
-        if (args != null && args.Any())
+        if (args != null && args.Length != 0)
         {
             application = SimulationStarter.BuildApplication(description, args);
         }

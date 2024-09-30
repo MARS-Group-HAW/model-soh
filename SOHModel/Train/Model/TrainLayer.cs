@@ -23,18 +23,16 @@ public class TrainLayer : VectorLayer
 
     public ISpatialGraphEnvironment GraphEnvironment { get; set; }
 
-    public override bool InitLayer(
-        LayerInitData layerInitData, 
-        RegisterAgent? registerAgentHandle = null,
-        UnregisterAgent? unregisterAgent = null)
+    public override bool InitLayer(LayerInitData layerInitData, RegisterAgent registerAgentHandle = null,
+        UnregisterAgent unregisterAgent = null)
     {
         base.InitLayer(layerInitData, registerAgentHandle, unregisterAgent);
 
         GraphEnvironment = new SpatialGraphEnvironment(new SpatialGraphOptions
         {
-            GraphImports =
-            [
-                new Input
+            GraphImports = new List<Input>
+            {
+                new()
                 {
                     File = layerInitData.LayerInitConfig.File,
                     InputConfiguration = new InputConfiguration
@@ -42,16 +40,12 @@ public class TrainLayer : VectorLayer
                         IsBiDirectedImport = true
                     }
                 }
-            ]
+            }
         });
 
-        var trainDriverMapping =
-            layerInitData.AgentInitConfigs.FirstOrDefault(mapping => mapping.ModelType.MetaType == typeof(TrainDriver));
-        if (registerAgentHandle != null && unregisterAgent != null && trainDriverMapping != null)
-        {
-            Driver = AgentManager.SpawnAgents<TrainDriver>(
-                trainDriverMapping, registerAgentHandle, unregisterAgent, new List<ILayer> { this });
-        }
+        Driver = AgentManager.SpawnAgents<TrainDriver>(
+            layerInitData.AgentInitConfigs.First(mapping => mapping.ModelType.MetaType == typeof(TrainDriver)),
+            registerAgentHandle, unregisterAgent, new List<ILayer> { this });
 
         return true;
     }

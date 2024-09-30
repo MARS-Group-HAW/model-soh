@@ -154,30 +154,26 @@ public class BusDriver : AbstractAgent, IBusSteeringCapable
 
     private bool FindNextRouteSection()
     {
-        if (!BusRouteEnumerator.MoveNext()) return false;
-        if (BusRouteEnumerator.Current?.From.Id == BusRouteEnumerator.Current?.To.Id) return false;
-            
-        var source = Environment.NearestNode(BusRouteEnumerator.Current?.From.Position, SpatialModalityType.CarDriving);
-        var target = Environment.NearestNode(BusRouteEnumerator.Current?.To.Position, SpatialModalityType.CarDriving);
-            
-        Route = Environment.FindShortestRoute(source, target,
-            edge => edge.Modalities.Contains(SpatialModalityType.CarDriving));
-            
-        if (Route == null)
+        if (BusRouteEnumerator.MoveNext())
         {
-            throw new ApplicationException($"{nameof(BusDriver)} cannot find route from '{source.Position}' " +
-                                           $"to '{target.Position}' but: {Environment.Nodes.Count}");
+            var source = Environment.NearestNode(BusRouteEnumerator.Current?.From.Position,
+                SpatialModalityType.CarDriving);
+            var target = Environment.NearestNode(BusRouteEnumerator.Current?.To.Position,
+                SpatialModalityType.CarDriving);
+
+            var route = Environment.FindShortestRoute(source, target,
+                edge => edge.Modalities.Contains(SpatialModalityType.CarDriving));
+
+            if (route is { Count: > 0 })
+            {
+                Route = route;
+                _startTickForCurrentStation = Layer.Context.CurrentTick;
+                Environment.Insert(Bus, Route.First().Edge.From);
+                return true;
+            }
         }
 
-        if (Route.Count == 0)
-        {
-            return true;
-        }
-
-        _startTickForCurrentStation = Layer.Context.CurrentTick;
-        Environment.Insert(Bus, Route.First().Edge.From);
-
-        return true;
+        return false;
     }
 
     #region fields

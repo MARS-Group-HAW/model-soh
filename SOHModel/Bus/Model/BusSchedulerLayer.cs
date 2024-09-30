@@ -22,7 +22,7 @@ public class BusSchedulerLayer : SchedulerLayer
     {
         const string typeKey = "busType";
 
-        var busType = dataRow.Data.TryGetValue(typeKey, out var type) ? type.Value<string>() : "Citaro12m";
+        var busType = dataRow.Data.TryGetValue(typeKey, out var type) ? type.Value<string>() : "EvoBus";
 
         if (!dataRow.Data.ContainsKey("line"))
             throw new ArgumentException("Missing line number for bus of field 'line' in input");
@@ -32,9 +32,6 @@ public class BusSchedulerLayer : SchedulerLayer
             : 0;
         var reversedRoute = dataRow.Data.TryGetValue("reversedRoute", out var reversed) &&
                             reversed.Value<bool>();
-        ArgumentNullException.ThrowIfNull(UnregisterAgent);
-        ArgumentNullException.ThrowIfNull(RegisterAgent);
-        
         var driver = new BusDriver(_busLayer, UnregisterAgent, busType)
         {
             Line = dataRow.Data["line"].Value<string>(),

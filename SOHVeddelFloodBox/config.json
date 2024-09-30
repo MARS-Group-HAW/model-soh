@@ -1,0 +1,66 @@
+{
+  "id": "veddel_flooding",
+  "globals": {
+    "deltaT": 1,
+    "startPoint": "2021-10-11T06:00:00",
+    "endPoint": "2021-10-11T07:30:00",
+    "deltaTUnit": "seconds",
+    "console": true
+  },
+  "agents": [
+    {
+      "name": "VeddelTraveler",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": [
+              "StableId"
+            ]
+          }
+        }
+      ],
+      "mapping": [
+      ],
+      "individual": [
+        {
+          "value": true,
+          "parameter": "ResultTrajectoryEnabled"
+        }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "name": "SpatialGraphMediatorLayer",
+      "inputs": [
+        {
+          "file": "resources/veddel_neu.geojson",
+          "inputConfiguration": {
+            "modalities": [
+              "Walking"
+            ],
+            "isBidirectedGraph": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "HouseholdLayer",
+      "file": "resources/households.geojson"
+    },
+    {
+      "name": "WaterLevelLayer",
+      "mapping": [
+        {
+          "parameter": "ticks_before_start",
+          "value": "2"
+        },
+        {
+          "parameter": "height_per_tick",
+          "value": "0.03"
+        }
+      ]
+    }
+  ]
+}

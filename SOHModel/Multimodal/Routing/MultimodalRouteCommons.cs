@@ -23,7 +23,6 @@ public static class MultimodalRouteCommons
         if (stops == null || !stops.Any() || !stops.First().Route.Any()) return int.MaxValue;
 
         foreach (var routeStop in stops)
-        {
             switch (routeStop.ModalChoice)
             {
                 case ModalChoice.Walking:
@@ -46,7 +45,6 @@ public static class MultimodalRouteCommons
                     travelTime += routeStop.Route.RouteLength / (20 / 3.6);
                     break;
             }
-        }
 
         return (int)Math.Ceiling(travelTime);
     }

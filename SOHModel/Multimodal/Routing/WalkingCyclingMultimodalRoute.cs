@@ -24,11 +24,13 @@ internal class WalkingCyclingMultimodalRoute : MultimodalRoute
         if (startRental == null)
             throw new ArgumentException(
                 "Could not find any route for bicycle because no rental bicycle is available.");
+
         var startRentalSidewalkNode = env.NearestNode(startRental.Position, SpatialModalityType.Walking);
 
         if (!startNode.Equals(startRentalSidewalkNode))
         {
-            var routeToRentalStart = env.FindShortestRoute(startNode, startRentalSidewalkNode, WalkingFilter);
+            var routeToRentalStart = env.FindShortestRoute(startNode, 
+                startRentalSidewalkNode, WalkingFilter);
             if (routeToRentalStart != null)
                 Add(routeToRentalStart, ModalChoice.Walking);
         }

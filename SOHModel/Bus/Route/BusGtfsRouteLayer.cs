@@ -10,24 +10,22 @@ using SOHModel.Bus.Station;
 
 namespace SOHModel.Bus.Route;
 
-public class BusGtfsRouteLayer : AbstractLayer, IBusRouteLayer
+public class BusGtfsRouteLayer(BusStationLayer stationLayer) : AbstractLayer, IBusRouteLayer
 {
-    private GTFSFeed _feed;
-    
-    public Dictionary<string, BusRoute> Routes { get; private set; }
-    public BusStationLayer BusStationLayer { get; set; }
+    private GTFSFeed? _feed;
+    private Dictionary<string, BusRoute> Routes { get; set; } = new();
 
-    public bool TryGetRoute(string line, out BusRoute busRoute)
+    public bool TryGetRoute(string line, out BusRoute? busRoute)
     {
-        if (!Routes.ContainsKey(line))
+        if (!Routes.TryGetValue(line, out var value))
         {
             busRoute = FindTrainRoute(line);
             if (busRoute == null) return false;
-
-            Routes.Add(line, busRoute);
+            value = busRoute;
+            Routes.Add(line, value);
         }
 
-        busRoute = Routes[line];
+        busRoute = value;
         return true;
     }
 
@@ -46,8 +44,9 @@ public class BusGtfsRouteLayer : AbstractLayer, IBusRouteLayer
 
     private BusRoute? FindTrainRoute(string routeShortName)
     {
-        var trainRoute = new BusRoute();
+        if (_feed == null) return null;
 
+        var trainRoute = new BusRoute();
         var route = _feed.Routes.Get().FirstOrDefault(route => route.ShortName.Equals(routeShortName));
         if (route == null) return null;
 
@@ -70,9 +69,9 @@ public class BusGtfsRouteLayer : AbstractLayer, IBusRouteLayer
                 var minutes = CalculateTravelTime(lastStopTime.DepartureTime, nextStopTime.ArrivalTime);
 
                 var startStation =
-                    BusStationLayer.Nearest(Position.CreateGeoPosition(lastStop.Longitude, lastStop.Latitude));
+                    stationLayer.Nearest(Position.CreateGeoPosition(lastStop.Longitude, lastStop.Latitude));
                 var goalStation =
-                    BusStationLayer.Nearest(Position.CreateGeoPosition(nextStop.Longitude, nextStop.Latitude));
+                    stationLayer.Nearest(Position.CreateGeoPosition(nextStop.Longitude, nextStop.Latitude));
                 if (startStation != null && goalStation != null)
                     trainRoute.Entries.Add(new BusRouteEntry(startStation, goalStation, minutes));
             }
