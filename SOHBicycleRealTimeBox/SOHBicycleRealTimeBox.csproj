@@ -19,6 +19,7 @@
 
     <ItemGroup>
         <PackageReference Include="Geodan.SensorThings.SDK" Version="0.4.1"/>
+        <PackageReference Include="Mars.Life.Simulations" Version="5.1.0" />
     </ItemGroup>
 
     <ItemGroup>
