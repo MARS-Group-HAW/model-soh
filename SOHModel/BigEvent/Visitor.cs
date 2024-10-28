@@ -3,7 +3,7 @@ using Mars.Common.Core.Random;
 using Mars.Interfaces.Environments;
 using SOHModel.Multimodal.Model;
 
-namespace SOHBigEventBox.model;
+namespace SOHModel.BigEvent;
 
 /// <summary>
 ///     This <see cref="Traveler{HumanTravelerLayer}" /> entity uses a variety of modalities to reach its goal.

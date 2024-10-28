@@ -9,15 +9,9 @@ using Mars.Components.Starter;
 using Mars.Core.Simulation;
 using Mars.Interfaces;
 using Mars.Interfaces.Model;
-using SOHBigEventBox.model;
-using SOHModel.Bicycle.Model;
-using SOHModel.Bicycle.Parking;
-using SOHModel.Bicycle.Rental;
-using SOHModel.Car.Model;
-using SOHModel.Car.Parking;
-using SOHModel.Car.Rental;
 using SOHModel.Domain.Graph;
 using SOHModel.Multimodal.Model;
+using SOHModel.BigEvent;
 
 namespace SOHBigEventBox;
 
