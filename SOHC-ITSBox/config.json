@@ -1,21 +1,67 @@
 {
-  "id": "",
+  "id": "kellinghusen_show_case_landuse_2021",
   "globals": {
+    "deltaT": 1,
     "startPoint": "2019-10-11T16:00:00",
     "endPoint": "2019-10-11T17:00:00",
-    "deltaT": 1,
     "deltaTUnit": "seconds",
     "console": true,
-    "output": "csv"
+    "npgSqlOptions": {
+      "host": "localhost",
+      "user": "mars",
+      "password": "sram2020",
+      "overrideByConflict": true
+    }
   },
   "agents": [
+    {
+      "name": "CarTraveler",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": [
+              "ActiveCapability"
+            ]
+          }
+        }
+      ],
+      "individual": [
+        {
+          "value": true,
+          "parameter": "ResultTrajectoryEnabled"
+        },
+        {
+          "value": true,
+          "parameter": "CapabilityDriving"
+        }
+      ],
+      "outputFilter": [
+        {
+          "parameter": "StoreTickResult",
+          "operator": "in",
+          "values": [
+            true
+          ]
+        }
+      ]
+    }
   ],
   "layers": [
     {
-      "name": "C_ITS_Hamburg_Teststrecke",
-      "file": "resources/SOH_C_ITS_Shape_Vector_Layer.gpkg"
+      "name": "CarLayer",
+      "file": "resources/drive_graph_hamburg_center.geojson"
+    },
+    {
+      "name": "CarTravelerSchedulerLayer",
+      "file": "resources/car_traveler.csv"
     }
   ],
   "entities": [
+    {
+      "name": "Car",
+      "output": "none",
+      "file": "resources/car.csv"
+    }
   ]
 }
