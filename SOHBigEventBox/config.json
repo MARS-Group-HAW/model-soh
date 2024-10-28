@@ -1,0 +1,53 @@
+{
+  "id": "BigEventBox",
+  "globals": {
+    "deltaT": 1,
+    "startPoint": "2024-01-01T08:00:00",
+    "endPoint": "2024-01-01T12:30:00",
+    "deltaTUnit": "seconds",
+    "console": true
+  },
+  "agents": [
+    {
+      "name": "Visitor",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": [
+              "StableId"
+            ]
+          }
+        }
+      ],
+      "individual": [
+        {
+          "value": true,
+          "parameter": "ResultTrajectoryEnabled"
+        }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "name": "SpatialGraphMediatorLayer",
+      "inputs": [
+        {
+          "file": "resources/walk_graph_hamburg_dammtor.geojson",
+          "inputConfiguration": {
+            "modalities": [
+              "Walking"
+            ],
+            "isBidirectedGraph": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "HumanTravelerSchedulerLayer",
+      "file": "resources/visitor_spawning.csv"
+    }
+  ],
+  "entities": [
+  ]
+}

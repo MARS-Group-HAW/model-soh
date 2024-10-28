@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using Mars.Common.Core.Logging;
 using Mars.Components.Layers;
@@ -10,6 +9,7 @@ using Mars.Components.Starter;
 using Mars.Core.Simulation;
 using Mars.Interfaces;
 using Mars.Interfaces.Model;
+using SOHBigEventBox.model;
 using SOHModel.Bicycle.Model;
 using SOHModel.Bicycle.Parking;
 using SOHModel.Bicycle.Rental;
@@ -35,25 +35,16 @@ internal static class Program
     public static void Main(string[] args)
     {
         Thread.CurrentThread.CurrentCulture = new CultureInfo("EN-US");
-        LoggerFactory.SetLogLevel(LogLevel.Off);
+        LoggerFactory.SetLogLevel(LogLevel.Info);
 
         var description = new ModelDescription();
         description.AddLayer<SpatialGraphMediatorLayer>([typeof(ISpatialGraphLayer)]);
         
-        description.AddLayer<BicycleParkingLayer>([typeof(IBicycleParkingLayer)]);
-        description.AddLayer<BicycleRentalLayer>([typeof(IBicycleRentalLayer)]);
-        description.AddLayer<CarParkingLayer>([typeof(ICarParkingLayer)]);
-        description.AddLayer<CarRentalLayer>([typeof(ICarRentalLayer)]);
-        
         description.AddLayer<HumanTravelerLayer>();
-        description.AddLayer<AgentSchedulerLayer<HumanTraveler, HumanTravelerLayer>>(
+        description.AddLayer<AgentSchedulerLayer<Visitor, HumanTravelerLayer>>(
             "HumanTravelerSchedulerLayer");
 
-        description.AddAgent<HumanTraveler, HumanTravelerLayer>();
-        description.AddEntity<Bicycle>();
-        description.AddEntity<RentalBicycle>();
-        description.AddEntity<Car>();
-        description.AddEntity<RentalCar>();
+        description.AddAgent<Visitor, HumanTravelerLayer>();
 
         ISimulationContainer application;
         if (args != null && args.Length != 0)
@@ -64,7 +55,7 @@ internal static class Program
         }
         else
         {
-            var file = File.ReadAllText("config_dammtor.json");
+            var file = File.ReadAllText("config.json");
             var simConfig = SimulationConfig.Deserialize(file);
             application = SimulationStarter.BuildApplication(description, simConfig);
         }
