@@ -33,7 +33,7 @@
       "name": "SpatialGraphMediatorLayer",
       "inputs": [
         {
-          "file": "resources/walk_graph_hamburg_dammtor.geojson",
+          "file": "resources/walk_graph_barclays.geojson",
           "inputConfiguration": {
             "modalities": [
               "Walking"
