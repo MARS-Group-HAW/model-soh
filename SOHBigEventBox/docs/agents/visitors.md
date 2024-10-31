@@ -30,10 +30,11 @@
     - Line 22 (S-Blankenese - U-Kellinghusenstr.): Stop: Hellgrundweg/Arenen;
     - Line 180 (S-Holstenstr. - S-Stellingen - Arenen), Stop: Am Volkspark
 - **Car**:
-    - Parking Lot GREY: 930 cars
-    - Parking Lot BLUE: 250 cars
-    - Parking Lot RED: 3800 cars
-    - Parking Lot YELLOW: 500 cars
+    - Parking Lot GREY: 350 cars
+    - Parking Lot BLUE: 275 cars
+    - Parking Lot RED: 1.400 cars
+    - Parking Lot YELLOW: 350 cars
+    - Parking Lot WHITE: 860 cars
 - **Bicycle**:
     - Bicycle parking at Entrance E2 by the ramp
 - **Walking**
