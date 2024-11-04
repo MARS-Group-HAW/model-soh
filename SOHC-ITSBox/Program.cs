@@ -31,7 +31,8 @@ internal static class Program
     public static void Main(string[] args)
     {
         Thread.CurrentThread.CurrentCulture = new CultureInfo("EN-US");
-        LoggerFactory.SetLogLevel(LogLevel.Warning); 
+        LoggerFactory.SetLogLevel(LogLevel.Info); 
+
         
         //Console.WriteLine("Hello World!");
         
