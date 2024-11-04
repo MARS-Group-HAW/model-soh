@@ -43,6 +43,29 @@ internal static class Program
         //description.AddLayer<CarDriverSchedulerLayer>();
         description.AddEntity<Car>(); 
         
+        ISimulationContainer application;
+
+        if (args != null && args.Length != 0)
+        {
+            application = SimulationStarter.BuildApplication(description, args);
+        }
+        else
+        {
+            var file = File.ReadAllText("config.json");
+            var simConfig = SimulationConfig.Deserialize(file);
+            application = SimulationStarter.BuildApplication(description, simConfig);
+        }
+
+        var simulation = application.Resolve<ISimulation>();
+
+        var watch = Stopwatch.StartNew();
+        var state = simulation.StartSimulation();
+        watch.Stop();
+
+        Console.WriteLine($"Executed iterations {state.Iterations} lasted {watch.Elapsed}");
+        application.Dispose();
+
+        /*
         var startTime = DateTime.Parse("2025-01-01T00:00:00");
         var start = Position.CreateGeoPosition(9.937944800, 53.547771400);
         var goal = Position.CreateGeoPosition(9.948982100, 53.552160201);
@@ -95,36 +118,14 @@ internal static class Program
                 }
             }
         };
-            
-            
+        */
         
-        //ISimulationContainer application;
-        
-        /*if (args != null && args.Length != 0)
-        {
-            application = SimulationStarter.BuildApplication(description, args);
-        }
-        else
-        {
-            var file = File.ReadAllText("config.json");
-            var simConfig = SimulationConfig.Deserialize(file);
-            application = SimulationStarter.BuildApplication(description, simConfig);
-        }
-
-        var simulation = application.Resolve<ISimulation>();
-
-        var watch = Stopwatch.StartNew();
-        var state = simulation.StartSimulation();
-        watch.Stop();
-
-        Console.WriteLine($"Executed iterations {state.Iterations} lasted {watch.Elapsed}");
-        application.Dispose();*/
-        
+        /*
         var starter = SimulationStarter.Start(description, config);
         var workflowState = starter.Run();
 
 
-        /*
+
         var table = CsvReader.MapData(Path.Combine(GetType().Name, nameof(CarDriver) + ".csv"));
         var firstRow = table.Select("Tick = '0'")[0];
         var posAfterFirstTick =
