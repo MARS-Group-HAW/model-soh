@@ -15,31 +15,8 @@
   },
   "agents": [
     {
-      "name": "CarTraveler",
-      "outputs": [
-        {
-          "kind":  "csv"
-        }
-      ],
-      "individual": [
-        {
-          "value": true,
-          "parameter": "ResultTrajectoryEnabled"
-        },
-        {
-          "value": true,
-          "parameter": "CapabilityDriving"
-        }
-      ],
-      "outputFilter": [
-        {
-          "parameter": "StoreTickResult",
-          "operator": "in",
-          "values": [
-            true
-          ]
-        }
-      ]
+      "name": "CarDriver",
+      "count": 1
     }
   ],
   "layers": [
