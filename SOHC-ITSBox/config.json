@@ -16,7 +16,8 @@
   "agents": [
     {
       "name": "CarDriver",
-      "count": 1
+      "count": 1 
+      //TODO hier file einfügen
     }
   ],
   "layers": [
