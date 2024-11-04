@@ -23,8 +23,8 @@ public static class SensorThingsImporter
         Console.WriteLine("Retrieving initial data from sensor-network for initial phase ...");
 
         var harburg = envelopeInput ?? new Envelope(9.9354367, 10.0275171, 53.4219923, 53.4700337);
-        var from = fromInput ?? new DateTime(2024, 08, 01, 12, 0, 0);
-        var to = toInput ?? new DateTime(2024, 08, 01, 12, 05, 0);
+        var from = fromInput ?? new DateTime(2024, 11, 04, 15, 35, 0);
+        var to = toInput ?? new DateTime(2024, 11, 04, 16, 05, 0);
 
         Console.WriteLine(
             $"Retrieving initial data from sensor-network for time range [{from.ToUniversalTime()}...{to.ToUniversalTime()} ...");
