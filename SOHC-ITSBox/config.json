@@ -16,7 +16,8 @@
   "agents": [
     {
       "name": "CarDriver",
-      "count": 1
+      "count": 1,
+      "file": "resources/car_driver.csv"
     }
   ],
   "layers": [
