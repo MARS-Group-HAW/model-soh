@@ -40,7 +40,7 @@ internal static class Program
         description.AddLayer<TrafficLightLayer>();
         description.AddLayer<CarLayer>();
         description.AddAgent<CarDriver, CarLayer>();
-        //description.AddLayer<CarDriverSchedulerLayer>();
+        description.AddLayer<CarDriverSchedulerLayer>();
         description.AddEntity<Car>(); 
         
         ISimulationContainer application;

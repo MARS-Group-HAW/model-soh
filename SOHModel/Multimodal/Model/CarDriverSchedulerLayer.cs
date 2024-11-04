@@ -1,7 +1,9 @@
 using Mars.Common;
 using Mars.Common.Core;
 using Mars.Components.Layers;
+using Mars.Interfaces.Agents;
 using Mars.Interfaces.Annotations;
+using Mars.Interfaces.Layers;
 using SOHModel.Car.Model;
 
 namespace SOHModel.Multimodal.Model;
@@ -14,26 +16,36 @@ public class CarDriverSchedulerLayer : SchedulerLayer
    {
       _carLayer = carDriverLayer;
    }
+   
+   private static void Register(ILayer layer, ITickClient tickClient)
+   {
+      //do nothing
+   }
+
+   private static void Unregister(ILayer layer, ITickClient tickClient)
+   {
+      //do nothing
+   }
 
    protected override void Schedule(SchedulerEntry dataRow)
    {
       var start = dataRow.SourceGeometry.RandomPositionFromGeometry();
       var goal = dataRow.TargetGeometry.RandomPositionFromGeometry();
-
+      //var drivemode = dataRow.Data.TryGetValue("driveMode", out var driveMode) ? driveMode.Value<int>() : 0;
+      
       var cardriver = new CarDriver
-      (
+       (
+       
          _carLayer,
-         RegisterAgent,
-         UnregisterAgent,
-         dataRow.Data.TryGetValue("driveMode", out var driveMode) ? driveMode.Value<int>() : 0,
-         dataRow.Data.TryGetValue("startLat", out var startLat) ? startLat.Value<double>() : 0,
-         dataRow.Data.TryGetValue("startLot", out var startLot) ? startLot.Value<double>() : 0,
-         dataRow.Data.TryGetValue("destLat", out var destLat) ? destLat.Value<double>() : 0,
-         dataRow.Data.TryGetValue("destLot", out var destLot) ? destLot.Value<double>() : 0,
-         null, //TODO add missing parameter
-         "",
-         "german"
+         Register,
+         Unregister,
+         3,
+         start.Latitude,
+         start.Longitude,
+         goal.Latitude,
+         goal.Longitude
       );
+      
       //carDriver.Init(_carLayer);
 
       _carLayer.Driver.Add(cardriver.ID, cardriver);

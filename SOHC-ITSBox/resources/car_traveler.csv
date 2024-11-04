@@ -1,2 +1,2 @@
-driveMode,startLat,startLot,destLat,destLot
-3,53.5468805, 10.0138144,53.552822,9.9932538
+startTime, endTime,spawningIntervalInMinutes,spawningAmount, source, destination
+16:00, 16:30,0,1,"Point(10.0138144 53.5468805)","Point(9.9932538 53.552822)"

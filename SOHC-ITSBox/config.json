@@ -1,5 +1,5 @@
 {
-  "id": "kellinghusen_show_case_landuse_2021",
+  "id": "C-ITS_2024",
   "globals": {
     "deltaT": 1,
     "startPoint": "2025-10-11T16:00:00",
@@ -47,10 +47,10 @@
       "name": "CarLayer",
       "output": "geojson",
       "outputFrequency": 1000,
-      "file": "resources/drive_graph_hamburg_center.geojson"
+      "file": "resources/drive_graph_altona_altstadt.graphml"
     },
     {
-      "name": "CarTravelerSchedulerLayer",
+      "name": "CarDriverSchedulerLayer",
       "file": "resources/car_traveler.csv"
     },
     {
