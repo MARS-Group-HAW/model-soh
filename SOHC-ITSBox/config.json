@@ -52,6 +52,10 @@
     {
       "name": "CarTravelerSchedulerLayer",
       "file": "resources/car_traveler.csv"
+    },
+    {
+      "name": "TrafficLightLayer", 
+      "file": "resources/traffic_lights_altona.zip"
     }
   ],
   "entities": [
