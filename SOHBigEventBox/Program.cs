@@ -12,6 +12,9 @@ using Mars.Interfaces.Model;
 using SOHModel.Domain.Graph;
 using SOHModel.Multimodal.Model;
 using SOHModel.BigEvent;
+using SOHModel.Train.Model;
+using SOHModel.Train.Station;
+using SOHModel.Train.Route;
 
 namespace SOHBigEventBox;
 
@@ -32,13 +35,20 @@ internal static class Program
         LoggerFactory.SetLogLevel(LogLevel.Info);
 
         var description = new ModelDescription();
+
         description.AddLayer<SpatialGraphMediatorLayer>([typeof(ISpatialGraphLayer)]);
-        
         description.AddLayer<HumanTravelerLayer>();
-        description.AddLayer<AgentSchedulerLayer<Visitor, HumanTravelerLayer>>(
-            "HumanTravelerSchedulerLayer");
+        description.AddLayer<AgentSchedulerLayer<Visitor, HumanTravelerLayer>>("HumanTravelerSchedulerLayer");
+        description.AddLayer<TrainLayer>();
+        description.AddLayer<TrainSchedulerLayer>();
+        description.AddLayer<TrainStationLayer>();
+        description.AddLayer<TrainRouteLayer>([typeof(ITrainRouteLayer)]);
+        
 
         description.AddAgent<Visitor, HumanTravelerLayer>();
+        description.AddAgent<TrainDriver, TrainLayer>();
+
+        description.AddEntity<Train>();
 
         ISimulationContainer application;
         if (args != null && args.Length != 0)

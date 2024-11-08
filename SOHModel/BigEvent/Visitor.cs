@@ -10,7 +10,7 @@ namespace SOHModel.BigEvent;
 /// </summary>
 public class Visitor : Traveler<HumanTravelerLayer>
 {
-    private ISet<ModalChoice> _choices = new HashSet<ModalChoice> { ModalChoice.Walking };
+    private readonly ISet<ModalChoice> _modalChoices = new HashSet<ModalChoice> { ModalChoice.Walking, ModalChoice.Train };
 
     public override void Init(HumanTravelerLayer layer)
     {
@@ -22,6 +22,6 @@ public class Visitor : Traveler<HumanTravelerLayer>
 
     protected override IEnumerable<ModalChoice> ModalChoices()
     {
-        return _choices;
+        return _modalChoices;
     }
 }
