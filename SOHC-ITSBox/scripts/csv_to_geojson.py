@@ -3,7 +3,7 @@ import json
 
 def csv_to_geojson():
     # Define the file paths
-    csv_file = "../../SOHTests/bin/Debug/net8.0/DriveFromAtoBWithLights/CarDriver.csv"
+    csv_file = "../bin/Debug/net8.0/CarDriver.csv"
     geojson_file = "output.geojson"
 
     # Initialize an empty GeoJSON structure
