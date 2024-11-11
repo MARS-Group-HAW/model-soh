@@ -1,2 +1,5 @@
 line,startTime,endTime,spawningIntervalInMinutes,minimumBoardingTimeInSeconds,spawningAmount,reversedRoute
-S3,08:00,10:00,10,20,1,false
+S3,08:00,12:30,10,20,1,false
+S3,08:00,12:30,10,20,1,true
+S5,08:05,12:30,10,20,1,false
+S5,08:05,12:30,10,20,1,true
