@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Mars.Common.Core.Random;
 using Mars.Interfaces.Environments;
 using SOHModel.Multimodal.Model;
@@ -23,5 +22,20 @@ public class Visitor : Traveler<HumanTravelerLayer>
     protected override IEnumerable<ModalChoice> ModalChoices()
     {
         return _modalChoices;
+    }
+
+
+    protected override MultimodalRoute FindMultimodalRoute()
+    {
+        try
+        {
+            return MultimodalLayer.Search(this, StartPosition, GoalPosition, ModalChoices());
+        }
+        catch (Exception ex) {
+            if (ex.Message.Contains("no reachable train station found", System.StringComparison.CurrentCultureIgnoreCase) || ex.Message.Contains("no train route available", System.StringComparison.CurrentCultureIgnoreCase)) {
+                return MultimodalLayer.Search(this, StartPosition, GoalPosition, [ModalChoice.Walking]);
+            }
+            else throw;
+        }
     }
 }
