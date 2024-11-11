@@ -22,15 +22,15 @@ public static class SensorThingsImporter
 
         Console.WriteLine("Retrieving initial data from sensor-network for initial phase ...");
 
-        var harburg = envelopeInput ?? new Envelope(9.9354367, 10.0275171, 53.4219923, 53.4700337);
-        var from = fromInput ?? new DateTime(2024, 11, 04, 15, 35, 0);
-        var to = toInput ?? new DateTime(2024, 11, 04, 16, 05, 0);
+        var c_itsArea = new Envelope(9.96865453546937, 9.995549770589417, 53.541856109114335, 53.56802054142237);
+        var from = fromInput ?? new DateTime(2024, 11, 11, 11, 00, 0);
+        var to = toInput ?? new DateTime(2024, 11, 11, 11, 15, 0);
 
         Console.WriteLine(
             $"Retrieving initial data from sensor-network for time range [{from.ToUniversalTime()}...{to.ToUniversalTime()} ...");
-        Console.WriteLine($"for the area [{harburg}]");
+        Console.WriteLine($"for the area [{c_itsArea}]");
         //var features = GetObservations(harburg, from, to, "StadtRad", out var observations);
-        var features = GetObservations(harburg, from, to, 
+        var features = GetObservations(c_itsArea, from, to, 
             "HH_STA_traffic_lights", out var observations);
         
         var geojson = new GeoJsonWriter().Write(features);

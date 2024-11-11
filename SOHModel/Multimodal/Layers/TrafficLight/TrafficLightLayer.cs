@@ -64,6 +64,7 @@ public class TrafficLightLayer : AbstractActiveLayer
         var inputDirectory = UnzipInputFile(_layerInitFile);
 
         //look for metadata.csv file
+        //todo metadata.csv finden 
         var metaDataFile = Directory.EnumerateFiles(inputDirectory, "metadata.csv", SearchOption.AllDirectories)
             .FirstOrDefault();
         if (metaDataFile == null)

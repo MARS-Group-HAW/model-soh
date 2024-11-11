@@ -32,13 +32,10 @@ internal static class Program
     {
         Thread.CurrentThread.CurrentCulture = new CultureInfo("EN-US");
         LoggerFactory.SetLogLevel(LogLevel.Info); 
-
-        
-        //Console.WriteLine("Hello World!");
         
         var description = new ModelDescription();
 
-        description.AddLayer<TrafficLightLayer>();
+        description.AddLayer<TrafficSignalLayer>();
         description.AddLayer<CarLayer>();
         description.AddAgent<CarDriver, CarLayer>();
         description.AddLayer<CarDriverSchedulerLayer>();

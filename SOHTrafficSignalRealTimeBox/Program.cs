@@ -26,7 +26,12 @@ internal static class Program
     {
         Thread.CurrentThread.CurrentCulture = new CultureInfo("EN-US");
         LoggerFactory.SetLogLevel(LogLevel.Off);
+        
+        SensorThingsImporter.LoadData();
+        
+        /*
         var description = new ModelDescription();
+         
 
         description.AddLayer<SpatialGraphMediatorLayer>(new[] { typeof(ISpatialGraphLayer) });
         description.AddLayer<GatewayLayer>();
@@ -78,5 +83,6 @@ internal static class Program
 
         Console.WriteLine($"Executed iterations {state.Iterations} lasted {watch.Elapsed}");
         application.Dispose();
+        */
     }
 }

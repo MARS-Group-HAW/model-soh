@@ -25,15 +25,15 @@
       "name": "CarLayer",
       "output": "geojson",
       "outputFrequency": 1000,
-      "file": "resources/drive_graph_altona_altstadt.graphml"
+      "file": "resources/c_its_teststrecke_street_graph.geojson"
     },
     {
       "name": "CarDriverSchedulerLayer",
       "file": "resources/car_traveler.csv"
     },
     {
-      "name": "TrafficLightLayer", 
-      "file": "resources/traffic_lights_altona.zip"
+      "name": "TrafficSignalLayer", 
+      "file": "resources/traffic_signals_citsarea_november_ 11_2024.geojson"
     }
   ],
   "entities": [
