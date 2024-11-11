@@ -1,4 +1,5 @@
-﻿using Mars.Common.Core.Collections;
+﻿using Mars.Common;
+using Mars.Common.Core.Collections;
 using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
@@ -23,6 +24,9 @@ public static class SensorThingsImporter
         Console.WriteLine("Retrieving initial data from sensor-network for initial phase ...");
 
         var c_itsArea = new Envelope(9.96865453546937, 9.995549770589417, 53.541856109114335, 53.56802054142237);
+        
+        //TODO GeoHash mt GeoHash.Bboxes() und über box iterieren
+        
         var from = fromInput ?? new DateTime(2024, 11, 11, 11, 00, 0);
         var to = toInput ?? new DateTime(2024, 11, 11, 11, 15, 0);
 

@@ -2,8 +2,8 @@
   "id": "C-ITS_2024",
   "globals": {
     "deltaT": 1,
-    "startPoint": "2025-10-11T16:00:00",
-    "endPoint": "2025-10-11T17:00:00",
+    "startPoint": "2024-11-11T11:00:00",
+    "endPoint": "2024-11-11T11:15:00",
     "deltaTUnit": "seconds",
     "console": true,
     "npgSqlOptions": {
@@ -16,7 +16,8 @@
   "agents": [
     {
       "name": "CarDriver",
-      "count": 1,
+      "output": "csv",
+      "count": 7,
       "file": "resources/car_driver.csv"
     }
   ],
