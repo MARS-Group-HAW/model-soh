@@ -10,4 +10,8 @@
         <ProjectReference Include="..\SOHModel\SOHModel.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="docs\agents\img.png" />
+    </ItemGroup>
+
 </Project>

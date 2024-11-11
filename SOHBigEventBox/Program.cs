@@ -35,7 +35,7 @@ internal static class Program
         description.AddLayer<SpatialGraphMediatorLayer>([typeof(ISpatialGraphLayer)]);
         
         description.AddLayer<HumanTravelerLayer>();
-        description.AddLayer<AgentSchedulerLayer<Visitor, HumanTravelerLayer>>(
+        description.AddLayer<AgentSchedulerLayer<Visitor, BigEventLayer>>(
             "HumanTravelerSchedulerLayer");
 
         description.AddAgent<Visitor, HumanTravelerLayer>();
