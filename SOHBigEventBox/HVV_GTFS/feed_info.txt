@@ -1,0 +1,2 @@
+"feed_publisher_name","feed_publisher_url","feed_lang","feed_start_date","feed_end_date","feed_version","feed_contact_mail","feed_contact_url"
+"Verkehrsverbund (hvv)","http://www.hvv.de","de",20240610,20241214,"2024-6-10T11:29:18","",""
