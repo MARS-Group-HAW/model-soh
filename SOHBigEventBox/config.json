@@ -39,6 +39,19 @@
           "parameter": "ResultTrajectoryEnabled"
         }
       ]
+    },
+    {
+      "name": "TrainDriver",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": [
+              "LoadPercentage"
+            ]
+          }
+        }
+      ]
     }
   ],
   "layers": [
@@ -53,6 +66,16 @@
               "TrainDriving"
             ],
             "isBidirectedGraph": true
+          }
+        },
+        {
+          "file": "resources/public_transport/commuter_train/commuter_train_graph.geojson",
+          "inputConfiguration": {
+            "modalities": [
+              "TrainDriving"
+            ],
+            "isBidirectedGraph": true,
+            "noHelperNodes": true
           }
         }
       ]
@@ -75,6 +98,10 @@
     {
       "name": "Bus",
       "file": "resources/bus.csv"
+    }
+    {
+      "name": "Train",
+      "file": "resources/public_transport/commuter_train/commuter_train.csv"
     }
   ]
 }

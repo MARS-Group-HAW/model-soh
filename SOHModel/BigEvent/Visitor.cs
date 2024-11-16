@@ -1,6 +1,6 @@
+using Mars.Common.Core.Random;
 using System.Collections.Generic;
 using Mars.Common;
-using Mars.Common.Core.Random;
 using Mars.Interfaces.Annotations;
 using Mars.Interfaces.Environments;
 using SOHModel.Bicycle.Parking;
@@ -17,6 +17,7 @@ public class Visitor : Traveler<BigEventLayer>
     [PropertyDescription] public bool LivesNearby { get; set; } // Indicates if the visitor lives nearby
 
     [PropertyDescription] public double UsesPublicTransport { get; set; } // Probability of using public transport
+    private readonly ISet<ModalChoice> _modalChoices = new HashSet<ModalChoice> { ModalChoice.Walking, ModalChoice.Train };
 
     public ModalChoice ChosenMode { get; private set; } // Store the chosen mode of transport
 
@@ -35,8 +36,24 @@ public class Visitor : Traveler<BigEventLayer>
     {
         // This method is no longer needed, as the choice is now stored in ChosenMode
         return new List<ModalChoice> { ChosenMode };
+        return _modalChoices;
     }
-    
+
+
+    protected override MultimodalRoute FindMultimodalRoute()
+    {
+        try
+        {
+            return MultimodalLayer.Search(this, StartPosition, GoalPosition, ModalChoices());
+        }
+        catch (Exception ex) {
+            if (ex.Message.Contains("no reachable train station found", System.StringComparison.CurrentCultureIgnoreCase) || ex.Message.Contains("no train route available", System.StringComparison.CurrentCultureIgnoreCase)) {
+                return MultimodalLayer.Search(this, StartPosition, GoalPosition, [ModalChoice.Walking]);
+            }
+            else throw;
+        }
+    }
+
     public ModalChoice Evaluate(Visitor attributes, BigEventLayer layer)
     {
         // Default to Walking if the visitor does not live nearby
