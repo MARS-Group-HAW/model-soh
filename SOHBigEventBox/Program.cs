@@ -12,6 +12,10 @@ using Mars.Interfaces.Model;
 using SOHModel.Domain.Graph;
 using SOHModel.Multimodal.Model;
 using SOHModel.BigEvent;
+using SOHModel.Bus.Model;
+using SOHModel.Bus.Route;
+using SOHModel.Bus.Station;
+
 
 namespace SOHBigEventBox;
 
@@ -28,40 +32,43 @@ internal static class Program
 {
     public static void Main(string[] args)
     {
-        Thread.CurrentThread.CurrentCulture = new CultureInfo("EN-US");
-        LoggerFactory.SetLogLevel(LogLevel.Info);
+         LoggerFactory.SetLogLevel(LogLevel.Info);
 
-        var description = new ModelDescription();
-        description.AddLayer<SpatialGraphMediatorLayer>([typeof(ISpatialGraphLayer)]);
-        
-        description.AddLayer<HumanTravelerLayer>();
-        description.AddLayer<AgentSchedulerLayer<Visitor, BigEventLayer>>(
-            "HumanTravelerSchedulerLayer");
+                var description = new ModelDescription();
+                description.AddLayer<SpatialGraphMediatorLayer>();
+                description.AddLayer<BusLayer>();
+                description.AddLayer<BusSchedulerLayer>();
+                description.AddLayer<BusStationLayer>();
+                //description.AddLayer<BusRouteLayer>(new[] { typeof(IBusRouteLayer) });
+                description.AddLayer<BusGtfsRouteLayer>(new[] {typeof(IBusRouteLayer)});
 
-        description.AddAgent<Visitor, HumanTravelerLayer>();
+                description.AddLayer<PassengerTravelerLayer>();
+                description.AddLayer<AgentSchedulerLayer<PassengerTraveler, PassengerTravelerLayer>>(
+                    "PassengerTravelerSchedulerLayer");
 
-        ISimulationContainer application;
-        if (args != null && args.Length != 0)
-        {
-            var container = CommandParser.ParseAndEvaluateArguments(description, args);
-            var config = container.SimulationConfig;
-            application = SimulationStarter.BuildApplication(description, config);
-        }
-        else
-        {
-            var file = File.ReadAllText("config.json");
-            var simConfig = SimulationConfig.Deserialize(file);
-            application = SimulationStarter.BuildApplication(description, simConfig);
-        }
+                description.AddAgent<BusDriver, BusLayer>();
+                description.AddAgent<PassengerTraveler, PassengerTravelerLayer>();
 
-        var simulation = application.Resolve<ISimulation>();
-        
-        var watch = Stopwatch.StartNew();
-        var state = simulation.StartSimulation();
+                description.AddEntity<Bus>();
 
-        watch.Stop();
+                ISimulationContainer application;
+                if (args != null && args.Length != 0)
+                {
+                    application = SimulationStarter.BuildApplication(description, args);
+                }
+                else
+                {
+                    var file = File.ReadAllText("config.json");
+                    var simConfig = SimulationConfig.Deserialize(file);
+                    application = SimulationStarter.BuildApplication(description, simConfig);
+                }
 
-        Console.WriteLine($"Executed iterations {state.Iterations} lasted {watch.Elapsed}");
-        application.Dispose();
-    }
+                var simulation = application.Resolve<ISimulation>();
+
+                var watch = Stopwatch.StartNew();
+                var state = simulation.StartSimulation();
+                watch.Stop();
+
+                Console.WriteLine($"Executed iterations {state.Iterations} lasted {watch.Elapsed}");
+            }
 }

@@ -1,4 +1,4 @@
-"service_id","monday","tuesday","wednesday","thursday","friday","saturday","sunday","start_date","end_date"
+service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date
 1,0,0,0,0,0,0,0,20240610,20241214
 2,0,0,0,0,0,0,0,20240610,20241214
 3,0,0,0,0,0,0,0,20240610,20241214

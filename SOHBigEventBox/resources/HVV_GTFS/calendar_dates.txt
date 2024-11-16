@@ -1,4 +1,4 @@
-"service_id","date","exception_type"
+service_id,date,exception_type
 1,20240619,1
 1,20240622,1
 1,20240616,1
