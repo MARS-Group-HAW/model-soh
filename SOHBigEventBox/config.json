@@ -70,9 +70,10 @@
         {
           "file": "resources/streets.geojson",
           "inputConfiguration": {
-            "modalities": ["BusDriving"],
-            "isBidirectedGraph": true,
-            "noHelperNodes": true
+            "modalities": [
+              "Walking",
+              "CarDriving"
+            ]
           }
         }
       ]

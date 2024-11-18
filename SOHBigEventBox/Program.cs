@@ -47,12 +47,15 @@ internal static class Program
         description.AddLayer<TrainSchedulerLayer>();
         description.AddLayer<TrainStationLayer>();
         description.AddLayer<TrainRouteLayer>([typeof(ITrainRouteLayer)]);
-        
+        description.AddLayer<BusLayer>();
+        description.AddLayer<BusGtfsRouteLayer>(new[] {typeof(IBusRouteLayer)});
 
         description.AddAgent<Visitor, BaseWalkingLayer>();
         description.AddAgent<TrainDriver, TrainLayer>();
+        description.AddAgent<BusDriver, BusLayer>();
 
         description.AddEntity<Train>();
+        description.AddEntity<Bus>();
 
         ISimulationContainer application;
         if (args != null && args.Length != 0)
