@@ -17,7 +17,7 @@
     {
       "name": "CarDriver",
       "output": "csv",
-      "count": 7,
+      "count": 429,
       "file": "resources/car_driver.csv"
     }
   ],
@@ -29,8 +29,8 @@
       "file": "resources/c_its_teststrecke_street_graph.geojson"
     },
     {
-      "name": "CarDriverSchedulerLayer",
-      "file": "resources/car_traveler.csv"
+      "name": "CarDriverSchedulerLayer"
+      //"file": "resources/car_traveler.csv"
     },
     {
       "name": "TrafficSignalLayer", 

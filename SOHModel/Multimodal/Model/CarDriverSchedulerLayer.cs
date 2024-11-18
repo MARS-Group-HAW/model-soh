@@ -4,6 +4,7 @@ using Mars.Components.Layers;
 using Mars.Interfaces.Agents;
 using Mars.Interfaces.Annotations;
 using Mars.Interfaces.Layers;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 using SOHModel.Car.Model;
 
 namespace SOHModel.Multimodal.Model;
@@ -29,13 +30,13 @@ public class CarDriverSchedulerLayer : SchedulerLayer
 
    protected override void Schedule(SchedulerEntry dataRow)
    {
+      
       var start = dataRow.SourceGeometry.RandomPositionFromGeometry();
       var goal = dataRow.TargetGeometry.RandomPositionFromGeometry();
       //var drivemode = dataRow.Data.TryGetValue("driveMode", out var driveMode) ? driveMode.Value<int>() : 0;
-      
+
       var cardriver = new CarDriver
-       (
-       
+      (
          _carLayer,
          Register,
          Unregister,
@@ -45,11 +46,12 @@ public class CarDriverSchedulerLayer : SchedulerLayer
          goal.Latitude,
          goal.Longitude
       );
-      
+
       //carDriver.Init(_carLayer);
 
       _carLayer.Driver.Add(cardriver.ID, cardriver);
       RegisterAgent(_carLayer, cardriver);
       //UnregisterAgent(_carLayer, carDriver);
+      
    }
 }
