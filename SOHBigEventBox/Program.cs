@@ -38,7 +38,7 @@ internal static class Program
          LoggerFactory.SetLogLevel(LogLevel.Info);
 
                 var description = new ModelDescription();
-                description.AddLayer<SpatialGraphMediatorLayer>();
+                description.AddLayer<SpatialGraphMediatorLayer>([typeof(ISpatialGraphLayer)]);
                 description.AddLayer<BusLayer>();
                 description.AddLayer<BusSchedulerLayer>();
                 description.AddLayer<BusStationLayer>();
@@ -48,9 +48,9 @@ internal static class Program
                 description.AddLayer<PassengerTravelerLayer>();
                 description.AddLayer<AgentSchedulerLayer<PassengerTraveler, PassengerTravelerLayer>>(
                     "PassengerTravelerSchedulerLayer");
-        var description = new ModelDescription();
+        //var description = new ModelDescription();
 
-        description.AddLayer<SpatialGraphMediatorLayer>([typeof(ISpatialGraphLayer)]);
+        //description.AddLayer<SpatialGraphMediatorLayer>([typeof(ISpatialGraphLayer)]);
         description.AddLayer<HumanTravelerLayer>();
         description.AddLayer<AgentSchedulerLayer<Visitor, HumanTravelerLayer>>("HumanTravelerSchedulerLayer");
         description.AddLayer<TrainLayer>();

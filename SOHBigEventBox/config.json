@@ -14,9 +14,7 @@
         {
           "kind": "trips",
           "outputConfiguration": {
-            "tripsFields": [
-              "LoadPercentage"
-            ]
+            "tripsFields": ["LoadPercentage"]
           }
         }
       ]
@@ -27,9 +25,7 @@
         {
           "kind": "trips",
           "outputConfiguration": {
-            "tripsFields": [
-              "StableId"
-            ]
+            "tripsFields": ["StableId"]
           }
         }
       ],
@@ -46,9 +42,7 @@
         {
           "kind": "trips",
           "outputConfiguration": {
-            "tripsFields": [
-              "LoadPercentage"
-            ]
+            "tripsFields": ["LoadPercentage"]
           }
         }
       ]
@@ -61,19 +55,22 @@
         {
           "file": "resources/walk_graph_barclays.geojson",
           "inputConfiguration": {
-            "modalities": [
-              "Walking",
-              "TrainDriving"
-            ],
+            "modalities": ["Walking"],
             "isBidirectedGraph": true
           }
         },
         {
           "file": "resources/public_transport/commuter_train/commuter_train_graph.geojson",
           "inputConfiguration": {
-            "modalities": [
-              "TrainDriving"
-            ],
+            "modalities": ["TrainDriving"],
+            "isBidirectedGraph": true,
+            "noHelperNodes": true
+          }
+        },
+        {
+          "file": "resources/streets.geojson",
+          "inputConfiguration": {
+            "modalities": ["BusDriving"],
             "isBidirectedGraph": true,
             "noHelperNodes": true
           }
@@ -90,15 +87,14 @@
     },
     {
       "name": "BusLayer",
-      "file": "resources/walk_graph_barclays.geojson"
+      "file": "resources/streets.geojson"
     }
-
   ],
   "entities": [
     {
       "name": "Bus",
       "file": "resources/bus.csv"
-    }
+    },
     {
       "name": "Train",
       "file": "resources/public_transport/commuter_train/commuter_train.csv"
