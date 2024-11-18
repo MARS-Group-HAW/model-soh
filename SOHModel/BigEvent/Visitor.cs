@@ -8,11 +8,11 @@ namespace SOHModel.BigEvent;
 /// <summary>
 ///     This <see cref="Traveler{BigEventLayer}" /> entity uses a variety of modalities to reach its goal.
 /// </summary>
-public class Visitor : Traveler<BigEventLayer>
+public class Visitor : Traveler<BaseWalkingLayer>
 {
     private ISet<ModalChoice> _choices;
 
-    public override void Init(BigEventLayer layer)
+    public override void Init(BaseWalkingLayer layer)
     {
         base.Init(layer);
         OvertakingActivated = true;

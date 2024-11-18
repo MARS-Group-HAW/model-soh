@@ -67,7 +67,7 @@
       ]
     },
     {
-      "name": "BigEventSchedulerLayer",
+      "name": "BaseWalkingSchedulerLayer",
       "file": "resources/visitor_spawning.csv"
     },
     {

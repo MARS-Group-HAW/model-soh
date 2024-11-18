@@ -37,15 +37,15 @@ internal static class Program
         var description = new ModelDescription();
 
         description.AddLayer<SpatialGraphMediatorLayer>([typeof(ISpatialGraphLayer)]);
-        description.AddLayer<BigEventLayer>();
-        description.AddLayer<AgentSchedulerLayer<Visitor, BigEventLayer>>("BigEventSchedulerLayer");
+        description.AddLayer<BaseWalkingLayer>();
+        description.AddLayer<AgentSchedulerLayer<Visitor, BaseWalkingLayer>>("BaseWalkingSchedulerLayer");
         description.AddLayer<TrainLayer>();
         description.AddLayer<TrainSchedulerLayer>();
         description.AddLayer<TrainStationLayer>();
         description.AddLayer<TrainRouteLayer>([typeof(ITrainRouteLayer)]);
         
 
-        description.AddAgent<Visitor, BigEventLayer>();
+        description.AddAgent<Visitor, BaseWalkingLayer>();
         description.AddAgent<TrainDriver, TrainLayer>();
 
         description.AddEntity<Train>();
