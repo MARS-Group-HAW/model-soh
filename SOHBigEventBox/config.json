@@ -93,6 +93,22 @@
     {
       "name": "BusLayer",
       "file": "resources/streets.geojson"
+    },
+    {
+      "name": "TrainStationLayer",
+      "file": "resources/public_transport/commuter_train/commuter_train_stations.geojson"
+    },
+    {
+      "name": "TrainRouteLayer",
+      "file": "resources/public_transport/commuter_train/commuter_train_plan.csv"
+    },
+    {
+      "name": "TrainLayer",
+      "file": "resources/public_transport/commuter_train/commuter_train_graph.geojson"
+    },
+    {
+      "name": "TrainSchedulerLayer",
+      "file": "resources/public_transport/commuter_train/commuter_train_driver_schedule.csv"
     }
   ],
   "entities": [
