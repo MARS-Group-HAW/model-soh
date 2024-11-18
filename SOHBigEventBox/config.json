@@ -87,6 +87,10 @@
       "file": "resources/HVV_GTFS"
     },
     {
+      "name": "BusStationLayer",
+      "file": "resources/bus_stops.geojson"
+    },
+    {
       "name": "BusLayer",
       "file": "resources/streets.geojson"
     }
