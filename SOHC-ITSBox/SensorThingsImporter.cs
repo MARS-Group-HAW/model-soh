@@ -27,12 +27,13 @@ namespace SOHC_ITSBox
 
             Console.WriteLine("Retrieving initial data from sensor-network for initial phase ...");
 
-            var c_itsArea = new Envelope(9.9, 10.4, 53.4, 53.8); // Covers all of Hamburg
+            var c_itsArea = new Envelope(9.96865453546937, 9.995549770589417, 53.541856109114335, 53.56802054142237);
 
-            var geoHashes = GetGeoHashBboxes(c_itsArea, 8);  // Level 8 für größere Auflösung
+            // Using very high precision (15) for maximum detail
+            var geoHashes = GetGeoHashBboxes(c_itsArea, 15);  // Very fine-grained precision
 
-            var from = fromInput ?? new DateTime(2024, 11, 11, 11, 00, 0);
-            var to = toInput ?? new DateTime(2024, 11, 11, 11, 15, 0);
+            var from = fromInput ?? new DateTime(2024, 11, 18, 12, 29, 0);
+            var to = toInput ?? new DateTime(2024, 11, 18, 12, 44, 0);
 
             Console.WriteLine($"Retrieving initial data from sensor-network for time range [{from.ToUniversalTime()}...{to.ToUniversalTime()} ...");
             Console.WriteLine($"for the area [{c_itsArea}]");
