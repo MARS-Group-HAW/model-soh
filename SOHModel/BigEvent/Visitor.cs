@@ -1,10 +1,6 @@
 using Mars.Common.Core.Random;
-using System.Collections.Generic;
-using Mars.Common;
 using Mars.Interfaces.Annotations;
 using Mars.Interfaces.Environments;
-using SOHModel.Bicycle.Parking;
-using SOHModel.Car.Parking;
 using SOHModel.Multimodal.Model;
 
 namespace SOHModel.BigEvent;
@@ -12,31 +8,54 @@ namespace SOHModel.BigEvent;
 /// <summary>
 ///     This <see cref="Traveler{BigEventLayer}" /> entity uses a variety of modalities to reach its goal.
 /// </summary>
-public class Visitor : Traveler<BigEventLayer>
+public class Visitor : Traveler<BaseWalkingLayer>
 {
-    [PropertyDescription] public bool LivesNearby { get; set; } // Indicates if the visitor lives nearby
+    private ISet<ModalChoice> _choices;
 
-    [PropertyDescription] public double UsesPublicTransport { get; set; } // Probability of using public transport
-    private readonly ISet<ModalChoice> _modalChoices = new HashSet<ModalChoice> { ModalChoice.Walking, ModalChoice.Train };
-
-    public ModalChoice ChosenMode { get; private set; } // Store the chosen mode of transport
-
-    public override void Init(BigEventLayer layer)
+    public override void Init(BaseWalkingLayer layer)
     {
-        if (SourceGeometry != null) StartPosition = layer.GetExitPosition(); // Choose random exit position from the arena
-        if (TargetGeometry != null) GoalPosition = TargetGeometry.RandomPositionFromGeometry(); // Choose random goal position
-
         base.Init(layer);
+        OvertakingActivated = true;
 
-        // Choose a single modality
-        ChosenMode = Evaluate(this, layer);
+        _choices = new ModalityChooser().Evaluate(this);
+        _choices.Add(ModalChoice.Walking);
+
+        handleLogic();
+        
+    const int radiusInM = 100;
+        // if (_choices.Contains(ModalChoice.CyclingOwnBike) && BicycleParkingLayer != null)
+        //     Bicycle = BicycleParkingLayer.CreateOwnBicycleNear(StartPosition, radiusInM, UsesBikeAndRide);
+        //
+        // if (_choices.Contains(ModalChoice.CarDriving) && CarParkingLayer != null)
+        //     Car = CarParkingLayer.CreateOwnCarNear(StartPosition, radiusInM);
+    }
+
+    /**
+     * This method handles the logic of the modal choices.
+     * It removes the modal choices that are not compatible with the selected modal choice.
+     * For example, if the visitor chooses to drive a car, they won't be able to choose to take the bus or train or co-drive the car.
+     */
+    private void handleLogic()
+    {
+        if (_choices.Contains(ModalChoice.CarDriving))
+        {
+            _choices.Remove(ModalChoice.Bus);
+            _choices.Remove(ModalChoice.Train);
+            _choices.Remove(ModalChoice.CyclingOwnBike);
+            _choices.Remove(ModalChoice.CoDriving);
+        }
+        if (_choices.Contains(ModalChoice.CoDriving))
+        {
+            _choices.Remove(ModalChoice.Bus);
+            _choices.Remove(ModalChoice.Train);
+            _choices.Remove(ModalChoice.CyclingOwnBike);
+            _choices.Remove(ModalChoice.CarDriving);
+        }
     }
 
     protected override IEnumerable<ModalChoice> ModalChoices()
     {
-        // This method is no longer needed, as the choice is now stored in ChosenMode
-        return new List<ModalChoice> { ChosenMode };
-        return _modalChoices;
+        return _choices;
     }
 
 
@@ -53,25 +72,46 @@ public class Visitor : Traveler<BigEventLayer>
             else throw;
         }
     }
+    
+    #region input
 
-    public ModalChoice Evaluate(Visitor attributes, BigEventLayer layer)
-    {
-        // Default to Walking if the visitor does not live nearby
-        ModalChoice chosenMode = ModalChoice.Walking;
+    [PropertyDescription(Name = "usesBike")]
+    public double UsesBike { get; set; }
 
-        // If the visitor lives nearby, they will walk
-        if (!attributes.LivesNearby)
-        {
-            // Choose public transport based on probability
-            if (RandomHelper.Random.NextDouble() < attributes.UsesPublicTransport)
-            {
-                chosenMode = ModalChoice.Bus; // Choose bus
-                GoalPosition = layer.GetBusStopPosition(); // Get a random bus stop as the goal position
-            }
-        }
+    [PropertyDescription(Name = "usesCar")] 
+    public double UsesCar { get; set; }
+    
+    [PropertyDescription(Name = "usesCoDriving")]
+    public double UsesCoDriving { get; set; }
+    
+    [PropertyDescription(Name = "usesTrain")]
+    public double UsesTrain { get; set; }
+    
+    [PropertyDescription(Name = "usesBus")]
+    public double UsesBus { get; set; }
 
-        return chosenMode; // Return the single chosen mode of transport
-    }
+    #endregion
 }
 
+public class ModalityChooser
+{
+    public ISet<ModalChoice> Evaluate(Visitor attributes)
+    {
+        if (RandomHelper.Random.NextDouble() < attributes.UsesCar)
+            return new HashSet<ModalChoice> { ModalChoice.CarDriving };
+        
+        if (RandomHelper.Random.NextDouble() < attributes.UsesCoDriving)
+            return new HashSet<ModalChoice> { ModalChoice.CoDriving };
 
+        if (RandomHelper.Random.NextDouble() < attributes.UsesBike)
+            return new HashSet<ModalChoice> { ModalChoice.CyclingOwnBike };
+
+        if (RandomHelper.Random.NextDouble() < attributes.UsesTrain)
+            return new HashSet<ModalChoice> { ModalChoice.Train };
+        
+        if (RandomHelper.Random.NextDouble() < attributes.UsesBus)
+            return new HashSet<ModalChoice> { ModalChoice.Bus };
+        
+        return new HashSet<ModalChoice> { ModalChoice.Walking };
+    }
+}

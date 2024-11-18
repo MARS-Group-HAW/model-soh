@@ -78,7 +78,7 @@
       ]
     },
     {
-      "name": "HumanTravelerSchedulerLayer",
+      "name": "BaseWalkingSchedulerLayer",
       "file": "resources/visitor_spawning.csv"
     },
     {
