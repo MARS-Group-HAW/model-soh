@@ -49,6 +49,7 @@ internal static class Program
         description.AddLayer<TrainRouteLayer>([typeof(ITrainRouteLayer)]);
         description.AddLayer<BusLayer>();
         description.AddLayer<BusGtfsRouteLayer>(new[] {typeof(IBusRouteLayer)});
+        description.AddLayer<BusStationLayer>();
 
         description.AddAgent<Visitor, BaseWalkingLayer>();
         description.AddAgent<TrainDriver, TrainLayer>();
