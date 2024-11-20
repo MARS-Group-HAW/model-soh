@@ -1,9 +1,9 @@
 {
-  "id": "kellinghusen_show_case_landuse_2021",
+  "id": "germany_autobahn_truck_simulation",
   "globals": {
     "deltaT": 1,
-    "startPoint": "2019-10-11T16:00:00",
-    "endPoint": "2019-10-11T17:00:00",
+    "startPoint": "2024-11-11T17:00:00",
+    "endPoint": "2024-11-11T17:15:00",
     "deltaTUnit": "seconds",
     "console": true,
     "npgSqlOptions": {
@@ -15,8 +15,13 @@
   },
   "agents": [
     {
-      "name": "HumanTraveler",
-      "output": "postgres",
+      "name": "SemiTruckDriver",
+      "outputs": [
+        {
+          "type": "geojson",
+          "kind": "trips"
+        }
+      ],
       "individual": [
         {
           "value": true,
@@ -24,69 +29,36 @@
         }
       ],
       "outputFilter": [
-        {
-          "parameter": "StoreTickResult",
-          "operator": "in",
-          "values": [
-            true
-          ]
-        }
+        
       ]
     }
   ],
   "layers": [
     {
-      "name": "SidewalkLayer",
-      "file": "resources/kellinghusenstrasse_medium_walk_graph.geojson"
-    },
-    {
-      "name": "CyclePathLayer",
-      "file": "resources/kellinghusenstrasse_small_walk_graph.geojson"
-    },
-    {
-      "name": "StreetLayer",
-      "file": "resources/kellinghusenstrasse_small_walk_graph.geojson"
-    },
-    {
-      "name": "BicycleParkingLayer",
-      "file": "resources/kellinghusenstrasse_bike_and_ride.geojson"
-    },
-    {
-      "name": "BicycleRentalLayer",
-      "file": "resources/kellinghusenstrasse_bicycle_rental_stations.geojson",
+      "name": "SemiTruckLayer",
+      "inputs": [
+        {
+          "file": "resources/autobahn_and_bundesstreet.geojson",
+          "inputConfiguration": {
+            "modalities": [
+              "CarDriving"
+            ],
+            "isBidirectedGraph": true
+          }
+        }
+      ],
       "outputFrequency": 60,
       "output": "geojson"
     },
     {
-      "name": "CarRentalLayer",
-      "file": "resources/kellinghusenstrasse_car_rental.geojson",
-      "output": "geojson"
-    },
-    {
-      "name": "CarParkingLayer",
-      "file": "resources/kellinghusenstrasse_car_parking.geojson"
-    },
-    {
-      "name": "HumanTravelerSchedulerLayer",
-      "file": "resources/human_traveler.csv"
+      "name": "SemiTruckSchedulerLayer",
+      "file": "resources/semi_truck_scheduler.csv"
     }
   ],
   "entities": [
     {
-      "name": "RentalBicycle",
-      "file": "resources/bicycle.csv"
-    },
-    {
-      "name": "Bicycle",
-      "file": "resources/bicycle.csv"
-    },
-    {
-      "name": "Car",
-      "file": "resources/car.csv"
-    },
-    {
-      "name": "RentalCar",
-      "file": "resources/car.csv"
+      "name": "SemiTruck",
+      "file": "resources/semi_truck.csv"
     }
   ]
 }

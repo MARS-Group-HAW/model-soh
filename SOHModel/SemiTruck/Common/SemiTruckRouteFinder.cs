@@ -18,7 +18,7 @@ namespace SOHModel.SemiTruck.Common
         public static Route Find(
             ISpatialGraphEnvironment environment,
             double startLat, double startLon, double destLat, double destLon,
-            ISpatialEdge startingEdge = null, int driveMode = 3, string osmRoute = "")
+            ISpatialEdge startingEdge, int driveMode = 3, string osmRoute = "")
         {
             Route route = null;
             ISpatialNode currentNode;
