@@ -2,8 +2,8 @@
   "id": "C-ITS_2024",
   "globals": {
     "deltaT": 1,
-    "startPoint": "2024-11-11T11:00:00",
-    "endPoint": "2024-11-11T11:15:00",
+    "startPoint": "2024-11-21T11:00:00",
+    "endPoint": "2024-11-21T11:15:00",
     "deltaTUnit": "seconds",
     "console": true,
     "npgSqlOptions": {
@@ -34,7 +34,7 @@
     },
     {
       "name": "TrafficSignalLayer", 
-      "file": "resources/traffic_signals_citsarea_november_ 11_2024.geojson"
+      "file": "resources/traffic_signals_citsarea_november_21_2024.geojson"
     }
   ],
   "entities": [

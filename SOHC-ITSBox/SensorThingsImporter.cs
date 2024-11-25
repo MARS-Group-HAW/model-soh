@@ -27,13 +27,13 @@ namespace SOHC_ITSBox
 
             Console.WriteLine("Retrieving initial data from sensor-network for initial phase ...");
 
-            var c_itsArea = new Envelope(9.96865453546937, 9.995549770589417, 53.541856109114335, 53.56802054142237);
+            var c_itsArea = new Envelope(9.96865453546937, 9.97134403, 53.541856109114335, 53.56802054142237);
 
             // Using very high precision (15) for maximum detail
-            var geoHashes = GetGeoHashBboxes(c_itsArea, 15);  // Very fine-grained precision
+            var geoHashes = GetGeoHashBboxes(c_itsArea, 5);  //  fine-grained precision
 
-            var from = fromInput ?? new DateTime(2024, 11, 18, 12, 29, 0);
-            var to = toInput ?? new DateTime(2024, 11, 18, 12, 44, 0);
+            var from = fromInput ?? new DateTime(2024, 11, 18, 11, 0, 0);
+            var to = toInput ?? new DateTime(2024, 11, 18, 11, 15, 0);
 
             Console.WriteLine($"Retrieving initial data from sensor-network for time range [{from.ToUniversalTime()}...{to.ToUniversalTime()} ...");
             Console.WriteLine($"for the area [{c_itsArea}]");
@@ -51,12 +51,12 @@ namespace SOHC_ITSBox
                 var maxLat = geoCoordinate.MaxY;
 
                 var geoEnvelope = new Envelope(minLon, maxLon, minLat, maxLat);
-                var featureCollection = GetObservations(geoEnvelope, from, to, "HH_STA_traffic_lights", out _);
+                var featureCollection = GetObservations(geoEnvelope, from, to, "HH_STA_traffic_lights", out var observations);
                 features.AddRange(featureCollection);
             }
 
-            Console.WriteLine($"Number of features: {features.Count}");
-            if (features.Count > 0)
+            //Console.WriteLine($"Number of features: {features.Count}");
+            if (true ) //features.Count > 0)
             {
                 var geojson = new GeoJsonWriter().Write(features);
                 File.WriteAllText("traffic_signals.geojson", geojson);
