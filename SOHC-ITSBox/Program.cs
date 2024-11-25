@@ -37,6 +37,7 @@ internal static class Program
 
         description.AddLayer<CarLayer>();
         description.AddAgent<CarDriver, CarLayer>();
+        description.AddAgent<EmergencyCarDriver, CarLayer>();
         //description.AddLayer<CarDriverSchedulerLayer>();
         description.AddEntity<Car>(); 
         description.AddLayer<TrafficSignalLayer>();
