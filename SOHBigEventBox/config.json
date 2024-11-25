@@ -71,7 +71,6 @@
           "file": "resources/streets.geojson",
           "inputConfiguration": {
             "modalities": [
-              "Walking",
               "CarDriving"
             ]
           }
