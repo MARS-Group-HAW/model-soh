@@ -82,6 +82,10 @@
       "file": "resources/visitor_spawning.csv"
     },
     {
+      "name": "BusSchedulerLayer",
+      "file": "resources/bus_driver_schedule.csv"
+    },
+    {
       "name": "BusGtfsRouteLayer",
       "file": "resources/HVV_GTFS"
     },
