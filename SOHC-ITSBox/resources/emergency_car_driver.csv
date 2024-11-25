@@ -1,0 +1,6 @@
+startTime,endTime,spawningIntervalInMinutes,spawningAmount,carType,maxSpeed,averageSpeed,trafficCode,startLat,startLon,destLat,destLon,osmRoute,nextTrafficLightPhase,driveMode,SirenActive
+11:00,16:30,1,20,Ambulance,150,90,"priority",53.551065,9.969558,53.5483657,9.9803357,"LINESTRING(9.969558  53.551065 ,9.9803357  53.5483657)","Green",3,true
+11:00,16:30,1,20,Ambulance,150,90,"priority",53.551065,9.969558,53.5593951,9.9718299,"LINESTRING(9.969558  53.551065 ,9.9718299  53.5593951)","Green",3,true
+11:00,16:30,1,20,Ambulance,150,90,"priority",53.551065,9.969558,53.5458987,9.9921944,"LINESTRING(9.969558  53.551065 ,9.9921944  53.5458987)","Green",3,true
+11:00,16:30,1,20,Ambulance,150,90,"priority",53.551065,9.969558,53.5471204,9.9795049,"LINESTRING(9.969558  53.551065 ,9.9795049  53.5471204)","Green",3,true
+11:00,16:30,1,20,Ambulance,150,90,"priority",53.551065,9.969558,53.5470335,9.9752829,"LINESTRING(9.969558  53.551065 ,9.9752829  53.5470335)","Green",3,true
