@@ -27,71 +27,80 @@ namespace SOHC_ITSBox
 
             Console.WriteLine("Retrieving initial data from sensor-network for initial phase ...");
 
-            var c_itsArea = new Envelope(9.96865453546937, 9.97134403, 53.541856109114335, 53.56802054142237);
-
-            // Using very high precision (15) for maximum detail
-            var geoHashes = GetGeoHashBboxes(c_itsArea, 5);  //  fine-grained precision
-
-            var from = fromInput ?? new DateTime(2024, 11, 18, 11, 0, 0);
-            var to = toInput ?? new DateTime(2024, 11, 18, 11, 15, 0);
-
-            Console.WriteLine($"Retrieving initial data from sensor-network for time range [{from.ToUniversalTime()}...{to.ToUniversalTime()} ...");
-            Console.WriteLine($"for the area [{c_itsArea}]");
-
-            var features = new FeatureCollection();
-
-            foreach (var geoHash in geoHashes)
+            var xCoords = new List<double>
             {
-                Console.WriteLine($"Processing GeoHash: {geoHash}");
-                var geoCoordinate = GeoHash.DecodeBbox(geoHash);
-                
-                var minLon = geoCoordinate.MinX;
-                var maxLon = geoCoordinate.MaxX;
-                var minLat = geoCoordinate.MinY;
-                var maxLat = geoCoordinate.MaxY;
+                9.9686545, 9.97134403, 9.97403356, 9.97672309, 9.97941262, 9.98210215, 9.98479168, 9.98748121,
+                9.99017074, 9.99286027, 9.9955498
+            };
 
-                var geoEnvelope = new Envelope(minLon, maxLon, minLat, maxLat);
-                var featureCollection = GetObservations(geoEnvelope, from, to, "HH_STA_traffic_lights", out var observations);
-                features.AddRange(featureCollection);
+            var yCoords = new List<double>
+            {
+                53.5418561, 53.5483972, 53.5549383, 53.5614794, 53.5680205
+            };
+
+            var envelopes = SplitEnvelope(xCoords, yCoords);
+
+            var from = fromInput ?? new DateTime(2024, 11, 21, 11, 00, 0);
+            var to = toInput ?? new DateTime(2024, 11, 21, 11, 15, 0);
+
+            var combinedFeatures = new FeatureCollection();
+            var allObservations = new List<Datastream>();
+
+            foreach (var envelope in envelopes)
+            {
+                var features = GetObservations(envelope, from, to, "HH_STA_traffic_lights", out var observations);
+                combinedFeatures.AddRange(features);
+                allObservations.AddRange(observations);
             }
 
-            //Console.WriteLine($"Number of features: {features.Count}");
-            if (true ) //features.Count > 0)
-            {
-                var geojson = new GeoJsonWriter().Write(features);
-                File.WriteAllText("traffic_signals.geojson", geojson);
-                Console.WriteLine("GeoJSON file has been written.");
-            }
-            else
-            {
-                Console.WriteLine("No features to write to the file.");
-            }
+            var geojson = new GeoJsonWriter().Write(combinedFeatures);
+            File.WriteAllText("traffic_signals_all_april_2024.geojson", geojson);
+            Console.WriteLine($"Observation count: {allObservations.Count}");
 
+            Console.WriteLine("... done");
 
-            return features;
+            return combinedFeatures;
         }
-        private static List<string> GetGeoHashBboxes(Envelope envelope, int precision)
+
+        private static List<Envelope> SplitEnvelope(List<double> xCoords, List<double> yCoords)
         {
-            var geoHashes = new List<string>();
-            var minLat = envelope.MinY;
-            var maxLat = envelope.MaxY;
-            var minLon = envelope.MinX;
-            var maxLon = envelope.MaxX;
+            var envelopes = new List<Envelope>();
 
-            var latStep = (maxLat - minLat) / 10;
-            var lonStep = (maxLon - minLon) / 10;
-
-            for (var lat = minLat; lat < maxLat; lat += latStep)
+            for (int i = 0; i < xCoords.Count - 1; i++)
             {
-                for (var lon = minLon; lon < maxLon; lon += lonStep)
+                for (int j = 0; j < yCoords.Count - 1; j++)
                 {
-                    var geoHash = GeoHash.Encode(lat, lon, precision);
-                    geoHashes.Add(geoHash);
+                    var minX = xCoords[i];
+                    var maxX = xCoords[i + 1];
+                    var minY = yCoords[j];
+                    var maxY = yCoords[j + 1];
+
+                    var envelope = new Envelope(minX, maxX, minY, maxY);
+                    envelopes.Add(envelope);
                 }
             }
 
-            return geoHashes;
+            return envelopes;
         }
+        // private static void ClientMqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e)
+        // {
+        //     var str = Encoding.Default.GetString(e.Message);
+        //     // var observation = JsonConvert.DeserializeObject<Observation>(str);
+        //     // var stream = observation.GetDatastream(Client).Result.Result;
+        //
+        //
+        //     Console.WriteLine(str);
+        //     Console.WriteLine();
+        //     // Console.WriteLine(stream.Description);
+        //     // Console.WriteLine(
+        //     //     $"{stream.GetObservedProperty(Client).Result.Result.Name} -> {observation.Id} published at {observation.PhenomenonTime.Start}: {observation.Result}");
+        //     // Console.WriteLine();
+        //
+        //
+        //     // Add Catalog Append (Message.PhenomeononTime, Message)
+        //     // 
+        //     // Remove Catalog Append (Catalog.LastAddTemporalRef, Message)
+        // }
 
         private static FeatureCollection GetObservations(Envelope window, DateTime from, DateTime to,
             string dataStreamTopic, out List<Datastream> observations)
@@ -103,6 +112,7 @@ namespace SOHC_ITSBox
             }
 
             var geometryWkt = new WKTWriter().Write(ToGeometry(window));
+
 
             var temporalQuery =
                 $"phenomenonTime gt {from:yyyy-MM-ddTHH:mm:ssZ} and phenomenonTime le {to:yyyy-MM-ddTHH:mm:ssZ}";
@@ -133,7 +143,8 @@ namespace SOHC_ITSBox
                 GetObservationsFeatureCollection(dataStreamTopic, out observations, geometryWkt, interestQuery);
 
             var collection = GroupByFirst(result, GetObservationsFeatureCollection(dataStreamTopic, out observations,
-                geometryWkt, allElementsOfThePast));
+                geometryWkt,
+                allElementsOfThePast));
 
             return collection;
         }
@@ -165,6 +176,8 @@ namespace SOHC_ITSBox
             };
             var dataStreamQuery = new OdataQuery
             {
+
+                // QueryFilter = new QueryFilter($"substringof(trim('{dataStreamTopic}'), serviceName)"),
                 QueryExpand = new QueryExpand(new[]
                 {
                     new Expand(new[] { "Datastreams" }, propertyQuery)
@@ -182,7 +195,6 @@ namespace SOHC_ITSBox
             };
 
             var locationResponse = _client.GetLocationCollection(filterQuery).Result;
-            
             var collection = new FeatureCollection();
             if (!locationResponse.Success)
             {
@@ -190,7 +202,7 @@ namespace SOHC_ITSBox
                 observationTopics = new List<Datastream>();
                 return collection;
             }
-            
+
             observationTopics = new List<Datastream>();
 
             foreach (var location in locationResponse.Result.Items)
@@ -205,6 +217,17 @@ namespace SOHC_ITSBox
                         var feature = CreateFeature(location, resultItem, thing, observation);
                         collection.Add(feature);
                     }
+
+                    // var interest = observation.FeatureOfInterest;
+                    // var interestFeature = Reader.Read<Feature>(interest.Feature.ToString());
+                    // interestFeature.Data = new AttributesTable
+                    // {
+                    //     {"type", "featureOfInterest"},
+                    //     {"name", interest.Name}, 
+                    //     {"interestDescription", interest.Description},
+                    //     {"interestId", interest.Id}
+                    // };
+                    // collection.Add(interestFeature);
                 }
 
                 Console.WriteLine(location.Name);
