@@ -35,11 +35,11 @@ internal static class Program
         
         var description = new ModelDescription();
 
+        description.AddLayer<TrafficLightLayer>();
         description.AddLayer<CarLayer>();
         description.AddAgent<CarDriver, CarLayer>();
         //description.AddLayer<CarDriverSchedulerLayer>();
         description.AddEntity<Car>(); 
-        description.AddLayer<TrafficSignalLayer>();
 
         
         ISimulationContainer application;

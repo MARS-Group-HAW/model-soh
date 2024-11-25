@@ -6,12 +6,7 @@
     "endPoint": "2024-11-21T11:15:00",
     "deltaTUnit": "seconds",
     "console": true,
-    "npgSqlOptions": {
-      "host": "localhost",
-      "user": "mars",
-      "password": "sram2020",
-      "overrideByConflict": true
-    }
+    "output": "csv"
   },
   "agents": [
     {
@@ -30,11 +25,10 @@
     },
     {
       "name": "CarDriverSchedulerLayer"
-      //"file": "resources/car_traveler.csv"
     },
     {
-      "name": "TrafficSignalLayer", 
-      "file": "resources/traffic_signals_citsarea_november_21_2024.geojson"
+      "name": "TrafficLightLayer", 
+      "file": "resources/ampel-coordinaten_prototyp.zip"
     }
   ],
   "entities": [
