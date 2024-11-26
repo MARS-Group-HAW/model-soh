@@ -68,7 +68,7 @@
           }
         },
         {
-          "file": "resources/shuttle_route.geojson",
+          "file": "resources/public_transport/bus/bus_graph.geojson",
           "inputConfiguration": {
             "modalities": [
               "CarDriving"
@@ -83,19 +83,19 @@
     },
     {
       "name": "BusSchedulerLayer",
-      "file": "resources/bus_driver_schedule.csv"
+      "file": "resources/public_transport/bus/bus_driver_schedule.csv"
     },
     {
       "name": "BusGtfsRouteLayer",
-      "file": "resources/HVV_GTFS"
+      "file": "resources/public_transport/HVV_GTFS"
     },
     {
       "name": "BusStationLayer",
-      "file": "resources/bus_stops.geojson"
+      "file": "resources/public_transport/bus/bus_graph.geojson"
     },
     {
       "name": "BusLayer",
-      "file": "resources/shuttle_route.geojson"
+      "file": "resources/public_transport/bus/bus_graph.geojson"
     },
     {
       "name": "TrainStationLayer",
@@ -117,7 +117,7 @@
   "entities": [
     {
       "name": "Bus",
-      "file": "resources/bus.csv"
+      "file": "resources/public_transport/bus/bus.csv"
     },
     {
       "name": "Train",
