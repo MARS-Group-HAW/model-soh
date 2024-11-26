@@ -68,7 +68,7 @@
           }
         },
         {
-          "file": "resources/streets.geojson",
+          "file": "resources/shuttle_route.geojson",
           "inputConfiguration": {
             "modalities": [
               "CarDriving"
@@ -95,7 +95,7 @@
     },
     {
       "name": "BusLayer",
-      "file": "resources/streets.geojson"
+      "file": "resources/shuttle_route.geojson"
     },
     {
       "name": "TrainStationLayer",
