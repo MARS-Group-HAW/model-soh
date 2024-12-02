@@ -9,9 +9,13 @@ using Mars.Components.Starter;
 using Mars.Core.Simulation;
 using Mars.Interfaces;
 using Mars.Interfaces.Model;
+using SOHModel.Bicycle.Model;
+using SOHModel.Bicycle.Parking;
 using SOHModel.Domain.Graph;
 using SOHModel.Multimodal.Model;
 using SOHModel.BigEvent;
+using SOHModel.Car.Model;
+using SOHModel.Car.Parking;
 using SOHModel.Train.Model;
 using SOHModel.Train.Station;
 using SOHModel.Train.Route;
@@ -43,12 +47,15 @@ internal static class Program
         description.AddLayer<TrainSchedulerLayer>();
         description.AddLayer<TrainStationLayer>();
         description.AddLayer<TrainRouteLayer>([typeof(ITrainRouteLayer)]);
-        
+        description.AddLayer<BicycleParkingLayer>();
+        description.AddLayer<CarParkingLayer>();
 
         description.AddAgent<Visitor, BaseWalkingLayer>();
         description.AddAgent<TrainDriver, TrainLayer>();
 
         description.AddEntity<Train>();
+        description.AddEntity<Bicycle>();
+        description.AddEntity<Car>();
 
         ISimulationContainer application;
         if (args != null && args.Length != 0)

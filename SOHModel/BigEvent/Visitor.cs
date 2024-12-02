@@ -1,6 +1,8 @@
 using Mars.Common.Core.Random;
 using Mars.Interfaces.Annotations;
 using Mars.Interfaces.Environments;
+using Microsoft.AspNetCore.Components.Sections;
+using SOHModel.Bicycle.Parking;
 using SOHModel.Multimodal.Model;
 
 namespace SOHModel.BigEvent;
@@ -11,23 +13,33 @@ namespace SOHModel.BigEvent;
 public class Visitor : Traveler<BaseWalkingLayer>
 {
     private ISet<ModalChoice> _choices;
+    private ModalChoice _preferred;
+    [PropertyDescription] public IBicycleParkingLayer BicycleParkingLayer { get; set; }
 
     public override void Init(BaseWalkingLayer layer)
     {
         base.Init(layer);
         OvertakingActivated = true;
-
         _choices = new ModalityChooser().Evaluate(this);
         _choices.Add(ModalChoice.Walking);
-
-        handleLogic();
         
-    const int radiusInM = 100;
-        // if (_choices.Contains(ModalChoice.CyclingOwnBike) && BicycleParkingLayer != null)
-        //     Bicycle = BicycleParkingLayer.CreateOwnBicycleNear(StartPosition, radiusInM, UsesBikeAndRide);
-        //
-        // if (_choices.Contains(ModalChoice.CarDriving) && CarParkingLayer != null)
-        //     Car = CarParkingLayer.CreateOwnCarNear(StartPosition, radiusInM);
+        handleLogic();
+        const int radiusInM = 1000;
+        
+        if (_choices.Contains(ModalChoice.CyclingOwnBike) && BicycleParkingLayer != null)
+        {
+            Bicycle = BicycleParkingLayer.CreateOwnBicycleNear(StartPosition, radiusInM, 1.0);
+            Console.WriteLine("Bike created");
+            Console.WriteLine("Bicycle spawned at " + Bicycle.Position);
+        }
+
+        if (_choices.Contains(ModalChoice.CarDriving) && CarParkingLayer != null)
+        {
+            Car = CarParkingLayer.CreateOwnCarNear(StartPosition, radiusInM);
+            Console.WriteLine("Car created");
+            Console.WriteLine("Car spawned at " + Car.Position);
+            Console.WriteLine("Car Parking Lot Capacity: " + Car.CarParkingSpace.HasCapacity + " " + Car.CarParkingSpace.Capacity);
+        }
     }
 
     /**
@@ -37,19 +49,26 @@ public class Visitor : Traveler<BaseWalkingLayer>
      */
     private void handleLogic()
     {
-        if (_choices.Contains(ModalChoice.CarDriving))
+        var modalProbabilities = new Dictionary<ModalChoice, double>
         {
-            _choices.Remove(ModalChoice.Bus);
-            _choices.Remove(ModalChoice.Train);
-            _choices.Remove(ModalChoice.CyclingOwnBike);
-            _choices.Remove(ModalChoice.CoDriving);
-        }
-        if (_choices.Contains(ModalChoice.CoDriving))
+            { ModalChoice.CarDriving, UsesCar },
+            { ModalChoice.CoDriving, UsesCoDriving },
+            { ModalChoice.Bus, UsesBus },
+            { ModalChoice.Train, UsesTrain },
+            { ModalChoice.CyclingOwnBike, UsesBike }
+        };
+        
+        var filteredChoices = _choices
+            .Where(choice => modalProbabilities.ContainsKey(choice))
+            .ToDictionary(choice => choice, choice => modalProbabilities[choice]);
+        
+        if (filteredChoices.Any())
         {
-            _choices.Remove(ModalChoice.Bus);
-            _choices.Remove(ModalChoice.Train);
-            _choices.Remove(ModalChoice.CyclingOwnBike);
-            _choices.Remove(ModalChoice.CarDriving);
+            _preferred = filteredChoices
+                .OrderByDescending(kvp => kvp.Value) 
+                .First().Key; 
+        } else {
+            _preferred = ModalChoice.Walking;
         }
     }
 
@@ -63,7 +82,8 @@ public class Visitor : Traveler<BaseWalkingLayer>
     {
         try
         {
-            return MultimodalLayer.Search(this, StartPosition, GoalPosition, ModalChoices());
+            Console.WriteLine("Preferred: " + _preferred);
+            return MultimodalLayer.Search(this, StartPosition, GoalPosition, _preferred);
         }
         catch (Exception ex) {
             if (ex.Message.Contains("no reachable train station found", System.StringComparison.CurrentCultureIgnoreCase) || ex.Message.Contains("no train route available", System.StringComparison.CurrentCultureIgnoreCase)) {
@@ -97,21 +117,22 @@ public class ModalityChooser
 {
     public ISet<ModalChoice> Evaluate(Visitor attributes)
     {
+        HashSet<ModalChoice> choices = new();
         if (RandomHelper.Random.NextDouble() < attributes.UsesCar)
-            return new HashSet<ModalChoice> { ModalChoice.CarDriving };
+            choices.Add(ModalChoice.CarDriving);
         
         if (RandomHelper.Random.NextDouble() < attributes.UsesCoDriving)
-            return new HashSet<ModalChoice> { ModalChoice.CoDriving };
+            choices.Add(ModalChoice.CoDriving);
 
         if (RandomHelper.Random.NextDouble() < attributes.UsesBike)
-            return new HashSet<ModalChoice> { ModalChoice.CyclingOwnBike };
+            choices.Add(ModalChoice.CyclingOwnBike);
 
         if (RandomHelper.Random.NextDouble() < attributes.UsesTrain)
-            return new HashSet<ModalChoice> { ModalChoice.Train };
+            choices.Add(ModalChoice.Train);
         
         if (RandomHelper.Random.NextDouble() < attributes.UsesBus)
-            return new HashSet<ModalChoice> { ModalChoice.Bus };
+            choices.Add(ModalChoice.Bus);
         
-        return new HashSet<ModalChoice> { ModalChoice.Walking };
+        return choices;
     }
 }

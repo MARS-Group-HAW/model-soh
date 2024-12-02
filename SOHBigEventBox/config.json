@@ -2,8 +2,8 @@
   "id": "BigEventBox",
   "globals": {
     "deltaT": 1,
-    "startPoint": "2024-01-01T08:00:00",
-    "endPoint": "2024-01-01T12:30:00",
+    "startPoint": "2024-07-16T22:30:00",
+    "endPoint": "2024-07-17T02:30:00",
     "deltaTUnit": "seconds",
     "console": true
   },
@@ -63,6 +63,24 @@
             "isBidirectedGraph": true,
             "noHelperNodes": true
           }
+        },
+        {
+          "file": "resources/barclays_car_streets.geojson",
+          "inputConfiguration": {
+            "modalities": [
+              "CarDriving"
+            ],
+            "isBidirectedGraph": true
+          }
+        },
+        {
+          "file": "resources/walk_graph_barclays.geojson",
+          "inputConfiguration": {
+            "modalities": [
+              "Cycling"
+            ],
+            "isBidirectedGraph": true
+          }
         }
       ]
     },
@@ -85,12 +103,28 @@
     {
       "name": "TrainSchedulerLayer",
       "file": "resources/public_transport/commuter_train/commuter_train_driver_schedule.csv"
+    },
+    {
+      "name": "BicycleParkingLayer",
+      "file": "resources/barclays_bike_parking.geojson"
+    },
+    {
+      "name": "CarParkingLayer",
+      "file": "resources/barclays_car_parking.geojson"
     }
   ],
   "entities": [
     {
       "name": "Train",
       "file": "resources/public_transport/commuter_train/commuter_train.csv"
+    },
+    {
+      "name": "Bicycle",
+      "file": "resources/bicycle.csv"
+    },
+    {
+      "name": "Car",
+      "file": "resources/car.csv"
     }
   ]
 }
