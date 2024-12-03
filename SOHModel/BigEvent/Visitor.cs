@@ -29,18 +29,16 @@ public class Visitor : Traveler<BaseWalkingLayer>
         if (_choices.Contains(ModalChoice.CyclingOwnBike) && BicycleParkingLayer != null)
         {
             Bicycle = BicycleParkingLayer.CreateOwnBicycleNear(StartPosition, radiusInM, 1.0);
-            Console.WriteLine("Bike created");
-            Console.WriteLine("Bicycle spawned at " + Bicycle.Position);
+            Console.WriteLine("Bike created at " + Bicycle.Position);
         }
 
         if (_choices.Contains(ModalChoice.CarDriving) && CarParkingLayer != null)
         {
             Car = CarParkingLayer.CreateOwnCarNear(StartPosition, radiusInM);
-            Console.WriteLine("Car created");
-            Console.WriteLine("Car spawned at " + Car.Position);
-            Console.WriteLine("Car Parking Lot Capacity: " + Car.CarParkingSpace.HasCapacity + " " + Car.CarParkingSpace.Capacity);
+            Console.WriteLine("Car created at " + Car.Position);
         }
     }
+    
 
     /**
      * This method handles the logic of the modal choices.
@@ -82,7 +80,7 @@ public class Visitor : Traveler<BaseWalkingLayer>
     {
         try
         {
-            Console.WriteLine("Preferred: " + _preferred);
+            Console.WriteLine("Preffered modal choice: " + _preferred);
             return MultimodalLayer.Search(this, StartPosition, GoalPosition, _preferred);
         }
         catch (Exception ex) {

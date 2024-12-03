@@ -25,7 +25,7 @@
         {
           "kind": "trips",
           "outputConfiguration": {
-            "tripsFields": ["StableId"]
+            "tripsFields": ["ModalType"]
           }
         }
       ],
@@ -68,7 +68,7 @@
           }
         },
         {
-          "file": "resources/barclays_car_streets.geojson",
+          "file": "resources/streets.geojson",
           "inputConfiguration": {
             "modalities": [
               "CarDriving"
@@ -82,7 +82,7 @@
             "modalities": [
               "Cycling"
             ],
-            "isBidirectedGraph": true,
+            "isBidirectedGraph": true
           }
         },
         {
