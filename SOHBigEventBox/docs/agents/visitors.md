@@ -31,8 +31,8 @@
     - Line 180 (S-Holstenstr. - S-Stellingen - Arenen), Stop: Am Volkspark
 - **Car**:
     - Parking Lot GREY: 350 cars
-    - Parking Lot BLUE: 275 cars
-    - Parking Lot RED: 1.400 cars
+    - Parking Lot BLUE: 200 cars
+    - Parking Lot RED: 1.900 cars
     - Parking Lot YELLOW: 350 cars
     - Parking Lot WHITE: 860 cars
 - **Bicycle**:

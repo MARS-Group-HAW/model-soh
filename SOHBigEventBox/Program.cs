@@ -16,6 +16,10 @@ using SOHModel.Multimodal.Model;
 using SOHModel.BigEvent;
 using SOHModel.Car.Model;
 using SOHModel.Car.Parking;
+using SOHModel.Bus.Model;
+using SOHModel.Bus.Route;
+using SOHModel.Bus.Station;
+
 using SOHModel.Train.Model;
 using SOHModel.Train.Station;
 using SOHModel.Train.Route;
@@ -49,13 +53,19 @@ internal static class Program
         description.AddLayer<TrainRouteLayer>([typeof(ITrainRouteLayer)]);
         description.AddLayer<BicycleParkingLayer>();
         description.AddLayer<CarParkingLayer>();
+        description.AddLayer<BusLayer>();
+        description.AddLayer<BusGtfsRouteLayer>([typeof(IBusRouteLayer)]);
+        description.AddLayer<BusSchedulerLayer>();
+        description.AddLayer<BusStationLayer>();
 
         description.AddAgent<Visitor, BaseWalkingLayer>();
         description.AddAgent<TrainDriver, TrainLayer>();
+        description.AddAgent<BusDriver, BusLayer>();
 
         description.AddEntity<Train>();
         description.AddEntity<Bicycle>();
         description.AddEntity<Car>();
+        description.AddEntity<Bus>();
 
         ISimulationContainer application;
         if (args != null && args.Length != 0)

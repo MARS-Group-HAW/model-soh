@@ -9,14 +9,23 @@
   },
   "agents": [
     {
+      "name": "BusDriver",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": ["LoadPercentage"]
+          }
+        }
+      ]
+    },
+    {
       "name": "Visitor",
       "outputs": [
         {
           "kind": "trips",
           "outputConfiguration": {
-            "tripsFields": [
-              "StableId"
-            ]
+            "tripsFields": ["StableId"]
           }
         }
       ],
@@ -33,9 +42,7 @@
         {
           "kind": "trips",
           "outputConfiguration": {
-            "tripsFields": [
-              "LoadPercentage"
-            ]
+            "tripsFields": ["LoadPercentage"]
           }
         }
       ]
@@ -48,18 +55,14 @@
         {
           "file": "resources/walk_graph_barclays.geojson",
           "inputConfiguration": {
-            "modalities": [
-              "Walking"
-            ],
+            "modalities": ["Walking"],
             "isBidirectedGraph": true
           }
         },
         {
           "file": "resources/public_transport/commuter_train/commuter_train_graph.geojson",
           "inputConfiguration": {
-            "modalities": [
-              "TrainDriving"
-            ],
+            "modalities": ["TrainDriving"],
             "isBidirectedGraph": true,
             "noHelperNodes": true
           }
@@ -79,7 +82,15 @@
             "modalities": [
               "Cycling"
             ],
-            "isBidirectedGraph": true
+            "isBidirectedGraph": true,
+          }
+        },
+        {
+          "file": "resources/public_transport/bus/bus_graph.geojson",
+          "inputConfiguration": {
+            "modalities": [
+              "CarDriving"
+            ]
           }
         }
       ]
@@ -87,6 +98,22 @@
     {
       "name": "BaseWalkingSchedulerLayer",
       "file": "resources/visitor_spawning.csv"
+    },
+    {
+      "name": "BusSchedulerLayer",
+      "file": "resources/public_transport/bus/bus_driver_schedule.csv"
+    },
+    {
+      "name": "BusGtfsRouteLayer",
+      "file": "resources/public_transport/HVV_GTFS"
+    },
+    {
+      "name": "BusStationLayer",
+      "file": "resources/public_transport/bus/bus_graph.geojson"
+    },
+    {
+      "name": "BusLayer",
+      "file": "resources/public_transport/bus/bus_graph.geojson"
     },
     {
       "name": "TrainStationLayer",
@@ -115,6 +142,10 @@
   ],
   "entities": [
     {
+      "name": "Bus",
+      "file": "resources/public_transport/bus/bus.csv"
+    },
+    {
       "name": "Train",
       "file": "resources/public_transport/commuter_train/commuter_train.csv"
     },
@@ -128,3 +159,4 @@
     }
   ]
 }
+    
