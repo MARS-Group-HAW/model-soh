@@ -53,7 +53,7 @@
       "name": "SpatialGraphMediatorLayer",
       "inputs": [
         {
-          "file": "resources/walk_graph_barclays.geojson",
+          "file": "resources/walk_graph_barclay_fix.geojson",
           "inputConfiguration": {
             "modalities": ["Walking"],
             "isBidirectedGraph": true

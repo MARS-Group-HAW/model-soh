@@ -139,7 +139,7 @@ public class BusDriver : AbstractAgent, IBusSteeringCapable
         else
             throw new ArgumentException($"No bus route provided by {nameof(BusRouteLayer)}");
 
-        if (BusRoute.Count() < 2)
+        if (BusRoute.Count() < 1)
             throw new ArgumentException("Bus route requires at least two stops");
 
         if (ReversedRoute)
