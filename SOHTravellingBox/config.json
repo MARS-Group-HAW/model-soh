@@ -1,35 +1,58 @@
 {
-  "id": "germany_autobahn_truck_simulation",
+  "id": "autobahn_simulation",
   "globals": {
     "deltaT": 1,
-    "startPoint": "2024-11-11T17:00:00",
-    "endPoint": "2024-11-11T17:15:00",
+    "startPoint": "2021-10-11T06:00:00",
+    "endPoint": "2021-10-11T18:00:00",
     "deltaTUnit": "seconds",
-    "console": true,
-    "npgSqlOptions": {
-      "host": "localhost",
-      "user": "mars",
-      "password": "sram2020",
-      "overrideByConflict": true
-    }
+    "console": true
   },
   "agents": [
     {
       "name": "SemiTruckDriver",
+      "count": 10,
+      "mapping": [
+        
+      ],
       "outputs": [
         {
-          "type": "geojson",
-          "kind": "trips"
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": [
+              "StableId",
+              "StartPosition",
+              "EndPosition",
+              "DistanceTraveled",
+              "Duration"
+            ]
+          }
         }
       ],
       "individual": [
+         {
+         "parameter": "startLat",
+         "value": 48.23607
+         },
+         {
+             "parameter": "startLon",
+             "value": 11.59965
+         },
+         {
+             "parameter": "destLat",
+             "value": 52.684
+         },
+         {
+             "parameter": "destLon",
+             "value": 13.2158
+         },
+         {
+             "parameter": "driveMode",
+             "value": 1
+         },
         {
-          "value": true,
-          "parameter": "ResultTrajectoryEnabled"
+          "name": "ResultTrajectoryEnabled",
+          "value": true
         }
-      ],
-      "outputFilter": [
-        
       ]
     }
   ],
@@ -40,19 +63,11 @@
         {
           "file": "resources/autobahn_and_bundesstreet.geojson",
           "inputConfiguration": {
-            "modalities": [
-              "CarDriving"
-            ],
+            "modalities": ["CarDriving"],
             "isBidirectedGraph": true
           }
         }
-      ],
-      "outputFrequency": 60,
-      "output": "geojson"
-    },
-    {
-      "name": "SemiTruckSchedulerLayer",
-      "file": "resources/semi_truck_scheduler.csv"
+      ]
     }
   ],
   "entities": [

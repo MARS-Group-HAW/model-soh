@@ -1,140 +1,129 @@
+namespace SOHModel.SemiTruck.Common;
+
 using Mars.Interfaces.Environments;
-using System;
-using System.Linq;
 
-namespace SOHModel.SemiTruck.Common
+/// <summary>
+///     Provides route-finding functionality for SemiTruck drivers.
+/// </summary>
+public static class SemiTruckRouteFinder
 {
+    private static readonly Random Random = new();
+
     /// <summary>
-    ///     Encapsulates the route-finding logic for a semi-truck.
+    ///     Finds a route based on the specified driveMode and parameters.
     /// </summary>
-    public static class SemiTruckRouteFinder
+    public static Route Find(ISpatialGraphEnvironment environment, int driveMode,
+        double startLat, double startLon, double destLat, double destLon,
+        ISpatialEdge startingEdge, string osmRoute)
     {
-        private static readonly Random Random = new();
+        Route route = null;
+        ISpatialNode currentNode;
 
-        /// <summary>
-        ///     Finds a route for the truck based on the specified drive mode and additional parameters.
-        ///     If driveMode is not provided, it defaults to finding the shortest route.
-        /// </summary>
-        public static Route Find(
-            ISpatialGraphEnvironment environment,
-            double startLat, double startLon, double destLat, double destLon,
-            ISpatialEdge startingEdge, int driveMode = 3, string osmRoute = "")
+        switch (driveMode)
         {
-            Route route = null;
-            ISpatialNode currentNode;
-
-            switch (driveMode)
+            case 1:
             {
-                case 1: // Random short route for testing or urban driving
+                // Random node traversal for up to 5 edges
+                while (route == null)
                 {
-                    while (route == null)
+                    currentNode = environment.GetRandomNode();
+                    var firstEdge = currentNode.OutgoingEdges.Values.FirstOrDefault();
+                    if (firstEdge == null) continue;
+
+                    route = new Route { firstEdge };
+
+                    // Add up to 5 edges to the route
+                    for (var i = 0; i < 5; i++)
                     {
-                        currentNode = environment.GetRandomNode();
-                        var firstEdge = currentNode.OutgoingEdges.Values.FirstOrDefault();
-                        if (firstEdge == null) continue;
+                        var last = route.Last();
+                        var outgoingEdges = last.Edge.To.OutgoingEdges;
+                        if (outgoingEdges.Count == 0) break;
 
-                        route = new Route { firstEdge };
-
-                        for (var i = 0; i < 5; i++)
-                        {
-                            var lastEdge = route.Last();
-                            var outgoingEdges = lastEdge.Edge.To.OutgoingEdges;
-                            if (outgoingEdges.Count == 0) break;
-
-                            var randomIndex = Random.Next(0, outgoingEdges.Count);
-                            var nextEdge = outgoingEdges.Values.ElementAt(randomIndex);
-                            route.Add(nextEdge);
-                        }
+                        var nextEdge = outgoingEdges.Values.ElementAt(Random.Next(0, outgoingEdges.Count));
+                        route.Add(nextEdge);
                     }
-
-                    break;
                 }
-                case 2: // Find a route between two random nodes
-                {
-                    while (route == null)
-                    {
-                        currentNode = environment.GetRandomNode();
-                        var goalNode = environment.GetRandomNode();
-                        if (goalNode == null || goalNode.Equals(currentNode)) continue;
 
-                        route = environment.FindRoute(currentNode, goalNode);
-                    }
-
-                    break;
-                }
-                
-                // TODO IMPORTANT: Change SpatialModalityType.CarDriving to TruckDriving if available!
-                
-                case 3: // Find the shortest route from start to destination coordinates (default)
-                {
-                    currentNode = environment.NearestNode(Position.CreateGeoPosition(startLon, startLat));
-                    var goalNode = environment.NearestNode(Position.CreateGeoPosition(destLon, destLat));
-
-                    route = environment.FindShortestRoute(currentNode, goalNode,
-                        edge => edge.Modalities.Contains(SpatialModalityType.CarDriving)) ?? new Route();
-
-                    break;
-                }
-                case 4: // Random route starting from a specific location
-                {
-                    currentNode = environment.NearestNode(Position.CreateGeoPosition(startLon, startLat));
-                    route = new Route();
-
-                    ISpatialNode goalNode = null;
-                    while (route.Count == 0 || goalNode.Equals(currentNode))
-                    {
-                        goalNode = environment.GetRandomNode();
-                        route = environment.FindRoute(currentNode, goalNode);
-                    }
-
-                    break;
-                }
-                case 5: // Continue along a specified starting edge
-                {
-                    currentNode = environment.NearestNode(Position.CreateGeoPosition(startLon, startLat));
-                    route = new Route { startingEdge };
-
-                    while (route.Count == 1)
-                    {
-                        var goalNode = environment.GetRandomNode();
-                        var nextEdges = environment.FindRoute(startingEdge.To, goalNode, (_, edge, _) => edge.Length);
-
-                        if (nextEdges != null && !goalNode.Equals(currentNode))
-                        {
-                            foreach (var edge in nextEdges)
-                                route.Add(edge.Edge);
-                        }
-                    }
-
-                    break;
-                }
-                case 6: // Follow a specific OSM route sequence
-                {
-                    currentNode = environment.NearestNode(Position.CreateGeoPosition(startLon, startLat));
-                    route = new Route();
-
-                    var osmIds = osmRoute.Replace("[", "").Replace("]", "").Split(';');
-                    var nodeToTraverse = currentNode;
-
-                    foreach (var osmId in osmIds)
-                    {
-                        var matchingEdge = nodeToTraverse.OutgoingEdges.Values
-                            .FirstOrDefault(edge => edge.Attributes["osmid"].Equals(osmId));
-
-                        if (matchingEdge != null)
-                        {
-                            route.Add(matchingEdge);
-                            nodeToTraverse = matchingEdge.To;
-                        }
-                    }
-
-                    break;
-                }
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(driveMode), "Invalid drive mode for route finding.");
+                break;
             }
+            case 2:
+            {
+                // Random start and goal nodes, finds a route between them
+                while (route == null)
+                {
+                    currentNode = environment.GetRandomNode();
+                    var goal = environment.GetRandomNode();
+                    if (goal == null || goal.Equals(currentNode)) continue;
 
-            return route ?? new Route();
+                    route = environment.FindRoute(currentNode, goal);
+                }
+
+                break;
+            }
+            case 3:
+            {
+                // Finds the shortest route between start and goal nodes
+                currentNode = environment.NearestNode(Position.CreateGeoPosition(startLon, startLat));
+                var goal = environment.NearestNode(Position.CreateGeoPosition(destLon, destLat));
+
+                route = environment.FindShortestRoute(currentNode, goal,
+                    edge => edge.Modalities.Contains(SpatialModalityType.CarDriving)) ?? new Route();
+
+                break;
+            }
+            case 4:
+            {
+                // Random goal selection from the nearest start node
+                currentNode = environment.NearestNode(Position.CreateGeoPosition(startLon, startLat));
+
+                while (route == null || route.Count == 0)
+                {
+                    var goal = environment.GetRandomNode();
+                    route = environment.FindRoute(currentNode, goal);
+                }
+
+                break;
+            }
+            case 5:
+            {
+                // Route starts at the provided edge and continues to random nodes
+                currentNode = environment.NearestNode(Position.CreateGeoPosition(startLon, startLat));
+                route = new Route { startingEdge };
+
+                while (route.Count == 1)
+                {
+                    var goal = environment.GetRandomNode();
+                    var nextEdges = environment.FindRoute(startingEdge.To, goal, (_, edge, _) => edge.Length);
+
+                    if (nextEdges != null)
+                        foreach (var edge in nextEdges)
+                            route.Add(edge.Edge);
+                }
+
+                break;
+            }
+            case 6:
+            {
+                // Creates a route based on a given OpenStreetMap (OSM) route
+                currentNode = environment.NearestNode(Position.CreateGeoPosition(startLon, startLat));
+                route = new Route();
+
+                var rawRoute = osmRoute.Replace("[", "").Replace("]", "").Split(';');
+                var nodeToScan = currentNode;
+
+                foreach (var osmId in rawRoute)
+                {
+                    var edge = nodeToScan.OutgoingEdges.Values.Single(x => x.Attributes["osmid"].Equals(osmId));
+                    route.Add(edge);
+                    nodeToScan = edge.To;
+                }
+
+                break;
+            }
+            default:
+                throw new ArgumentOutOfRangeException(nameof(driveMode), $"Invalid driveMode: {driveMode}");
         }
+
+        return route;
     }
 }

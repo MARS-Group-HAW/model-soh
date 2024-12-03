@@ -1,67 +1,73 @@
+using Mars.Interfaces.Annotations;
 using Mars.Interfaces.Environments;
-using SOHModel.SemiTruck.Steering;
+using SOHModel.Car.Steering;
+using SOHModel.Domain.Graph;
 using SOHModel.Domain.Model;
 using SOHModel.Domain.Steering.Capables;
+using SOHModel.SemiTruck.Steering;
 
-namespace SOHModel.SemiTruck.Model;
-
-public class SemiTruck : Vehicle<ISemiTruckSteeringCapable, IPassengerCapable, SemiTruckSteeringHandle, SemiTruckPassengerHandle>
+namespace SOHModel.SemiTruck.Model
 {
-    private ISpatialGraphEnvironment _environment;
-
-    public SemiTruck()
+    /// <summary>
+    /// Represents a SemiTruck in the simulation. It extends the generic Vehicle class,
+    /// implementing specific logic for SemiTruck behavior, steering, and passenger handling.
+    /// </summary>
+    public class SemiTruck : Vehicle<ISemiTruckSteeringCapable, IPassengerCapable, SemiTruckSteeringHandle, SemiTruckPassengerHandle>
     {
-        IsCollidingEntity = true;
-        ModalityType = SpatialModalityType.CarDriving; // Similar driving modality as cars
-    }
+        // Backing field for the spatial graph environment
+        private ISpatialGraphEnvironment _environment;
 
-    /// <summary>
-    ///     Reference to the truck layer that manages all truck entities in the simulation.
-    /// </summary>
-    public SemiTruckLayer Layer { get; set; }
+        // Private field to store the steering handle
+        private SemiTruckSteeringHandle _steeringHandle;
 
-    /// <summary>
-    ///     Environment in which the truck operates, typically a road network.
-    /// </summary>
-    public ISpatialGraphEnvironment Environment
-    {
-        get => _environment ?? Layer.GraphEnvironment;
-        set => _environment = value;
-    }
+        /// <summary>
+        /// The current steering handle for the SemiTruck.
+        /// </summary>
+        public SemiTruckSteeringHandle SteeringHandle { get; private set; }
 
-    /// <summary>
-    ///     Defines a maximum distance within which passengers can enter the truck (if relevant).
-    ///     Adjust this value as needed for the truck's characteristics.
-    /// </summary>
-    public double DistanceToEnterTruck { get; } = 150;
+        /// <summary>
+        /// Default constructor initializes the SemiTruck with the CarDriving modality.
+        /// </summary>
+        public SemiTruck()
+        {
+            ModalityType = SpatialModalityType.CarDriving;
+        }
+        
 
-    /// <summary>
-    ///     Creates a handle for managing passenger interactions with the truck.
-    /// </summary>
-    protected override SemiTruckPassengerHandle CreatePassengerHandle()
-    {
-        return new SemiTruckPassengerHandle(this);
-    }
+        /// <summary>
+        /// The street layer associated with the SemiTruck, annotated for property injection.
+        /// </summary>
+        [PropertyDescription]
+        public StreetLayer StreetLayer { get; set; }
 
-    /// <summary>
-    ///     Creates a handle for managing the truck's steering behavior.
-    /// </summary>
-    protected override SemiTruckSteeringHandle CreateSteeringHandle(ISemiTruckSteeringCapable steeringCapable)
-    {
-        return new SemiTruckSteeringHandle(Environment, this);
-    }
+        /// <summary>
+        /// The spatial graph environment in which the SemiTruck operates.
+        /// Defaults to the environment from the StreetLayer if not explicitly set.
+        /// </summary>
+        public ISpatialGraphEnvironment Environment
+        {
+            get => _environment ?? StreetLayer.Environment;
+            set => _environment = value;
+        }
 
-    /// <summary>
-    ///     Checks if a passenger is in range to enter the truck.
-    /// </summary>
-    protected override bool IsInRangeToEnterVehicle(IPassengerCapable passenger)
-    {
-        if (Position == null || passenger.Position == null) return false;
+        /// <summary>
+        /// Creates and returns a passenger handle for the SemiTruck.
+        /// </summary>
+        /// <returns>A new instance of <see cref="SemiTruckPassengerHandle"/>.</returns>
+        protected override SemiTruckPassengerHandle CreatePassengerHandle()
+        {
+            return new SemiTruckPassengerHandle(this);
+        }
 
-        var truckNode = Environment.NearestNode(Position);
-        var passengerNode = Environment.NearestNode(passenger.Position);
-
-        var distanceInMTo = Position.DistanceInMTo(passenger.Position);
-        return truckNode.Equals(passengerNode) || distanceInMTo < DistanceToEnterTruck;
+        /// <summary>
+        /// Creates and returns a steering handle for the SemiTruck, using the associated driver.
+        /// </summary>
+        /// <param name="driver">The driver controlling the SemiTruck.</param>
+        /// <returns>A new instance of <see cref="SemiTruckSteeringHandle"/>.</returns>
+        protected override SemiTruckSteeringHandle CreateSteeringHandle(ISemiTruckSteeringCapable driver)
+        {
+            // Return a new steering handle for the SemiTruck
+            return new SemiTruckSteeringHandle(Environment, this);
+        }
     }
 }

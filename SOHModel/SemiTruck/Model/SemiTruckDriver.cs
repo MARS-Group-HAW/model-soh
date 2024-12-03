@@ -1,154 +1,182 @@
-using Mars.Components.Agents;
+using Mars.Interfaces.Agents;
 using Mars.Interfaces.Annotations;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Layers;
-using SOHModel.SemiTruck.Steering;
 using SOHModel.Domain.Steering.Common;
 using SOHModel.SemiTruck.Common;
+using SOHModel.SemiTruck.Steering;
+using Position = Mars.Interfaces.Environments.Position;
 
-namespace SOHModel.SemiTruck.Model;
-
-/// <summary>
-///     Implementation of a driver agent that is responsible for managing a single SemiTruck and
-///     dynamically directing its movement to a specified destination.
-/// </summary>
-public sealed class SemiTruckDriver : AbstractAgent, ISemiTruckSteeringCapable
+namespace SOHModel.SemiTruck.Model
 {
-    private static int _stableId;
-
-    private SemiTruckSteeringHandle _steeringHandle;
-    private readonly UnregisterAgent _unregister;
-    private readonly ISpatialGraphEnvironment _environment;
-
-    private long _departureTick;
-
-    public SemiTruckDriver(SemiTruckLayer layer, RegisterAgent register, UnregisterAgent unregister, 
-        double startLat, double startLon, 
-        double destLat, double destLon, 
-        string truckType = "StandardTruck", 
-        ISpatialEdge startingEdge = null, string trafficCode = "german")
+    /// <summary>
+    /// Represents a driver for the SemiTruck, responsible for route planning and managing the truck's movement.
+    /// </summary>
+    public class SemiTruckDriver : IAgent<SemiTruckLayer>, ISemiTruckSteeringCapable
     {
-        Layer = layer;
-        _environment = layer.GraphEnvironment;
-        _unregister = unregister;
+        // Private fields for managing the SemiTruck's steering and its environment
+        private SemiTruckSteeringHandle _steeringHandle;
+        private UnregisterAgent _unregister;
+        private ISpatialGraphEnvironment _environment;
+        private SemiTruckLayer Layer;
 
-        // Initialize the truck with the specified type
-        SemiTruck = InitializeTruck(truckType);
-        SemiTruck.Environment = _environment;
-        TrafficCode = trafficCode;
+        // Public property for the associated SemiTruck
+        public SemiTruck SemiTruck { get; set; }
 
-        // Calculate dynamic route based on start and destination coordinates
-        var route = SemiTruckRouteFinder.Find(_environment, startLat, startLon, destLat, destLon, startingEdge);
-        var node = route.First().Edge.From;
-        _environment.Insert(SemiTruck, node);
+        /// <summary>
+        /// Initializes the SemiTruckDriver with the provided layer.
+        /// </summary>
+        /// <param name="layer">The SemiTruckLayer to which the driver belongs.</param>
+        public void Init(SemiTruckLayer layer)
+        {
+            // Set up the environment and layer 
+            Layer = layer;
+            _environment = layer.Environment;
+            _unregister = layer.UnregisterAgent;
+            // Create the SemiTruck and _steeringHandle
+            SemiTruck = CreateSemiTruck();
+            SemiTruck.Environment = _environment;
+            //_steeringHandle = new SemiTruckSteeringHandle(Layer.Environment, SemiTruck);
+            // TODO: Replace hardcoded route parameters with dynamic values
+            var route = SemiTruckRouteFinder.Find(_environment, 1, 48.23607, 11.59965, 52.684, 13.2158, null, "");
+            //var route = SemiTruckRouteFinder.Find(_environment, drivemode, startLat, startLon, destLat, destLon, null, "");
+            // Insert the SemiTruck into the environment at the starting node
+            
+            var node = route.First().Edge.From;
+            _environment.Insert(SemiTruck, node);
+            SemiTruck.TryEnterDriver(this, out _steeringHandle);
+            //TODO Diese Line wirft Exception
+            _steeringHandle.Route = route;
+            
+            // Register the agent
+            layer.RegisterAgent.Invoke(layer, this);
+        }
 
-        SemiTruck.TryEnterDriver(this, out _steeringHandle);
-        _steeringHandle.Route = route;
+        /// <summary>
+        /// Called during each simulation tick to update the SemiTruck's state.
+        /// </summary>
+        public void Tick()
+        {
+            _steeringHandle.Move();
+            if (GoalReached)
+            {
+                _environment.Remove(SemiTruck);
+                _unregister.Invoke(Layer, this);
+            }
+        }
 
-        register.Invoke(layer, this);
-    }
 
-    public void Notify(PassengerMessage passengerMessage)
-    {
-        // Implement your logic here; for now, similar to CarDriver, we can unregister the agent when the goal is reached.
-        if (passengerMessage == PassengerMessage.GoalReached)
-            _unregister.Invoke(Layer, this);
+        /// <summary>
+        /// Creates a new SemiTruck instance and initializes its steering handle.
+        /// </summary>
+        /// <returns>A new SemiTruck instance.</returns>
+        private SemiTruck CreateSemiTruck()
+        {
+            return Layer.EntityManager.Create<SemiTruck>("type", "StandardTruck");
+        }
+
+        // Unique identifier for the SemiTruckDriver
+        public Guid ID { get; set; }
+
+        // Indicates whether the SemiTruck has reached its goal
+        public bool GoalReached => _steeringHandle.GoalReached;
+
+        // Current position of the SemiTruckDriver
+        public Position Position
+        {
+            get => SemiTruck.Position;
+            set => SemiTruck.Position = value;
+        }
+
+        public double startLat { get; set; }
+        public double startLon { get; set; }
+        public double destLat { get; set; }
+        public double destLon { get; set; }
+        public int drivemode { get; set; }
+        
+        public string truckType { get; set; }
+        public double Latitude => Position.Latitude;
+
+        public double Longitude => Position.Longitude;
+        
+        public double PositionOnEdge => SemiTruck.PositionOnCurrentEdge;
+
+        /// <summary>
+        /// Notifies the driver with a message (not implemented yet).
+        /// </summary>
+        /// <param name="passengerMessage">The message to notify the driver with.</param>
+        public void Notify(PassengerMessage passengerMessage)
+        {
+            throw new NotImplementedException();
+        }
+
+        // Indicates whether overtaking is activated (not implemented yet)
+        public bool OvertakingActivated { get; }
+
+        // Indicates whether braking is activated
+        public bool BrakingActivated { get; set; }
+        
+        public Route Route => _steeringHandle.Route;
+        
+        /// <summary>
+        ///     Indicates the current light phase (red,green,yellow) of the next traffic light if available.
+        /// </summary>
+        public string NextTrafficLightPhase => _steeringHandle.NextTrafficLightPhase.ToString();
+        
+        [PropertyDescription(Name = "velocity")]
+        public double Velocity
+        {
+            get => SemiTruck.Velocity;
+            set => SemiTruck.Velocity = value;
+        }
+        
+        public double VelocityInKm => Velocity * 3.6;
+        
+        
+        [PropertyDescription(Name = "maxSpeed")]
+        public double MaxSpeed
+        {
+            get => SemiTruck.MaxSpeed;
+            set => SemiTruck.MaxSpeed = value;
+        }
+
+        [PropertyDescription(Name = "speedLimit")]
+        public double SpeedLimit => _steeringHandle.SpeedLimit;
+
+        public double RemainingDistanceOnEdge => _steeringHandle.RemainingDistanceOnEdge;
+        
+        [PropertyDescription(Name = "stableId")]
+        public string StableId { get; set; }
+        
+        public bool CurrentlyCarDriving => true;
+
+        public double RemainingRouteDistanceToGoal => _steeringHandle.Route.RemainingRouteDistanceToGoal;
+
+        public string CurrentEdgeId
+        {
+            get
+            {
+                if (SemiTruck.CurrentEdge == null || !SemiTruck.CurrentEdge.Attributes.ContainsKey("osmid"))
+                    return "-1";
+                var osmId = SemiTruck.CurrentEdge.Attributes["osmid"].ToString();
+                return osmId[0] == '[' ? "-1" : osmId;
+            }
+        }
+
+        /// <summary>
+        ///     Get or sets the intersection behaviour model identified by code when no traffic signals are available
+        ///     "german" = right before left rule
+        ///     "southAfrica" = first in first out (FIFO) rule
+        /// </summary>
+        [PropertyDescription(Name = "trafficCode", Ignore = true)]
+        public string TrafficCode
+        {
+            get => SemiTruck.TrafficCode;
+            set => SemiTruck.TrafficCode = value;
+        }
+
     }
     
-    /// <summary>
-    ///     Initializes the truck and sets properties specific to SemiTruck.
-    /// </summary>
-    /// <param name="truckType">The type of truck to initialize (e.g., "StandardTruck", "TankerTruck")</param>
-    private SemiTruck InitializeTruck(string truckType)
-    {
-        var truck = Layer.EntityManager.Create<SemiTruck>("type", truckType);
-        truck.Layer = Layer;
-        return truck;
-    }
-
-    public override void Tick()
-    {
-        _steeringHandle.Move();
-
-        if (GoalReached)
-        {
-            _environment.Remove(SemiTruck);
-            _unregister.Invoke(Layer, this);
-        }
-    }
-
-    #region properties
-
-    public Position Position
-    {
-        get => SemiTruck.Position;
-        set => SemiTruck.Position = value;
-    }
-
-    public Route Route => _steeringHandle.Route;
-
-    public double Latitude => Position.Latitude;
-
-    public double Longitude => Position.Longitude;
-
-    [PropertyDescription(Name = "velocity")]
-    public double Velocity
-    {
-        get => SemiTruck.Velocity;
-        set => SemiTruck.Velocity = value;
-    }
-
-    [PropertyDescription(Name = "maxSpeed")]
-    public double MaxSpeed
-    {
-        get => SemiTruck.MaxSpeed;
-        set => SemiTruck.MaxSpeed = value;
-    }
-
-    public double SpeedLimit => _steeringHandle.SpeedLimit;
-
-    public double RemainingDistanceOnEdge => _steeringHandle.RemainingDistanceOnEdge;
-
-    public double PositionOnEdge => SemiTruck.PositionOnCurrentEdge;
-
-    [PropertyDescription(Name = "stableId")]
-    public string StableId { get; set; } = _stableId++.ToString();
-
-    public bool GoalReached => _steeringHandle.GoalReached;
-
-    public SemiTruck SemiTruck { get; set; }
-
-    public bool OvertakingActivated { get; set; }
-    public bool BrakingActivated { get; set; }
-
-    public bool CurrentlyTruckDriving => true;
-
-    public double RemainingRouteDistanceToGoal => _steeringHandle.Route.RemainingRouteDistanceToGoal;
-
-    public string CurrentEdgeId
-    {
-        get
-        {
-            if (SemiTruck.CurrentEdge == null || !SemiTruck.CurrentEdge.Attributes.ContainsKey("osmid"))
-                return "-1";
-            var osmId = SemiTruck.CurrentEdge.Attributes["osmid"].ToString();
-            return osmId[0] == '[' ? "-1" : osmId;
-        }
-    }
-
-    /// <summary>
-    ///     Gets or sets the intersection behaviour model identified by code when no traffic signals are available.
-    ///     "german" = right before left rule
-    ///     "southAfrica" = first in first out (FIFO) rule
-    /// </summary>
-    [PropertyDescription(Name = "trafficCode", Ignore = true)]
-    public string TrafficCode
-    {
-        get => SemiTruck.TrafficCode;
-        set => SemiTruck.TrafficCode = value;
-    }
-
-    private SemiTruckLayer Layer { get; }
-
-    #endregion
+    
+    
 }
