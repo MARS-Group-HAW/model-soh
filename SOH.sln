@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOHDemonstrationBox", "SOHD
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOHVeddelFloodBox", "SOHVeddelFloodBox\SOHVeddelFloodBox.csproj", "{D9C01F0D-BD23-47B6-BF93-109BAFDC44C6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOHChristmasMarketBox", "SOHChristmasMarketBox\SOHChristmasMarketBox.csproj", "{887B5EE6-566B-4843-8AB1-1F3D086F9FA8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -102,6 +104,12 @@ Global
 		{D9C01F0D-BD23-47B6-BF93-109BAFDC44C6}.Full|Any CPU.Build.0 = Debug|Any CPU
 		{D9C01F0D-BD23-47B6-BF93-109BAFDC44C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D9C01F0D-BD23-47B6-BF93-109BAFDC44C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{887B5EE6-566B-4843-8AB1-1F3D086F9FA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{887B5EE6-566B-4843-8AB1-1F3D086F9FA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{887B5EE6-566B-4843-8AB1-1F3D086F9FA8}.Full|Any CPU.ActiveCfg = Debug|Any CPU
+		{887B5EE6-566B-4843-8AB1-1F3D086F9FA8}.Full|Any CPU.Build.0 = Debug|Any CPU
+		{887B5EE6-566B-4843-8AB1-1F3D086F9FA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{887B5EE6-566B-4843-8AB1-1F3D086F9FA8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
