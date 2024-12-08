@@ -11,6 +11,7 @@ using Mars.Interfaces;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Model;
 using SOHModel.SemiTruck.Model;
+using SOHModel.SemiTruck.Scheduling;
 
 namespace SOHTravellingBox;
 
@@ -26,6 +27,7 @@ internal static class Program
         // Add only the necessary layers for car simulation
         // description.AddLayer<SpatialGraphMediatorLayer>(new[] { typeof(ISpatialGraphLayer) });
         description.AddLayer<SemiTruckLayer>();
+        description.AddLayer<SemiTruckSchedulerLayer>();
         description.AddAgent<SemiTruckDriver, SemiTruckLayer>();
         // Add car-related entities
         description.AddEntity<SemiTruck>();

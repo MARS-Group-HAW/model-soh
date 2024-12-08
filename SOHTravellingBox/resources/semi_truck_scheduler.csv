@@ -1,2 +1,6 @@
-startTime,endTime,spawningIntervalInMinutes,spawningAmount,maxPayload,maxSpeed,source,destination,routeType
-6:00,12:00,10,5,30000,90,"POINT(9.980432366937286 53.55780087248252)","POINT(9.98587407115215 53.5608395249729)",3
+startTime,endTime,spawningIntervalInMinutes,spawningAmount,sourceX,sourceY,destinationX,destinationY,TruckType,DriveMode
+7:00,18:00,1800,0,11.59965,48.23607,13.2158,52.684,StandardTruck,2
+5:00,14:00,1800,0,11.98765,48.23607,13.87654,52.684,StandardTruck,2
+9:00,20:00,450,0,11.12345,48.23607,13.45678,52.684,StandardTruck,2
+16:00,23:00,500,0,11.56789,48.23607,13.65432,52.684,StandardTruck,2
+6:00,9:00,1000,0,11.23456,48.23607,13.78901,52.684,StandardTruck,2

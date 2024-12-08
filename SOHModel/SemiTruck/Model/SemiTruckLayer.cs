@@ -55,13 +55,11 @@ namespace SOHModel.SemiTruck.Model
                 // Load the environment from a specified file
                     Environment = new SpatialGraphEnvironment(layerInitData.LayerInitConfig.File);
             }
-            
             // Initialize agents based on configurations provided in LayerInitData
             foreach (var config in layerInitData.AgentInitConfigs)
             {
                     // Spawn agents based on the configuration
                     var spawnedDrivers = AgentManager.SpawnAgents(config, registerAgentHandle, unregisterAgent, [this], [Environment]);
-
                     // Explicitly initialize each SemiTruckDriver instance
                     foreach (var kvp in spawnedDrivers)
                     {
@@ -70,12 +68,17 @@ namespace SOHModel.SemiTruck.Model
                         {
                             driver.Init(this); // Explicitly call the Init method
                         }
+                        
                     }
-
                     // Add the spawned agents to the Driver dictionary
                     Driver.AddRange(spawnedDrivers);
+                    //TODO Why does the code below not call INIT of drivers?
+                    // if (registerAgentHandle != null && unregisterAgent != null && Environment != null)
+                    // {
+                    //     Driver.AddRange(AgentManager.SpawnAgents(config,
+                    //         registerAgentHandle, unregisterAgent, [this], [Environment]));
+                    // }
             }
-
             return true;
         }
     }

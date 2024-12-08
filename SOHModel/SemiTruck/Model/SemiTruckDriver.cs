@@ -18,7 +18,7 @@ namespace SOHModel.SemiTruck.Model
         private SemiTruckSteeringHandle _steeringHandle;
         private UnregisterAgent _unregister;
         private ISpatialGraphEnvironment _environment;
-        private SemiTruckLayer Layer;
+        private SemiTruckLayer _layer;
 
         // Public property for the associated SemiTruck
         public SemiTruck SemiTruck { get; set; }
@@ -30,22 +30,24 @@ namespace SOHModel.SemiTruck.Model
         public void Init(SemiTruckLayer layer)
         {
             // Set up the environment and layer 
-            Layer = layer;
+            _layer = layer;
             _environment = layer.Environment;
             _unregister = layer.UnregisterAgent;
             // Create the SemiTruck and _steeringHandle
             SemiTruck = CreateSemiTruck();
             SemiTruck.Environment = _environment;
-            //_steeringHandle = new SemiTruckSteeringHandle(Layer.Environment, SemiTruck);
-            // TODO: Replace hardcoded route parameters with dynamic values
-            var route = SemiTruckRouteFinder.Find(_environment, 1, 48.23607, 11.59965, 52.684, 13.2158, null, "");
-            //var route = SemiTruckRouteFinder.Find(_environment, drivemode, startLat, startLon, destLat, destLon, null, "");
+            
+            //Define SpatialEdge for driveMode 5 as First Outgoing Edge
+            ISpatialEdge startingEdge = null;
+            // var startNode = _environment.NearestNode(Position.CreateGeoPosition(StartLon, StartLat));
+            // startingEdge = startNode.OutgoingEdges.Values.FirstOrDefault();
+            
+            var route = SemiTruckRouteFinder.Find(_environment, Drivemode, StartLat,StartLon, DestLat, DestLon, startingEdge, "");
             // Insert the SemiTruck into the environment at the starting node
             
             var node = route.First().Edge.From;
             _environment.Insert(SemiTruck, node);
             SemiTruck.TryEnterDriver(this, out _steeringHandle);
-            //TODO Diese Line wirft Exception
             _steeringHandle.Route = route;
             
             // Register the agent
@@ -61,7 +63,7 @@ namespace SOHModel.SemiTruck.Model
             if (GoalReached)
             {
                 _environment.Remove(SemiTruck);
-                _unregister.Invoke(Layer, this);
+                _unregister.Invoke(_layer, this);
             }
         }
 
@@ -72,7 +74,7 @@ namespace SOHModel.SemiTruck.Model
         /// <returns>A new SemiTruck instance.</returns>
         private SemiTruck CreateSemiTruck()
         {
-            return Layer.EntityManager.Create<SemiTruck>("type", "StandardTruck");
+            return _layer.EntityManager.Create<SemiTruck>("type", TruckType);
         }
 
         // Unique identifier for the SemiTruckDriver
@@ -87,14 +89,18 @@ namespace SOHModel.SemiTruck.Model
             get => SemiTruck.Position;
             set => SemiTruck.Position = value;
         }
-
-        public double startLat { get; set; }
-        public double startLon { get; set; }
-        public double destLat { get; set; }
-        public double destLon { get; set; }
-        public int drivemode { get; set; }
-        
-        public string truckType { get; set; }
+        [PropertyDescription]
+        public double StartLat { get; set; }
+        [PropertyDescription]
+        public double StartLon { get; set; }
+        [PropertyDescription]
+        public double DestLat { get; set; }
+        [PropertyDescription]
+        public double DestLon { get; set; }
+        [PropertyDescription]
+        public int Drivemode { get; set; }
+        [PropertyDescription]
+        public string TruckType { get; set; }
         public double Latitude => Position.Latitude;
 
         public double Longitude => Position.Longitude;

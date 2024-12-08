@@ -19,12 +19,7 @@ namespace SOHModel.SemiTruck.Model
 
         // Private field to store the steering handle
         private SemiTruckSteeringHandle _steeringHandle;
-
-        /// <summary>
-        /// The current steering handle for the SemiTruck.
-        /// </summary>
-        public SemiTruckSteeringHandle SteeringHandle { get; private set; }
-
+        
         /// <summary>
         /// Default constructor initializes the SemiTruck with the CarDriving modality.
         /// </summary>

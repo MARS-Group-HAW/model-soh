@@ -10,10 +10,8 @@
   "agents": [
     {
       "name": "SemiTruckDriver",
-      "count": 10,
-      "mapping": [
-        
-      ],
+      "count": 1,
+      "file": "resources/semi_truck_initializer.csv",
       "outputs": [
         {
           "kind": "trips",
@@ -29,26 +27,6 @@
         }
       ],
       "individual": [
-         {
-         "parameter": "startLat",
-         "value": 48.23607
-         },
-         {
-             "parameter": "startLon",
-             "value": 11.59965
-         },
-         {
-             "parameter": "destLat",
-             "value": 52.684
-         },
-         {
-             "parameter": "destLon",
-             "value": 13.2158
-         },
-         {
-             "parameter": "driveMode",
-             "value": 1
-         },
         {
           "name": "ResultTrajectoryEnabled",
           "value": true
@@ -68,6 +46,10 @@
           }
         }
       ]
+    },
+    {
+      "name": "SemiTruckSchedulerLayer",
+      "file": "resources/semi_truck_scheduler.csv"
     }
   ],
   "entities": [
