@@ -10,7 +10,6 @@ using Mars.Core.Simulation;
 using Mars.Interfaces;
 using Mars.Interfaces.Model;
 using SOHModel.Domain.Graph;
-using SOHModel.Multimodal.Model;
 using SOHModel.BigEvent;
 using SOHModel.Bus.Model;
 using SOHModel.Bus.Route;
