@@ -37,6 +37,9 @@
 
     <ItemGroup>
         <None Remove="SimulationTests\BicycleTests\**"/>
+        <None Update="BigEventTests\resources\walk_graph_barclays.geojson">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <ItemGroup>
