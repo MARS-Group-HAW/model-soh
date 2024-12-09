@@ -1,9 +1,14 @@
+using Mars.Common;
 using Mars.Common.Core.Random;
+using Mars.Interfaces.Agents;
 using Mars.Interfaces.Annotations;
 using Mars.Interfaces.Environments;
 using Microsoft.AspNetCore.Components.Sections;
 using SOHModel.Bicycle.Parking;
+using SOHModel.Car.Steering;
 using SOHModel.Multimodal.Model;
+using SOHModel.Multimodal.Multimodal;
+using SOHModel.Multimodal.Routing;
 
 namespace SOHModel.BigEvent;
 
@@ -29,7 +34,7 @@ public class Visitor : Traveler<BaseWalkingLayer>
         if (_choices.Contains(ModalChoice.CyclingOwnBike) && BicycleParkingLayer != null)
         {
             Bicycle = BicycleParkingLayer.CreateOwnBicycleNear(StartPosition, radiusInM, 1.0);
-            Console.WriteLine("Bike created at " + Bicycle.Position);
+            //Console.WriteLine("Bike created at " + Bicycle.Position);
         }
 
         if (_choices.Contains(ModalChoice.CarDriving) && CarParkingLayer != null)
@@ -78,19 +83,14 @@ public class Visitor : Traveler<BaseWalkingLayer>
 
     protected override MultimodalRoute FindMultimodalRoute()
     {
-        try
-        {
-            Console.WriteLine("Preffered modal choice: " + _preferred);
-            return MultimodalLayer.Search(this, StartPosition, GoalPosition, _preferred);
-        }
-        catch (Exception ex) {
-            if (ex.Message.Contains("no reachable train station found", System.StringComparison.CurrentCultureIgnoreCase) || ex.Message.Contains("no train route available", System.StringComparison.CurrentCultureIgnoreCase)) {
-                return MultimodalLayer.Search(this, StartPosition, GoalPosition, [ModalChoice.Walking]);
-            }
-            else throw;
-        }
+        
+        //Console.WriteLine("Preferred modal choice: " + _preferred);
+        //Console.Write("Visitor's start position: " + StartPosition);
+        return MultimodalLayer.Search(this, StartPosition, GoalPosition, _preferred);
+        
     }
     
+
     #region input
 
     [PropertyDescription(Name = "usesBike")]

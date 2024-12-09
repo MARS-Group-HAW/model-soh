@@ -55,7 +55,7 @@
         {
           "file": "resources/walk_graph_barclays.geojson",
           "inputConfiguration": {
-            "modalities": ["Walking"],
+            "modalities": ["Walking", "Cycling"],
             "isBidirectedGraph": true
           }
         },
@@ -68,29 +68,12 @@
           }
         },
         {
-          "file": "resources/streets.geojson",
+          "file": "resources/barclays_car_streets.geojson",
           "inputConfiguration": {
             "modalities": [
               "CarDriving"
             ],
             "isBidirectedGraph": true
-          }
-        },
-        {
-          "file": "resources/walk_graph_barclays.geojson",
-          "inputConfiguration": {
-            "modalities": [
-              "Cycling"
-            ],
-            "isBidirectedGraph": true
-          }
-        },
-        {
-          "file": "resources/public_transport/bus/bus_graph.geojson",
-          "inputConfiguration": {
-            "modalities": [
-              "CarDriving"
-            ]
           }
         }
       ]

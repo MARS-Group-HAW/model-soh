@@ -35,9 +35,6 @@
       <None Update="resources\barclays_car_parking.geojson">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="resources\barclays_car_streets.geojson">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
       <None Update="resources\bicycle.csv">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
@@ -105,6 +102,9 @@
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="resources\streets.geojson">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="resources\barclays_car_streets.geojson">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>

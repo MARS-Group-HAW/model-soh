@@ -66,7 +66,7 @@ internal static class Program
         description.AddEntity<Bicycle>();
         description.AddEntity<Car>();
         description.AddEntity<Bus>();
-
+        
         ISimulationContainer application;
         if (args != null && args.Length != 0)
         {
