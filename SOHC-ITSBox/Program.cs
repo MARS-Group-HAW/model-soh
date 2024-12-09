@@ -19,6 +19,7 @@ using SOHModel.Multimodal.Layers.TrafficLight;
 using SOHModel.Multimodal.Model;
 
 
+
 namespace SOHC_ITSBox;
 
 /// <summary>
@@ -64,6 +65,7 @@ internal static class Program
 
         Console.WriteLine($"Executed iterations {state.Iterations} lasted {watch.Elapsed}");
         application.Dispose();
+        
         
 
         /*
