@@ -1,77 +1,30 @@
 import requests
 import json
-from math import isclose
+from shapely.geometry import Point, Polygon
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from tqdm import tqdm
 
-# API base URL
 base_url = "https://tld.iot.hamburg.de/v1.0/Datastreams"
 
-# Coordinates to search for
-coordinates = [
-    (9.976073965573184, 53.56248769775651),
-    (9.981474191841663, 53.56009009055772),
+polygon_coords = [
+    (9.967878591161167, 53.54190162843912),
+    (9.995227259170974, 53.54190162843912),
+    (9.995227259170974, 53.566197397982364),
+    (9.967878591161167, 53.566197397982364),
+    (9.967878591161167, 53.54190162843912)
 ]
 
-
-# Function to check if two coordinates are close enough (less strict than before)
-def coordinates_match(coord1, coord2, rel_tol=1e-5, abs_tol=1e-5):
-    return isclose(coord1[0], coord2[0], rel_tol=rel_tol, abs_tol=abs_tol) and isclose(coord1[1], coord2[1],
-                                                                                       rel_tol=rel_tol, abs_tol=abs_tol)
+polygon = Polygon(polygon_coords)
 
 
-# Function to check if an element contains the specified coordinates
-def contains_coordinates(element, coordinates_set):
-    coordinates_data = element.get("observedArea", {}).get("coordinates", [])
-    buffer = None  # Temporary storage for a single number
-
-    # Debug: Print out the coordinates in the response
-    print(f"Checking element: {element.get('name')}")
-    print(f"Observed coordinates: {coordinates_data}")
-
-    for coord in coordinates_data:
-        if isinstance(coord, (list, tuple)):
-            # Handle nested list of coordinate pairs
-            if all(isinstance(c, (list, tuple)) and len(c) == 2 for c in coord):
-                print(f"Nested coordinates found: {coord}")
-                for sub_coord in coord:
-                    lon, lat = sub_coord
-                    print(f"Comparing {lon}, {lat} with target coordinates")
-                    if any(coordinates_match((lon, lat), target) for target in coordinates_set):
-                        return True
-            # Handle single coordinate pair
-            elif len(coord) == 2:
-                lon, lat = coord
-                print(f"Comparing {lon}, {lat} with target coordinates")
-                if any(coordinates_match((lon, lat), target) for target in coordinates_set):
-                    return True
-        elif isinstance(coord, (int, float)):
-            # Handle consecutive single numbers
-            if buffer is None:
-                buffer = coord  # Store the first single number
-            else:
-                # Form a tuple with the buffered number
-                lon, lat = buffer, coord
-                buffer = None  # Reset the buffer
-                print(f"Comparing {lon}, {lat} with target coordinates")
-                if any(coordinates_match((lon, lat), target) for target in coordinates_set):
-                    return True
-        else:
-            print(f"Skipping invalid coordinate: {coord}")
-
-    # If buffer still contains a number, it means the last number didn't have a pair
-    if buffer is not None:
-        print(f"Skipping unmatched single number: {buffer}")
-
-    return False
+def is_within_area(lon, lat, polygon):
+    point = Point(lon, lat)
+    return polygon.contains(point)
 
 
-# Function to fetch and process data for a specific range of results
-def fetch_and_process(skip, coordinates_set):
+def fetch_and_process(skip):
     url = f"{base_url}?$filter=properties/serviceName eq 'HH_STA_traffic_lights' and properties/layerName eq 'primary_signal'&$expand=Observations($orderby=phenomenonTime desc;$top=15)&$orderby=id&$top=1000&$skip={skip}"
     response = requests.get(url, headers={"Accept": "application/json"})
-
-    # Debug: Print the status code and raw response for inspection
-    print(f"Response status: {response.status_code}")
 
     if response.status_code != 200:
         print(f"Failed to fetch data: {response.status_code}")
@@ -79,45 +32,41 @@ def fetch_and_process(skip, coordinates_set):
 
     data = response.json()
 
-    # Debug: Print the raw JSON response
-    print("API Response Data:", json.dumps(data, indent=4))
-
     elements = data.get("value", [])
     matched_elements = []
 
-    # Check if any element contains the target coordinates and return matches
     for element in elements:
-        if contains_coordinates(element, coordinates_set):
-            matched_elements.append(element)
+        coordinates_data = element.get("observedArea", {}).get("coordinates", [])
+        for coord in coordinates_data:
+            if isinstance(coord, (list, tuple)) and len(coord) == 2:
+                lon, lat = coord
+                if is_within_area(lon, lat, polygon):
+                    matched_elements.append(element)
+                    break
 
     return matched_elements
 
 
 def main():
-    coordinates_set = set(coordinates)
-    output_file = "filtered_data.json"
+    output_file = "traffic_lights_observations.json"
     matched_elements = []
-    request_count = 0  # Counter for the number of requests made
+    request_count = 0
 
-    # Using ThreadPoolExecutor to fetch data concurrently
     with ThreadPoolExecutor(max_workers=20) as executor:
         futures = []
         skip = 0
-        step = 1000  # Number of items to skip per request
+        step = 1000
 
-        # Launch multiple fetch tasks
-        for i in range(20):  # Start with 5 threads
-            futures.append(executor.submit(fetch_and_process, skip, coordinates_set))
+        for i in range(20):
+            futures.append(executor.submit(fetch_and_process, skip))
             skip += step
 
-        # Wait for threads to complete and collect results
-        for future in as_completed(futures):
+        for future in tqdm(as_completed(futures), total=len(futures), desc="Fetching data"):
             result = future.result()
-            if result:  # If any result is found, store it
+            if result:
                 matched_elements.extend(result)
-            request_count += 1  # Increment the request counter after each request
+            request_count += 1
 
-    # After processing all data, save matched elements and print the count
     if matched_elements:
         with open(output_file, "w") as f:
             json.dump(matched_elements, f, indent=4)
@@ -125,9 +74,6 @@ def main():
         print(f"Data saved to {output_file}")
     else:
         print("No matches found.")
-
-    print(f"Total number of requests made: {request_count}")
-    print(f"Total number of traffic lights processed: {len(matched_elements)}")
 
 
 if __name__ == "__main__":
