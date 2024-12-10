@@ -27,21 +27,31 @@ public static class SemiTruckRouteFinder
                 while (route == null)
                 {
                     currentNode = environment.GetRandomNode();
+
                     var firstEdge = currentNode.OutgoingEdges.Values.FirstOrDefault();
                     if (firstEdge == null) continue;
 
                     route = new Route { firstEdge };
 
-                    // Add up to 5 edges to the route
+                    var routeComplete = true;
                     for (var i = 0; i < 5; i++)
                     {
                         var last = route.Last();
-                        var outgoingEdges = last.Edge.To.OutgoingEdges;
-                        if (outgoingEdges.Count == 0) break;
+                        var edgeCount = last.Edge.To.OutgoingEdges.Count;
+                        if (edgeCount == 0)
+                        {
+                            //_logger.LogWarning("Dead end found");
+                            routeComplete = false;
+                            break;
+                        }
 
-                        var nextEdge = outgoingEdges.Values.ElementAt(Random.Next(0, outgoingEdges.Count));
+                        var randomLane = Random.Next(0, edgeCount);
+                        var nextEdge = last.Edge.To.OutgoingEdges.Values.ElementAt(randomLane);
                         route.Add(nextEdge);
                     }
+
+                    if (routeComplete)
+                        break;
                 }
 
                 break;
@@ -51,7 +61,10 @@ public static class SemiTruckRouteFinder
                 // Random start and goal nodes, finds a route between them
                 while (route == null)
                 {
+                    //TODO Random Node can be out of range
                     currentNode = environment.GetRandomNode();
+                    if (currentNode == null) continue;
+
                     var goal = environment.GetRandomNode();
                     if (goal == null || goal.Equals(currentNode)) continue;
 
@@ -76,9 +89,10 @@ public static class SemiTruckRouteFinder
                 // Random goal selection from the nearest start node
                 currentNode = environment.NearestNode(Position.CreateGeoPosition(startLon, startLat));
 
-                while (route == null || route.Count == 0)
+                ISpatialNode goal = null;
+                while (route == null || goal.Equals(currentNode) || route.Count == 0)
                 {
-                    var goal = environment.GetRandomNode();
+                    goal = environment.GetRandomNode();
                     route = environment.FindRoute(currentNode, goal);
                 }
 
@@ -95,7 +109,7 @@ public static class SemiTruckRouteFinder
                     var goal = environment.GetRandomNode();
                     var nextEdges = environment.FindRoute(startingEdge.To, goal, (_, edge, _) => edge.Length);
 
-                    if (nextEdges != null)
+                    if (!goal.Equals(currentNode) || nextEdges != null)
                         foreach (var edge in nextEdges)
                             route.Add(edge.Edge);
                 }
@@ -109,19 +123,20 @@ public static class SemiTruckRouteFinder
                 route = new Route();
 
                 var rawRoute = osmRoute.Replace("[", "").Replace("]", "").Split(';');
-                var nodeToScan = currentNode;
 
+                var nodeToScan = currentNode;
                 foreach (var osmId in rawRoute)
                 {
-                    var edge = nodeToScan.OutgoingEdges.Values.Single(x => x.Attributes["osmid"].Equals(osmId));
-                    route.Add(edge);
-                    nodeToScan = edge.To;
+                    var res = nodeToScan.OutgoingEdges.Values.Single(x => x.Attributes["osmid"].Equals(osmId));
+
+                    route.Add(res);
+                    nodeToScan = res.To;
                 }
 
                 break;
             }
             default:
-                throw new ArgumentOutOfRangeException(nameof(driveMode), $"Invalid driveMode: {driveMode}");
+                throw new ArgumentOutOfRangeException(nameof(driveMode));
         }
 
         return route;

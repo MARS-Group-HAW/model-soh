@@ -1,39 +1,56 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using Mars.Common.Core.Logging;
+using Mars.Components.Layers;
 using Mars.Components.Starter;
 using Mars.Core.Simulation;
 using Mars.Interfaces;
-using Mars.Interfaces.Environments;
 using Mars.Interfaces.Model;
-using SOHModel.SemiTruck.Model;
-using SOHModel.SemiTruck.Scheduling;
+using SOHModel.Bicycle.Model;
+using SOHModel.Bicycle.Parking;
+using SOHModel.Bicycle.Rental;
+using SOHModel.Car.Model;
+using SOHModel.Car.Parking;
+using SOHModel.Car.Rental;
+using SOHModel.Domain.Graph;
+using SOHModel.Multimodal.Model;
 
-namespace SOHTravellingBox;
+namespace SOHKellinghusenBox;
 
+/// <summary>
+///     This pre-defined starter program runs the the
+///     <value>Kellinghusen scenario</value>
+///     with outside passed arguments or
+///     a default simulation inputConfiguration with CSV output and trips.
+/// </summary>
 internal static class Program
 {
     public static void Main(string[] args)
     {
         Thread.CurrentThread.CurrentCulture = new CultureInfo("EN-US");
-        LoggerFactory.SetLogLevel(LogLevel.Warning);
+        LoggerFactory.SetLogLevel(LogLevel.Off);
 
         var description = new ModelDescription();
-
-        // Add only the necessary layers for car simulation
-        // description.AddLayer<SpatialGraphMediatorLayer>(new[] { typeof(ISpatialGraphLayer) });
-        description.AddLayer<SemiTruckLayer>();
-        description.AddLayer<SemiTruckSchedulerLayer>();
-        description.AddAgent<SemiTruckDriver, SemiTruckLayer>();
-        // Add car-related entities
-        description.AddEntity<SemiTruck>();
-
+        description.AddLayer<SpatialGraphMediatorLayer>(new[] { typeof(ISpatialGraphLayer) });
         
+        description.AddLayer<BicycleParkingLayer>(new[] { typeof(IBicycleParkingLayer) });
+        description.AddLayer<BicycleRentalLayer>(new[] { typeof(IBicycleRentalLayer) });
+        description.AddLayer<CarParkingLayer>(new[] { typeof(ICarParkingLayer) });
+        description.AddLayer<CarRentalLayer>(new[] { typeof(ICarRentalLayer) });
         
+        description.AddLayer<HumanTravelerLayer>();
+        description.AddLayer<AgentSchedulerLayer<HumanTraveler, HumanTravelerLayer>>(
+            "HumanTravelerSchedulerLayer");
+
+        description.AddAgent<HumanTraveler, HumanTravelerLayer>();
+        description.AddEntity<Bicycle>();
+        description.AddEntity<RentalBicycle>();
+        description.AddEntity<Car>();
+        description.AddEntity<RentalCar>();
 
         ISimulationContainer application;
         if (args != null && args.Length != 0)
@@ -44,16 +61,13 @@ internal static class Program
         }
         else
         {
-            var file = File.ReadAllText("config.json");
+            var file = File.ReadAllText("config_dammtor.json");
             var simConfig = SimulationConfig.Deserialize(file);
-            // var simConfig = CreateDefaultConfig();
             application = SimulationStarter.BuildApplication(description, simConfig);
         }
 
-        
-        
         var simulation = application.Resolve<ISimulation>();
-
+        
         var watch = Stopwatch.StartNew();
         var state = simulation.StartSimulation();
 
@@ -62,114 +76,4 @@ internal static class Program
         Console.WriteLine($"Executed iterations {state.Iterations} lasted {watch.Elapsed}");
         application.Dispose();
     }
-
-    private static SimulationConfig CreateDefaultConfig()
-    {
-        Console.WriteLine("Creating default configuration...");
-        var startPoint = DateTime.Parse("2021-10-11T06:00:00");
-        var endPoint = DateTime.Parse("2021-10-11T11:00:00");
-        var config = new SimulationConfig
-        {
-            SimulationIdentifier = "autobahn_simulation",
-            Globals =
-            {
-                StartPoint = startPoint,
-                EndPoint = endPoint,
-                DeltaTUnit = TimeSpanUnit.Seconds,
-                ShowConsoleProgress = true,
-                DeltaT = 1,
-                OutputTarget = OutputTargetType.GeoJsonFile,
-                // simulation output formats
-            },
-            AgentMappings =
-            {
-                new AgentMapping()
-                {
-                    Name = "CarDriver",
-                    InstanceCount = 10,
-                    OutputKind = OutputKind.Full,
-                    Outputs = new List<Output>
-                        {
-                            new Output
-                            {
-                    OutputConfiguration = new OutputConfiguration()
-                    {
-                        TripsDiscriminatorFields = new string[]
-                        {
-                            "StableId",
-                            "StartPosition",
-                            "EndPosition",
-                            "DistanceTraveled", 
-                            "Duration"
-                        }
-                    }
-                    }
-                            },
-                    IndividualMapping = new List<IndividualMapping>()
-                    {
-                        new IndividualMapping() { Name = "startLat", Value = 48.23607 },
-                        new IndividualMapping { Name = "startLon", Value = 11.59965 },
-                        new IndividualMapping { Name = "destLat", Value = 52.684 },
-                        new IndividualMapping { Name = "destLon", Value = 13.2158 },
-                        new IndividualMapping { Name = "ResultTrajectoryEnabled", Value = true },
-                        new IndividualMapping { Name = "driveMode", Value = 1 }
-                    }
-                    
-                }
-            },
-            LayerMappings =
-            {
-                new LayerMapping
-                {
-                    Name = "CarLayer",
-                    File = "resources/autobahn_and_bundesstreet.geojson",
-                    InputConfiguration = new InputConfiguration()
-                    {
-                        IsBiDirectedImport = true,
-                        Modalities = new HashSet<SpatialModalityType>
-                        {
-                            SpatialModalityType.CarDriving
-                        },
-                    }
-                    
-                }
-            },
-            EntityMappings =
-            {
-                new EntityMapping()
-                {
-                    Name = "Car",
-                    File = "resources/car.csv"
-                }
-                 
-            }
-            
-            // layer configuration
-            // agent configuration
-            
-        };
-        return config;
-    }
 }
-
-
-// {
-// "parameter": "startLat",
-// "value": 48.23607
-// },
-// {
-//     "parameter": "startLon",
-//     "value": 11.59965
-// },
-// {
-//     "parameter": "destLat",
-//     "value": 52.684
-// },
-// {
-//     "parameter": "destLon",
-//     "value": 13.2158
-// },
-// {
-//     "parameter": "driveMode",
-//     "value": 1
-// },

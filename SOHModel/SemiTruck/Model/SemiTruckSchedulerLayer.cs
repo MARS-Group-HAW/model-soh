@@ -54,22 +54,12 @@ namespace SOHModel.SemiTruck.Scheduling
                 };
                 driver.Init(SemiTruckLayer);
 
-                // Ensure the driver was initialized correctly
-                if (driver.Position == null)
-                {
-                    Console.WriteLine("[ERROR] Driver Position was not initialized properly during Init. Skipping this driver.");
-                    return; // Skip this driver
-                }
+                
 
                 // Add the driver to the layer and register it
                 SemiTruckLayer.Driver.Add(driver.ID, driver);
                 RegisterAgent(SemiTruckLayer, driver);
 
-                // Validate that the driver was successfully added
-                if (!SemiTruckLayer.Driver.ContainsKey(driver.ID))
-                {
-                    Console.WriteLine("[ERROR] Driver registration failed. Skipping this driver.");
-                }
             }
             catch (Exception ex)
             {

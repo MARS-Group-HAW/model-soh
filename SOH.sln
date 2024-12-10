@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOHFerryTransferBox", "SOHF
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOHTrainBox", "SOHTrainBox\SOHTrainBox.csproj", "{A9FF79F1-8567-42D6-90EC-6175E1F7249D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOHRoutingOptimization", "SOHRoutingOptimization\SOHRoutingOptimization.csproj", "{ec203d8f-5e84-4803-9f29-14eff6dc0991}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOHTravellingBox", "SOHTravellingBox\SOHTravellingBox.csproj", "{6481BB71-B8BD-40B3-A5E1-78113314003B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOHGreen4BikesBox", "SOHGreen4BikesBox\SOHGreen4BikesBox.csproj", "{158B856D-5428-4F02-803E-4BDCB004B9FA}"
@@ -78,6 +80,12 @@ Global
 		{A9FF79F1-8567-42D6-90EC-6175E1F7249D}.Full|Any CPU.Build.0 = Debug|Any CPU
 		{A9FF79F1-8567-42D6-90EC-6175E1F7249D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A9FF79F1-8567-42D6-90EC-6175E1F7249D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ec203d8f-5e84-4803-9f29-14eff6dc0991}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {ec203d8f-5e84-4803-9f29-14eff6dc0991}.Debug|Any CPU.Build.0 = Debug|Any CPU
+        {ec203d8f-5e84-4803-9f29-14eff6dc0991}.Full|Any CPU.ActiveCfg = Debug|Any CPU
+        {ec203d8f-5e84-4803-9f29-14eff6dc0991}.Full|Any CPU.Build.0 = Debug|Any CPU
+        {ec203d8f-5e84-4803-9f29-14eff6dc0991}.Release|Any CPU.ActiveCfg = Release|Any CPU
+        {ec203d8f-5e84-4803-9f29-14eff6dc0991}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6481BB71-B8BD-40B3-A5E1-78113314003B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6481BB71-B8BD-40B3-A5E1-78113314003B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6481BB71-B8BD-40B3-A5E1-78113314003B}.Full|Any CPU.ActiveCfg = Debug|Any CPU

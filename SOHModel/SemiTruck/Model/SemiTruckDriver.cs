@@ -31,9 +31,9 @@ namespace SOHModel.SemiTruck.Model
         {
             // Set up the environment and layer 
             _layer = layer;
-            _environment = layer.Environment;
-            _unregister = layer.UnregisterAgent;
-            // Create the SemiTruck and _steeringHandle
+            _environment = _layer.Environment;
+            _unregister = _layer.UnregisterAgent;
+            // Create the SemiTruck
             SemiTruck = CreateSemiTruck();
             SemiTruck.Environment = _environment;
             
