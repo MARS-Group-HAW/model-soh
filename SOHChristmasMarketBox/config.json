@@ -1,0 +1,51 @@
+{
+  "id": "rathausmarkt_2023",
+  "globals": {
+    "deltaT": 1,
+    "startPoint": "2023-12-10T15:00:00",
+    "endPoint": "2023-12-10T20:00:00",
+    "deltaTUnit": "seconds",
+    "console": true
+  },
+  "agents": [
+    {
+      "name": "HumanTraveler",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": [
+              "StableId"
+            ]
+          }
+        }
+      ],
+      "individual": [
+        {
+          "value": true,
+          "parameter": "ResultTrajectoryEnabled"
+        }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "name": "SpatialGraphMediatorLayer",
+      "inputs": [
+        {
+          "file": "resources/walk_graph_rathausmarkt.geojson",
+          "inputConfiguration": {
+            "modalities": [
+              "Walking"
+            ],
+            "isBidirectedGraph": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "HumanTravelerSchedulerLayer",
+      "file": "resources/human_traveler_rathausmarkt_v2.csv"
+    }
+  ]
+}
