@@ -10,41 +10,49 @@ using SOHModel.Domain.Steering.Acceleration;
 using Xunit;
 using Xunit.Abstractions;
 
-public class BikesTests
+namespace SOHTests.BigEventTests
 {
-    private readonly ITestOutputHelper _output;
 
-    public BikesTests(ITestOutputHelper output)
+    public class BikesTests
     {
-        _output = output;
-    }
-    
-    [Fact]
-    public void Test_UnimodalRouteBetweenCoordinates()
-    {
-        string currentDirectory = Directory.GetCurrentDirectory();
-        _output.WriteLine("Current working directory: " + currentDirectory);
+        private readonly ITestOutputHelper _output;
 
-        var environment = new SpatialGraphEnvironment(new Input
+        public BikesTests(ITestOutputHelper output)
         {
-            File = Path.Combine(
-                "BigEventTests", "resources", "walk_graph_barclays.geojson"),
-            InputConfiguration = new InputConfiguration
+            _output = output;
+        }
+
+        [Fact]
+        public void Test_UnimodalRouteBetweenCoordinates()
+        {
+            string currentDirectory = Directory.GetCurrentDirectory();
+            _output.WriteLine("Current working directory: " + currentDirectory);
+
+            var environment = new SpatialGraphEnvironment(new Input
             {
-                GeometryAsNodesEnabled = true,
-                IsBiDirectedImport = true, Modalities = new HashSet<SpatialModalityType>
+                File = Path.Combine(
+                    "BigEventTests", "resources", "walk_graph_barclays.geojson"),
+                InputConfiguration = new InputConfiguration
                 {
-                    SpatialModalityType.Walking
+                    GeometryAsNodesEnabled = true,
+                    IsBiDirectedImport = true, 
+                    Modalities = new HashSet<SpatialModalityType>
+                    {
+                        SpatialModalityType.Walking,
+                        SpatialModalityType.Cycling
+                    }
                 }
-            }
-        });
-        _output.WriteLine(environment.Nodes.Count.ToString());
-        
-        var startNode = environment.NearestNode(new[] { 53.593998, 9.902225 });
-        var goalNode = environment.NearestNode(new[] { 53.5836529, 9.928451 });
-        
-        var selectedRoute = environment.FindShortestRoute(startNode, goalNode,
-            edge => edge.Modalities.Contains(SpatialModalityType.Walking));
-        Assert.NotNull(selectedRoute);
+            });
+            _output.WriteLine(environment.Nodes.Count.ToString());
+
+            File.WriteAllText("bikestest.geojson", environment.ToGeoJson());
+
+            var startNode = environment.NearestNode(new[] { 53.593998, 9.902225 });
+            var goalNode = environment.NearestNode(new[] { 53.5836529, 9.928451 });
+
+            var selectedRoute = environment.FindShortestRoute(startNode, goalNode,
+                edge => edge.Modalities.Contains(SpatialModalityType.Walking));
+            Assert.NotNull(selectedRoute);
+        }
     }
 }
