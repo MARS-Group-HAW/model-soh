@@ -53,11 +53,7 @@
       "name": "SpatialGraphMediatorLayer",
       "inputs": [
         {
-          "file": "resources/walk_graph_barclays.geojson",
-          "inputConfiguration": {
-            "modalities": ["Walking", "Cycling"],
-            "isBidirectedGraph": true
-          }
+          "file": "resources/walking_and_cycling_base.geojson"
         },
         {
           "file": "resources/public_transport/commuter_train/commuter_train_graph.geojson",
@@ -68,13 +64,7 @@
           }
         },
         {
-          "file": "resources/barclays_car_streets.geojson",
-          "inputConfiguration": {
-            "modalities": [
-              "CarDriving"
-            ],
-            "isBidirectedGraph": true
-          }
+          "file": "resources/fixed_streets_v6.geojson"
         }
       ]
     },
@@ -119,8 +109,8 @@
       "file": "resources/barclays_bike_parking.geojson"
     },
     {
-      "name": "CarParkingLayer",
-      "file": "resources/barclays_car_parking.geojson"
+      "name": "BarclaysParkingLayer",
+      "file": "resources/updated_car_parking.geojson"
     }
   ],
   "entities": [
