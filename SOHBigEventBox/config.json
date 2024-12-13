@@ -2,8 +2,8 @@
   "id": "BigEventBox",
   "globals": {
     "deltaT": 1,
-    "startPoint": "2024-06-22T08:00:00",
-    "endPoint": "2024-06-22T12:30:00",
+    "startPoint": "2024-07-16T22:30:00",
+    "endPoint": "2024-07-17T02:30:00",
     "deltaTUnit": "seconds",
     "console": true
   },
@@ -25,7 +25,7 @@
         {
           "kind": "trips",
           "outputConfiguration": {
-            "tripsFields": ["StableId"]
+            "tripsFields": ["ModalType"]
           }
         }
       ],
@@ -53,11 +53,7 @@
       "name": "SpatialGraphMediatorLayer",
       "inputs": [
         {
-          "file": "resources/walk_graph_barclays.geojson",
-          "inputConfiguration": {
-            "modalities": ["Walking"],
-            "isBidirectedGraph": true
-          }
+          "file": "resources/walking_and_cycling_base.geojson"
         },
         {
           "file": "resources/public_transport/commuter_train/commuter_train_graph.geojson",
@@ -68,12 +64,7 @@
           }
         },
         {
-          "file": "resources/public_transport/bus/bus_graph.geojson",
-          "inputConfiguration": {
-            "modalities": [
-              "CarDriving"
-            ]
-          }
+          "file": "resources/fixed_streets_v6.geojson"
         }
       ]
     },
@@ -112,6 +103,14 @@
     {
       "name": "TrainSchedulerLayer",
       "file": "resources/public_transport/commuter_train/commuter_train_driver_schedule.csv"
+    },
+    {
+      "name": "BicycleParkingLayer",
+      "file": "resources/barclays_bike_parking.geojson"
+    },
+    {
+      "name": "BarclaysParkingLayer",
+      "file": "resources/updated_car_parking.geojson"
     }
   ],
   "entities": [
@@ -122,6 +121,15 @@
     {
       "name": "Train",
       "file": "resources/public_transport/commuter_train/commuter_train.csv"
+    },
+    {
+      "name": "Bicycle",
+      "file": "resources/bicycle.csv"
+    },
+    {
+      "name": "Car",
+      "file": "resources/car.csv"
     }
   ]
 }
+    

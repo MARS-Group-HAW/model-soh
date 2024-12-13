@@ -13,6 +13,8 @@ namespace SOHModel.Car.Parking;
 public class CarParkingSpace : IVectorFeature
 {
     private const string Area = "area";
+    
+    private const string CapacityKey = "capacity";
 
     private ConcurrentDictionary<IParkingCar, byte>? _parkingVehicles;
 
@@ -66,14 +68,22 @@ public class CarParkingSpace : IVectorFeature
         VectorStructured = data;
         var centroid = VectorStructured.Geometry.Centroid;
         Position = Position.CreatePosition(centroid.X, centroid.Y);
+        
+        if (VectorStructured.Data.ContainsKey(CapacityKey) && VectorStructured.Data[CapacityKey] != null)
+        {
+            Capacity = VectorStructured.Data[CapacityKey].Value<int>();
+        }
+        else
+        {
+            var area = VectorStructured.Data.ContainsKey(Area) ? VectorStructured.Data[Area].Value<double>() : 0;
+            if (area < 10) //if smaller than 10m2 then 1 car
+                Capacity = 1;
+            else if (area < 500) // if smaller than 500m2 then 15m2/car
+                Capacity = (int)(area / 15);
+            else //if bigger than 100m2 then 20m2/car
+                Capacity = (int)(area / 20);
+        }
 
-        var area = VectorStructured.Data.ContainsKey(Area) ? VectorStructured.Data[Area].Value<double>() : 0;
-        if (area < 10) //if smaller than 10m2 then 1 car
-            Capacity = 1;
-        else if (area < 500) // if smaller than 500m2 then 15m2/car
-            Capacity = (int)(area / 15);
-        else //if bigger than 100m2 then 20m2/car
-            Capacity = (int)(area / 20);
     }
 
     /// <summary>

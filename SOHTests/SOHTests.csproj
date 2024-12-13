@@ -22,6 +22,8 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Content Include="bin\Debug\net8.0\BigEventTests\resources\walk_v3.geojson" />
+        <Content Include="bin\Debug\net8.0\BigEventTests\resources\walk_v5.geojson" />
         <Content Include="res\**">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
@@ -37,6 +39,15 @@
 
     <ItemGroup>
         <None Remove="SimulationTests\BicycleTests\**"/>
+        <None Update="BigEventTests\resources\walk_graph_barclays.geojson">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="BigEventTests\resources\walk_v8.geojson">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="BigEventTests\resources\updated_streets_v7.geojson">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <ItemGroup>
