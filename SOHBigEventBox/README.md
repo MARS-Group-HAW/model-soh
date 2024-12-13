@@ -70,7 +70,7 @@ keys:
 For our Big Event Simulation, the `BaseWalkingSchedulerLayer` is populated with the `visitor_spawning.csv` file. This
 file contains the information about the visitors that are to be spawned at the beginning of the simulation. If you look 
 at the content of the file, you will see that it contains the following columns:
-* `startTime`: the time at which the first visitor of a certain row is to be spawned
+* `startTime`: the time at which the first visitor of a certain row will be spawned
 * `endTime`: the time at which the visitors stop being spawned
 * `spawningIntervalInMinutes`: the time interval between the spawning of a number (`spawningAmount`) visitors
 * `spawningAmount`: the number of visitors to be spawned at each interval
