@@ -16,7 +16,7 @@ namespace SOHTests.BigEventTests.PublicTransportTests;
 
 public class BigEventBusLayerFixture : BusLayerFixture
 {
-    public BigEventBusLayerFixture() : base(ResourcesConstants.BigEventLinesCsv, ResourcesConstants.BigEventBusGraph) { }
+    public BigEventBusLayerFixture() : base(ResourcesConstants.BigEventBusLinesCsv, ResourcesConstants.BigEventBusGraph) { }
 }
 public class BusTests : IClassFixture<BigEventBusLayerFixture>
 {

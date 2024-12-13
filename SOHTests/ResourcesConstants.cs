@@ -22,7 +22,7 @@ public static class ResourcesConstants
     public static readonly string TrainCsv = Path.Combine(EntityInitsFolder, "train.csv");
     public static readonly string BusCsv = Path.Combine(EntityInitsFolder, "bus.csv");
     public static readonly string Bus113LineCsv = Path.Combine(EntityInitsFolder, "bus_113_line.csv");
-    public static readonly string BigEventLinesCsv = Path.Combine(EntityInitsFolder, "big_event_lines.csv");
+    public static readonly string BigEventBusLinesCsv = Path.Combine(EntityInitsFolder, "big_event_bus_lines.csv");
     public static readonly string FerryLineCsv = Path.Combine(EntityInitsFolder, "ferry_line.csv");
     public static readonly string TrainU1LineCsv = Path.Combine(EntityInitsFolder, "train_u1_line.csv");
     public static readonly string FerryDriverCsv = Path.Combine(AgentInitsFolder, "ferry_driver.csv");
