@@ -1,14 +1,9 @@
-using Mars.Common;
 using Mars.Common.Core.Random;
-using Mars.Interfaces.Agents;
 using Mars.Interfaces.Annotations;
 using Mars.Interfaces.Environments;
-using Microsoft.AspNetCore.Components.Sections;
 using SOHModel.Bicycle.Parking;
-using SOHModel.Car.Steering;
 using SOHModel.Multimodal.Model;
-using SOHModel.Multimodal.Multimodal;
-using SOHModel.Multimodal.Routing;
+
 
 namespace SOHModel.BigEvent;
 
@@ -19,6 +14,8 @@ public class Visitor : Traveler<BaseWalkingLayer>
 {
     private ISet<ModalChoice> _choices;
     private ModalChoice _preferred;
+    private Random random = new Random();
+    
     [PropertyDescription] public IBicycleParkingLayer BicycleParkingLayer { get; set; }
 
     public override void Init(BaseWalkingLayer layer)
@@ -28,7 +25,7 @@ public class Visitor : Traveler<BaseWalkingLayer>
         _choices = new ModalityChooser().Evaluate(this);
         _choices.Add(ModalChoice.Walking);
         
-        handleLogic();
+        HandleLogic();
         const int radiusInM = 1000;
         
         if (_choices.Contains(ModalChoice.CyclingOwnBike) && BicycleParkingLayer != null)
@@ -39,23 +36,32 @@ public class Visitor : Traveler<BaseWalkingLayer>
 
         if (_choices.Contains(ModalChoice.CarDriving) && CarParkingLayer != null)
         {
-            Car = CarParkingLayer.CreateOwnCarNear(StartPosition, radiusInM);
-            Console.WriteLine("Car created at " + Car.Position);
+            Car = PickRandomCarFromParkingLayer();
         }
     }
-    
+
+    /**
+     * This method picks a random car from the Barclays parking spots and removes it from the parking spot. 
+     */
+    private Car.Model.Car PickRandomCarFromParkingLayer()
+    {
+        var randomIndex = random.Next(BarclaysParkingLayer.ParkedCars.Count);
+        var randomCar = BarclaysParkingLayer.ParkedCars[randomIndex];
+        BarclaysParkingLayer.ParkedCars.RemoveAt(randomIndex);
+        return randomCar;
+    }
+
 
     /**
      * This method handles the logic of the modal choices.
      * It removes the modal choices that are not compatible with the selected modal choice.
      * For example, if the visitor chooses to drive a car, they won't be able to choose to take the bus or train or co-drive the car.
      */
-    private void handleLogic()
+    private void HandleLogic()
     {
         var modalProbabilities = new Dictionary<ModalChoice, double>
         {
             { ModalChoice.CarDriving, UsesCar },
-            { ModalChoice.CoDriving, UsesCoDriving },
             { ModalChoice.Bus, UsesBus },
             { ModalChoice.Train, UsesTrain },
             { ModalChoice.CyclingOwnBike, UsesBike }
@@ -99,9 +105,6 @@ public class Visitor : Traveler<BaseWalkingLayer>
     [PropertyDescription(Name = "usesCar")] 
     public double UsesCar { get; set; }
     
-    [PropertyDescription(Name = "usesCoDriving")]
-    public double UsesCoDriving { get; set; }
-    
     [PropertyDescription(Name = "usesTrain")]
     public double UsesTrain { get; set; }
     
@@ -118,9 +121,6 @@ public class ModalityChooser
         HashSet<ModalChoice> choices = new();
         if (RandomHelper.Random.NextDouble() < attributes.UsesCar)
             choices.Add(ModalChoice.CarDriving);
-        
-        if (RandomHelper.Random.NextDouble() < attributes.UsesCoDriving)
-            choices.Add(ModalChoice.CoDriving);
 
         if (RandomHelper.Random.NextDouble() < attributes.UsesBike)
             choices.Add(ModalChoice.CyclingOwnBike);
