@@ -31,11 +31,11 @@ brief description of the main attributes.
 
 ```json
 "globals": {
-"deltaT": 1,
-"startPoint": "2024-07-16T22:30:00",
-"endPoint": "2024-07-17T02:30:00",
-"deltaTUnit": "seconds",
-"console": true
+  "deltaT": 1,
+  "startPoint": "2024-07-16T22:30:00",
+  "endPoint": "2024-07-17T02:30:00",
+  "deltaTUnit": "seconds",
+  "console": true
 }
 ```
 
