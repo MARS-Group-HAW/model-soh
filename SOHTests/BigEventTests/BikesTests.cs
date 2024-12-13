@@ -31,7 +31,7 @@ namespace SOHTests.BigEventTests
             var environment = new SpatialGraphEnvironment(new Input
             {
                 File = Path.Combine(
-                    "BigEventTests", "resources", "walk_graph_barclays.geojson"),
+                    "BigEventTests", "resources", "walk_v8.geojson"),
                 InputConfiguration = new InputConfiguration
                 {
                     GeometryAsNodesEnabled = true,
@@ -43,16 +43,25 @@ namespace SOHTests.BigEventTests
                     }
                 }
             });
-            _output.WriteLine(environment.Nodes.Count.ToString());
+            //_output.WriteLine(environment.Nodes.Count.ToString());
 
-            File.WriteAllText("bikestest.geojson", environment.ToGeoJson());
+            //File.WriteAllText("walking_and_cycling_base.geojson", environment.ToGeoJson());
 
-            var startNode = environment.NearestNode(new[] { 53.593998, 9.902225 });
-            var goalNode = environment.NearestNode(new[] { 53.5836529, 9.928451 });
+            foreach (var startNode in environment.Nodes)
+            {
+                foreach (var goalNode in environment.Nodes)
+                {
+                    if (startNode != goalNode)
+                    {
+                        _output.WriteLine($"Calculating route from Node {startNode.Position} to Node {goalNode.Position}");
 
-            var selectedRoute = environment.FindShortestRoute(startNode, goalNode,
-                edge => edge.Modalities.Contains(SpatialModalityType.Walking));
-            Assert.NotNull(selectedRoute);
+                        var selectedRoute = environment.FindShortestRoute(startNode, goalNode,
+                            edge => edge.Modalities.Contains(SpatialModalityType.Walking));
+
+                        Assert.NotNull(selectedRoute);
+                    }
+                }
+            }
         }
     }
 }
