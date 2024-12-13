@@ -87,11 +87,18 @@ the `spawningAmount` to spawn more visitors at each interval, or you can change 
 spawn visitors more or less frequently. The source and the destination will calculate the nearest node to the given
 coordinates and assign it to the visitor. So if you want to change the location of the simulation you will need another 
 file with a different graph. Don't forget to change the new file in the `config.json` layer mappings.
+
+A new ParkingLayer `BarclaysParkingLayer` was added to the model. This layer is used to simulate the parking spaces 
+around the arena. When you start the program, the five parking spaces that belong to the arena are filled with cars. 
+This specific layer stores every car that is parked in the parking spaces in a list called `ParkedCars`. The main agent
+of this simulation, the `Visitor`, then gets a reference to a random car from the list of parked cars if his preferred 
+modality is `CarDriving`. 
+
 ___
 
 ## AgentMappings
 
-In this section, the agent types that are defined in the model logic (and that were added to `desciption` above) are
+In this section, the agent types that are defined in the model logic (and that were added to `description` above) are
 configured. An initialization file can be specified as well.
 
 ```json
