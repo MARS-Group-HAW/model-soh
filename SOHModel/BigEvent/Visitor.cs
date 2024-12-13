@@ -14,7 +14,7 @@ public class Visitor : Traveler<BaseWalkingLayer>
 {
     private ISet<ModalChoice> _choices;
     private ModalChoice _preferred;
-    private Random random = new Random();
+    private readonly Random _random = new Random();
     
     [PropertyDescription] public IBicycleParkingLayer BicycleParkingLayer { get; set; }
 
@@ -45,7 +45,7 @@ public class Visitor : Traveler<BaseWalkingLayer>
      */
     private Car.Model.Car PickRandomCarFromParkingLayer()
     {
-        var randomIndex = random.Next(BarclaysParkingLayer.ParkedCars.Count);
+        var randomIndex = _random.Next(BarclaysParkingLayer.ParkedCars.Count);
         var randomCar = BarclaysParkingLayer.ParkedCars[randomIndex];
         BarclaysParkingLayer.ParkedCars.RemoveAt(randomIndex);
         return randomCar;
