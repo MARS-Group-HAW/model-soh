@@ -107,13 +107,16 @@
       <None Update="resources\barclays_car_streets.geojson">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="resources\bikestest.geojson">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
       <None Update="resources\updated_car_parking.geojson">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="resources\updated_streets.geojson">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="resources\fixed_streets_v6.geojson">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="resources\walking_and_cycling_base.geojson">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>

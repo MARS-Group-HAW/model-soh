@@ -47,22 +47,22 @@ internal static class Program
         description.AddLayer<SpatialGraphMediatorLayer>([typeof(ISpatialGraphLayer)]);
         description.AddLayer<BaseWalkingLayer>();
         description.AddLayer<AgentSchedulerLayer<Visitor, BaseWalkingLayer>>("BaseWalkingSchedulerLayer");
-        description.AddLayer<TrainLayer>();
-        description.AddLayer<TrainSchedulerLayer>();
-        description.AddLayer<TrainStationLayer>();
-        description.AddLayer<TrainRouteLayer>([typeof(ITrainRouteLayer)]);
+        //description.AddLayer<TrainLayer>();
+        //description.AddLayer<TrainSchedulerLayer>();
+        //description.AddLayer<TrainStationLayer>();
+        //description.AddLayer<TrainRouteLayer>([typeof(ITrainRouteLayer)]);
         description.AddLayer<BicycleParkingLayer>();
-        description.AddLayer<CarParkingLayer>();
+        description.AddLayer<BarclaysParkingLayer>();
         description.AddLayer<BusLayer>();
         description.AddLayer<BusGtfsRouteLayer>([typeof(IBusRouteLayer)]);
         description.AddLayer<BusSchedulerLayer>();
         description.AddLayer<BusStationLayer>();
 
         description.AddAgent<Visitor, BaseWalkingLayer>();
-        description.AddAgent<TrainDriver, TrainLayer>();
+        //description.AddAgent<TrainDriver, TrainLayer>();
         description.AddAgent<BusDriver, BusLayer>();
 
-        description.AddEntity<Train>();
+        //description.AddEntity<Train>();
         description.AddEntity<Bicycle>();
         description.AddEntity<Car>();
         description.AddEntity<Bus>();
