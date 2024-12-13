@@ -271,7 +271,6 @@ public class BusDriverTests : IClassFixture<BusRouteLayerFixture>
     [InlineData(0, true)]
     public void TestRouteNeedsAtLeastOneSection(int remainingStations, bool shouldFail)
     {
-
         BusDriver busDriver = new(_layer, (_, _) => { })
         {
             Line = "113",
@@ -285,10 +284,9 @@ public class BusDriverTests : IClassFixture<BusRouteLayerFixture>
 
         // copy the original BusRoute, to restore it later
         List<BusRouteEntry> busRouteEntriesCopy = CopyRouteEntries(busDriver.BusRoute.Entries);
-
         
         busDriver.BusRoute.Entries.RemoveRange(0, busDriver.BusRoute.Entries.Count - remainingStations);
-        if (shouldFail) busDriver.BusRoute = null;
+        if (shouldFail) busDriver.BusRoute = null; // trigger bus driver to search for new route in next tick
 
         Exception exception = null;
         try
@@ -310,7 +308,6 @@ public class BusDriverTests : IClassFixture<BusRouteLayerFixture>
         // restore the original BusRoute
         busDriver.BusRoute.Entries = busRouteEntriesCopy;
     }
-
 
     private List<BusRouteEntry> CopyRouteEntries(List<BusRouteEntry> routeEntries)
     {
