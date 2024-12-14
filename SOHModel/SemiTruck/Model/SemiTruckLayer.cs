@@ -3,10 +3,12 @@ using Mars.Components.Environments;
 using Mars.Components.Layers;
 using Mars.Components.Services;
 using Mars.Core.Data;
+using Mars.Interfaces;
 using Mars.Interfaces.Agents;
 using Mars.Interfaces.Data;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Layers;
+using ServiceStack.Text;
 using SOHModel.Domain.Graph;
 
 namespace SOHModel.SemiTruck.Model
@@ -55,30 +57,20 @@ namespace SOHModel.SemiTruck.Model
                 // Load the environment from a specified file
                     Environment = new SpatialGraphEnvironment(layerInitData.LayerInitConfig.File);
             }
-            // Initialize agents based on configurations provided in LayerInitData
-            foreach (var config in layerInitData.AgentInitConfigs)
-            {
-                    // Spawn agents based on the configuration
-                    var spawnedDrivers = AgentManager.SpawnAgents(config, registerAgentHandle, unregisterAgent, [this], [Environment]);
-                    // Explicitly initialize each SemiTruckDriver instance
-                    foreach (var kvp in spawnedDrivers)
-                    {
-                        var agent = kvp.Value; // Extract the IAgent value
-                        if (agent is SemiTruckDriver driver) // Check if the agent is a SemiTruckDriver
-                        {
-                            driver.Init(this); // Explicitly call the Init method
-                        }
-                        
-                    }
-                    // Add the spawned agents to the Driver dictionary
-                    Driver.AddRange(spawnedDrivers);
-                    //TODO Why does the code below not call INIT of drivers?
-                    // if (registerAgentHandle != null && unregisterAgent != null && Environment != null)
-                    // {
-                    //     Driver.AddRange(AgentManager.SpawnAgents(config,
-                    //         registerAgentHandle, unregisterAgent, [this], [Environment]));
-                    // }
-            }
+            
+            var agentManager = layerInitData.Container.Resolve<IAgentManager>();
+        
+            // Create and register objects of type MyAgentType.
+            var agents = agentManager.Spawn<SemiTruckDriver, SemiTruckLayer>(
+                dependencies: new List<IModelObject> { this, Environment });
+        
+            // Otherwise only create them but do not registering 
+            // to trigger their Tick() method. 
+            agentManager.Create<SemiTruckDriver>().ToList();
+            
+            // Add the spawned agents to the Driver dictionary for tracking
+            Driver.AddRange(agents.ToDictionary(agent => agent.ID, agent => (IAgent)agent));
+
             return true;
         }
     }

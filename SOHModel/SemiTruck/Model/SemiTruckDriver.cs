@@ -41,8 +41,7 @@ namespace SOHModel.SemiTruck.Model
             ISpatialEdge startingEdge = null;
             // var startNode = _environment.NearestNode(Position.CreateGeoPosition(StartLon, StartLat));
             // startingEdge = startNode.OutgoingEdges.Values.FirstOrDefault();
-            
-            var route = SemiTruckRouteFinder.Find(_environment, Drivemode, StartLat,StartLon, DestLat, DestLon, startingEdge, "");
+            var route = SemiTruckRouteFinder.Find(_environment, DriveMode, StartLat,StartLon, DestLat, DestLon, startingEdge, "");
             // Insert the SemiTruck into the environment at the starting node
             
             var node = route.First().Edge.From;
@@ -98,7 +97,7 @@ namespace SOHModel.SemiTruck.Model
         [PropertyDescription]
         public double DestLon { get; set; }
         [PropertyDescription]
-        public int Drivemode { get; set; }
+        public int DriveMode { get; set; }
         [PropertyDescription]
         public string TruckType { get; set; }
         public double Latitude => Position.Latitude;

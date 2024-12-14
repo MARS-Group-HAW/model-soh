@@ -1,6 +1,10 @@
 using System.Data;
 using Mars.Common.Core;
+using Mars.Common.Core.Collections;
 using Mars.Components.Layers;
+using Mars.Core.Data;
+using Mars.Interfaces;
+using Mars.Interfaces.Agents;
 using SOHModel.SemiTruck.Model;
 
 namespace SOHModel.SemiTruck.Scheduling
@@ -40,25 +44,24 @@ namespace SOHModel.SemiTruck.Scheduling
                 var destLat = dataRow.Data["destinationY"].Value<double>();
                 var destLon = dataRow.Data["destinationX"].Value<double>();
                 var driveMode = dataRow.Data.TryGetValue("DriveMode", out var driveModeValue) ? driveModeValue.Value<int>() : 1;
-
-                // TODO Why is ID and INIT necessary?
-                var driver = new SemiTruckDriver
-                {
-                    ID = Guid.NewGuid(),
-                    StartLat = startLat,
-                    StartLon = startLon,
-                    DestLat = destLat,
-                    DestLon = destLon,
-                    Drivemode = driveMode,
-                    TruckType = semiTruckType
-                };
-                driver.Init(SemiTruckLayer);
+                
+                var agentManager = SemiTruckLayer.Container.Resolve<IAgentManager>();
+                var agents = agentManager.Spawn<SemiTruckDriver, SemiTruckLayer>(
+                    dependencies: new List<IModelObject> { SemiTruckLayer, SemiTruckLayer.Environment },
+                    assignment: agent =>
+                    {
+                        agent.StartLat = startLat;
+                        agent.StartLon = startLon;
+                        agent.DestLat = destLat;
+                        agent.DestLon = destLon;
+                        agent.DriveMode = driveMode;
+                        agent.TruckType = semiTruckType;
+                    });
 
                 
 
-                // Add the driver to the layer and register it
-                SemiTruckLayer.Driver.Add(driver.ID, driver);
-                RegisterAgent(SemiTruckLayer, driver);
+                // Adds driver to the layer and register it
+                SemiTruckLayer.Driver.AddRange(agents.ToDictionary(agent => agent.ID, agent => (IAgent)agent));
 
             }
             catch (Exception ex)
