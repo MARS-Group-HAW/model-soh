@@ -50,7 +50,6 @@ public class BusTests : IClassFixture<BigEventBusLayerFixture>
                 }
             })
         };
-        File.WriteAllText("BusGraphOut.geojson", _layer.GraphEnvironment.ToGeoJson());
     }
 
 
