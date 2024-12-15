@@ -1,2 +1,3 @@
 line,startTime,endTime,spawningIntervalInMinutes,minimumBoardingTimeInSeconds,spawningAmount,reversedRoute
-"380(Shuttle)",08:00,12:30,10,20,1,true
+"380(Shuttle)",2024-07-16T22:30:00,2024-07-17T02:30:00,10,20,1,true
+"180",2024-07-16T22:30:00,2024-07-17T02:30:00,10,20,1,true

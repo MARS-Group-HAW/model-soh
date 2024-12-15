@@ -12,7 +12,6 @@ using Mars.Interfaces.Model;
 using SOHModel.Bicycle.Model;
 using SOHModel.Bicycle.Parking;
 using SOHModel.Domain.Graph;
-using SOHModel.Multimodal.Model;
 using SOHModel.BigEvent;
 using SOHModel.Car.Model;
 using SOHModel.Car.Parking;
@@ -54,7 +53,8 @@ internal static class Program
         description.AddLayer<BicycleParkingLayer>();
         description.AddLayer<BarclaysParkingLayer>();
         description.AddLayer<BusLayer>();
-        description.AddLayer<BusGtfsRouteLayer>([typeof(IBusRouteLayer)]);
+        description.AddLayer<BusRouteLayer>([typeof(IBusRouteLayer)]);
+        // description.AddLayer<BusGtfsRouteLayer>([typeof(IBusRouteLayer)]);
         description.AddLayer<BusSchedulerLayer>();
         description.AddLayer<BusStationLayer>();
 

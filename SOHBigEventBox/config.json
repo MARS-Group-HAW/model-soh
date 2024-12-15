@@ -64,6 +64,16 @@
           }
         },
         {
+          "file": "resources/public_transport/bus/bus_graph.geojson",
+          "inputConfiguration": {
+            "GeometryAsNodesEnabled": false,
+            "isBidirectedGraph": true,
+            "modalities": [
+              "CarDriving"
+            ]
+          }
+        },
+        {
           "file": "resources/fixed_streets_v6.geojson"
         }
       ]
@@ -76,10 +86,10 @@
       "name": "BusSchedulerLayer",
       "file": "resources/public_transport/bus/bus_driver_schedule.csv"
     },
-    {
-      "name": "BusGtfsRouteLayer",
-      "file": "resources/public_transport/HVV_GTFS"
-    },
+    // {
+    //   "name": "BusGtfsRouteLayer",
+    //   "file": "resources/public_transport/HVV_GTFS"
+    // },
     {
       "name": "BusStationLayer",
       "file": "resources/public_transport/bus/bus_graph.geojson"
@@ -87,6 +97,10 @@
     {
       "name": "BusLayer",
       "file": "resources/public_transport/bus/bus_graph.geojson"
+    },
+    {
+      "name": "BusRouteLayer",
+      "file": "resources/public_transport/bus/bus_lines_stop_times.csv"
     },
     {
       "name": "TrainStationLayer",
