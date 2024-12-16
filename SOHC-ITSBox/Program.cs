@@ -31,9 +31,42 @@ internal static class Program
 {
     public static void Main(string[] args)
     {
+
+
+        try
+        {
+            // Pfad zur JSON-Datei
+            string filePath = "D:\\Projekt\\aktuell\\model-soh\\SOHC-ITSBox\\resources\\output_traffic_light_phases.json";
+
+            // TrafficLightData-Instanz erstellen
+            var trafficLightData = new TrafficLightData(filePath);
+
+            // Beispielkoordinate: (Latitude, Longitude)
+            double latitude = 9.9822394;
+            double longitude = 53.5641432;
+
+            // Phasenliste für die Koordinate abrufen
+            var phases = trafficLightData.GetPhasesForCoordinate(latitude, longitude);
+            Console.WriteLine($"Phasen für Koordinate ({latitude}, {longitude}): {string.Join(", ", phases)}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ein Fehler ist aufgetreten: {ex.Message}");
+        }
+
+
+
+
+
+
+
+
+
+
+
         Thread.CurrentThread.CurrentCulture = new CultureInfo("EN-US");
-        LoggerFactory.SetLogLevel(LogLevel.Info); 
-        
+        LoggerFactory.SetLogLevel(LogLevel.Info);
+
         var description = new ModelDescription();
 
         description.AddLayer<TrafficLightLayer>();
@@ -41,9 +74,9 @@ internal static class Program
         description.AddAgent<CarDriver, CarLayer>();
         description.AddAgent<EmergencyCarDriver, CarLayer>();
         //description.AddLayer<CarDriverSchedulerLayer>();
-        description.AddEntity<Car>(); 
+        description.AddEntity<Car>();
 
-        
+
         ISimulationContainer application;
 
         if (args != null && args.Length != 0)
@@ -65,8 +98,8 @@ internal static class Program
 
         Console.WriteLine($"Executed iterations {state.Iterations} lasted {watch.Elapsed}");
         application.Dispose();
-        
-        
+
+
 
         /*
         var startTime = DateTime.Parse("2025-01-01T00:00:00");
@@ -122,7 +155,7 @@ internal static class Program
             }
         };
         */
-        
+
         /*
         var starter = SimulationStarter.Start(description, config);
         var workflowState = starter.Run();
