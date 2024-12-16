@@ -2,6 +2,7 @@ using Mars.Common;
 using Mars.Components.Environments;
 using Mars.Interfaces.Agents;
 using Mars.Interfaces.Environments;
+using SOHModel.Car.Model;
 using SOHModel.Domain.Model;
 using SOHModel.Domain.Steering.Acceleration;
 using SOHModel.Domain.Steering.Capables;
@@ -95,6 +96,7 @@ public class VehicleSteeringHandle
 
     protected SpatialGraphExploreResult ExploreEnvironment()
     {
+        
         return Environment.Explore(Vehicle, Route,
             Math.Max(MinimalExploreDistance, Vehicle.ExploreDistanceFactor * Vehicle.Velocity));
     }
@@ -183,8 +185,15 @@ public class VehicleSteeringHandle
                 if (speedChange <= Vehicle.MaxDeceleration && speedChange < biggestDeceleration)
                     biggestDeceleration = speedChange;
             }
-            else if (edgeExploreResult.LightPhase == TrafficLightPhase.Red)
+            else if (edgeExploreResult.LightPhase == TrafficLightPhase.Red) //TODO check for emergency vehicles in action
             {
+                //TODO traffic light controller holen und auf grün schalten
+                if (Vehicle.Driver is EmergencyCarDriver)
+               {
+                    //TODO force green 
+                  return biggestDeceleration;  
+                }
+                
                 var speedChange = CalculateSpeedChange(Vehicle.Velocity, MaxSpeed,
                     edgeExploreResult.IntersectionDistance, 0, 0);
                 if (speedChange < biggestDeceleration)
