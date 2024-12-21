@@ -14,120 +14,17 @@
       <None Update="config.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="resources\public_transport\commuter_train\commuter_train.csv">
+      <None Update="resources\*.csv">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="resources\public_transport\commuter_train\commuter_train_driver_schedule.csv">
+      <None Update="resources\*.geojson">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="resources\public_transport\commuter_train\commuter_train_graph.geojson">
+      <None Update="resources\public_transport\**\*.csv">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="resources\public_transport\commuter_train\commuter_train_plan.csv">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\public_transport\commuter_train\commuter_train_stations.geojson">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\barclays_bike_parking.geojson">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\barclays_car_parking.geojson">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\bicycle.csv">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\BigEventFootway.overpassql">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\car.csv">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\qgis_project.qgz">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\shuttle_route.geojson">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\shuttle_stations.geojson">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\visitor_spawning_analysis.csv">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\walk_graph_barclays.geojson">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\public_transport\bus\bus.csv">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\public_transport\bus\bus_driver_schedule.csv">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\public_transport\bus\bus_graph.geojson">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\public_transport\HVV_GTFS\agency.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\public_transport\HVV_GTFS\calendar.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\public_transport\HVV_GTFS\calendar_dates.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\public_transport\HVV_GTFS\feed_info.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\public_transport\HVV_GTFS\frequencies.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\public_transport\HVV_GTFS\routes.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\public_transport\HVV_GTFS\shapes.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\public_transport\HVV_GTFS\stop_times.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\public_transport\HVV_GTFS\stops.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\public_transport\HVV_GTFS\transfers.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\public_transport\HVV_GTFS\trips.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\streets.geojson">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\barclays_car_streets.geojson">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\updated_car_parking.geojson">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\updated_streets.geojson">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\fixed_streets_v6.geojson">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\walking_and_cycling_base.geojson">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\public_transport\bus\bus_lines_stop_times.csv">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\resident_spawning.csv">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="resources\visitor_spawning_presentation.csv">
+      <None Update="resources\public_transport\**\*.geojson">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>
-
 </Project>
