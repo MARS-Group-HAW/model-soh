@@ -8,7 +8,7 @@ using SOHModel.Multimodal.Model;
 namespace SOHModel.BigEvent;
 
 /// <summary>
-///     This <see cref="Traveler{BigEventLayer}" /> entity uses a variety of modalities to reach its goal.
+///     This <see cref="Traveler{BaseWalkingLayer}" /> entity uses a variety of modalities to reach its goal.
 /// </summary>
 public class Visitor : Traveler<BaseWalkingLayer>
 {
@@ -18,6 +18,9 @@ public class Visitor : Traveler<BaseWalkingLayer>
     
     [PropertyDescription] public IBicycleParkingLayer BicycleParkingLayer { get; set; }
 
+    /**
+     * This method initializes the visitor and sets the modal choices.
+     */
     public override void Init(BaseWalkingLayer layer)
     {
         base.Init(layer);
@@ -45,10 +48,15 @@ public class Visitor : Traveler<BaseWalkingLayer>
      */
     private Car.Model.Car PickRandomCarFromParkingLayer()
     {
-        var randomIndex = _random.Next(BarclaysParkingLayer.ParkedCars.Count);
-        var randomCar = BarclaysParkingLayer.ParkedCars[randomIndex];
-        BarclaysParkingLayer.ParkedCars.RemoveAt(randomIndex);
-        return randomCar;
+        if (BarclaysParkingLayer.ParkedCars.Count > 0)
+        {
+           var randomIndex = _random.Next(BarclaysParkingLayer.ParkedCars.Count);
+                   var randomCar = BarclaysParkingLayer.ParkedCars[randomIndex];
+                   BarclaysParkingLayer.ParkedCars.RemoveAt(randomIndex);
+                   return randomCar; 
+        }
+        throw new ArgumentException("No cars available in the Barclays parking layer. Please ensure that there are " +
+                                    "maximum 3660 car drivers in the simulation.");
     }
 
 
