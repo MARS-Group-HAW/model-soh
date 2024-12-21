@@ -25,7 +25,24 @@
         {
           "kind": "trips",
           "outputConfiguration": {
-            "tripsFields": ["ModalType"]
+            "tripsFields": ["ActiveCapability"]
+          }
+        }
+      ],
+      "individual": [
+        {
+          "value": true,
+          "parameter": "ResultTrajectoryEnabled"
+        }
+      ]
+    },
+    {
+      "name": "Resident",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": ["StableId"]
           }
         }
       ],
@@ -79,8 +96,12 @@
       ]
     },
     {
-      "name": "BaseWalkingSchedulerLayer",
-      "file": "resources/visitor_spawning.csv"
+      "name": "VisitorSchedulerLayer",
+      "file": "resources/visitor_spawning_presentation.csv"
+    },
+    {
+      "name": "ResidentSchedulerLayer",
+      "file": "resources/resident_spawning.csv"
     },
     {
       "name": "BusSchedulerLayer",

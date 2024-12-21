@@ -14,11 +14,9 @@ using SOHModel.Bicycle.Parking;
 using SOHModel.Domain.Graph;
 using SOHModel.BigEvent;
 using SOHModel.Car.Model;
-using SOHModel.Car.Parking;
 using SOHModel.Bus.Model;
 using SOHModel.Bus.Route;
 using SOHModel.Bus.Station;
-
 using SOHModel.Train.Model;
 using SOHModel.Train.Station;
 using SOHModel.Train.Route;
@@ -26,11 +24,8 @@ using SOHModel.Train.Route;
 namespace SOHBigEventBox;
 
 /// <summary>
-/// 
-///     !!!!2024-10-18: SLIGHTLY EDITED COPY OF SOHTravellingBox/Program.cs!!!!
-///     
-///     This pre-defined starter program runs the the
-///     <value>Kellinghusen scenario</value>
+///     This pre-defined starter program runs the
+///     <b>Big Event scenario</b>
 ///     with outside passed arguments or
 ///     a default simulation inputConfiguration with CSV output and trips.
 /// </summary>
@@ -45,7 +40,8 @@ internal static class Program
 
         description.AddLayer<SpatialGraphMediatorLayer>([typeof(ISpatialGraphLayer)]);
         description.AddLayer<BaseWalkingLayer>();
-        description.AddLayer<AgentSchedulerLayer<Visitor, BaseWalkingLayer>>("BaseWalkingSchedulerLayer");
+        description.AddLayer<AgentSchedulerLayer<Visitor, BaseWalkingLayer>>("VisitorSchedulerLayer");
+        description.AddLayer<AgentSchedulerLayer<Resident, BaseWalkingLayer>>("ResidentSchedulerLayer");
         description.AddLayer<TrainLayer>();
         description.AddLayer<TrainSchedulerLayer>();
         description.AddLayer<TrainStationLayer>();
@@ -58,6 +54,7 @@ internal static class Program
         description.AddLayer<BusSchedulerLayer>();
         description.AddLayer<BusStationLayer>();
 
+        description.AddAgent<Resident, BaseWalkingLayer>();
         description.AddAgent<Visitor, BaseWalkingLayer>();
         description.AddAgent<TrainDriver, TrainLayer>();
         description.AddAgent<BusDriver, BusLayer>();
