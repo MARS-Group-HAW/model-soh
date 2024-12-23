@@ -298,6 +298,11 @@ public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>,
                     if (trainStation == null) return false;
                     var train = trainStation.Find(route.Goal);
                     return TryEnterVehicleAsPassenger(train, this);
+                case ModalChoice.Bus:
+                    var busStation = BusStationLayer.Nearest(Position);
+                    if (busStation == null) return false;
+                    var bus = busStation.Find(route.Goal);
+                    return TryEnterVehicleAsPassenger(bus, this);
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -334,6 +339,7 @@ public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>,
             ModalChoice.CyclingOwnBike => TryParkOwnBicycle() && TryLeaveVehicle(this),
             ModalChoice.Ferry => TryLeaveVehicle(this),
             ModalChoice.Train => TryLeaveVehicle(this),
+            ModalChoice.Bus => TryLeaveVehicle(this),
             _ => throw new ArgumentOutOfRangeException()
         };
     }
