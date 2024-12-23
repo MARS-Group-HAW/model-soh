@@ -12,10 +12,10 @@ public class WalkingBusDrivingMultimodalRoute : MultimodalRoute
     private readonly IBusStationLayer _busStationLayer;
 
     /// <summary>
-    ///     Describes a multimodal route with walk, Train drive, walk.
+    ///     Describes a multimodal route with walk, bus drive, walk.
     /// </summary>
     /// <param name="environmentLayer">Contains the environment.</param>
-    /// <param name="stationLayer">The station layer containing all Train stations to route to.</param>
+    /// <param name="stationLayer">The station layer containing all bus stations to route to.</param>
     /// <param name="start">Position where the route should start.</param>
     /// <param name="goal">Position where the route should end.</param>
     public WalkingBusDrivingMultimodalRoute(
@@ -28,18 +28,18 @@ public class WalkingBusDrivingMultimodalRoute : MultimodalRoute
         _busStationLayer = stationLayer;
         _environment = environmentLayer.Environment;
 
-        var (startBusStation, routeToFirstStation) = FindStartTrainStationAndWalkingRoute();
-        var (goalBusStation, routeToGoal) = FindGoalTrainStationAndFinalWalkingRoute();
-        var trainRoutes = FindBusRoutes(startBusStation, goalBusStation).ToList();
+        var (startBusStation, routeToFirstStation) = FindStartBusStationAndWalkingRoute();
+        var (goalBusStation, routeToGoal) = FindGoalBusStationAndFinalWalkingRoute();
+        var busRoutes = FindBusRoutes(startBusStation, goalBusStation).ToList();
 
-        if (trainRoutes.Count == 0)
-            throw new ArgumentException("Could not find any train route.");
+        if (busRoutes.Count == 0)
+            throw new ArgumentException("Could not find any bus route.");
 
         if (routeToFirstStation != null) Add(routeToFirstStation, ModalChoice.Walking);
         
-        foreach (var trainRoute in trainRoutes)
+        foreach (var busRoute in busRoutes)
         {
-            Add(trainRoute, ModalChoice.Train);
+            Add(busRoute, ModalChoice.Bus);
         }
 
         if (routeToGoal != null)
@@ -48,37 +48,37 @@ public class WalkingBusDrivingMultimodalRoute : MultimodalRoute
         }
     }
 
-    private (BusStation?, Route?) FindStartTrainStationAndWalkingRoute(
+    private (BusStation?, Route?) FindStartBusStationAndWalkingRoute(
         HashSet<BusStation>? unreachable = null)
     {
         unreachable ??= new HashSet<BusStation>();
         var busStation = _busStationLayer.Nearest(_start, station => !unreachable.Contains(station));
         if (busStation == null)
-            throw new ApplicationException($"No reachable Train station found for route from {_start} to {_goal}");
+            throw new ApplicationException($"No reachable bus station found for route from {_start} to {_goal}");
 
         var startNode = _environment.NearestNode(_start, SpatialModalityType.Walking);
-        var trainStationNode = _environment.NearestNode(busStation.Position, SpatialModalityType.Walking);
-        if (startNode.Equals(trainStationNode))
+        var busStationNode = _environment.NearestNode(busStation.Position, SpatialModalityType.Walking);
+        if (startNode.Equals(busStationNode))
             return (busStation, null);
 
-        var route = _environment.FindShortestRoute(startNode, trainStationNode, WalkingFilter);
+        var route = _environment.FindShortestRoute(startNode, busStationNode, WalkingFilter);
         if (route == null) // no walking route exists, Train station is excluded from next search
         {
             unreachable.Add(busStation);
-            return FindStartTrainStationAndWalkingRoute(unreachable);
+            return FindStartBusStationAndWalkingRoute(unreachable);
         }
 
-        // var distance = startNode.Position.DistanceInMTo(TrainStationNode.Position);
+        // var distance = startNode.Position.DistanceInMTo(BusStationNode.Position);
         // if (route.RouteLength > distance * 2)
         {
             var nextBusStation = _busStationLayer.Nearest(_start,
                 station => !unreachable.Contains(station) && station != busStation);
             if (nextBusStation != null)
             {
-                var nextTrainStationNode = _environment.NearestNode(nextBusStation.Position);
-                if (!startNode.Equals(nextTrainStationNode))
+                var nextBusStationNode = _environment.NearestNode(nextBusStation.Position);
+                if (!startNode.Equals(nextBusStationNode))
                 {
-                    var nextRoute = _environment.FindShortestRoute(startNode, nextTrainStationNode, WalkingFilter);
+                    var nextRoute = _environment.FindShortestRoute(startNode, nextBusStationNode, WalkingFilter);
                     if (nextRoute?.RouteLength < route.RouteLength)
                         return (nextBusStation, nextRoute);
                 }
@@ -88,14 +88,15 @@ public class WalkingBusDrivingMultimodalRoute : MultimodalRoute
         return (busStation, route);
     }
 
-    private (BusStation, Route) FindGoalTrainStationAndFinalWalkingRoute(
+    private (BusStation, Route) FindGoalBusStationAndFinalWalkingRoute(
         HashSet<BusStation>? unreachable = null)
     {
         unreachable ??= [];
         var busStation = _busStationLayer.Nearest(_goal, station => !unreachable.Contains(station));
-        if (busStation == null)
+        if (busStation == null) {
             throw new ApplicationException(
-                $"No Train route available within the spatial graph environment to reach goal station from {_start} to {_goal}");
+                $"No bus route available within the spatial graph environment to reach goal station from {_start} to {_goal}");
+        }
 
         var busStationNode = _environment.NearestNode(busStation.Position, SpatialModalityType.Walking);
         var goalNode = _environment.NearestNode(_goal, SpatialModalityType.Walking);
@@ -112,11 +113,11 @@ public class WalkingBusDrivingMultimodalRoute : MultimodalRoute
                     station => !unreachable.Contains(station) && station != busStation);
                 if (nextBusStation != null)
                 {
-                    var nextTrainStationNode = _environment.NearestNode(nextBusStation.Position);
-                    if (!goalNode.Equals(nextTrainStationNode))
+                    var nextBusStationNode = _environment.NearestNode(nextBusStation.Position);
+                    if (!goalNode.Equals(nextBusStationNode))
                     {
                         var nextRoute =
-                            _environment.FindShortestRoute(nextTrainStationNode, goalNode, WalkingFilter);
+                            _environment.FindShortestRoute(nextBusStationNode, goalNode, WalkingFilter);
                         if (nextRoute?.RouteLength < route.RouteLength) return (nextBusStation, nextRoute);
                     }
                 }
@@ -126,27 +127,26 @@ public class WalkingBusDrivingMultimodalRoute : MultimodalRoute
         }
 
         unreachable.Add(busStation);
-        return FindGoalTrainStationAndFinalWalkingRoute(unreachable);
+        return FindGoalBusStationAndFinalWalkingRoute(unreachable);
     }
 
     private IEnumerable<Route> FindBusRoutes(BusStation? startBusStation, BusStation? goalBusStation)
     {
-        var trainRoutes = new List<Route>();
-        var startTrainStationNode =
-            _environment.NearestNode(startBusStation.Position, SpatialModalityType.TrainDriving);
-        var goalTrainStationNode =
-            _environment.NearestNode(goalBusStation.Position, SpatialModalityType.TrainDriving);
+        var busRoutes = new List<Route>();
+        var startBusStationNode =
+            _environment.NearestNode(startBusStation.Position, SpatialModalityType.CarDriving);
+        var goalBusStationNode =
+            _environment.NearestNode(goalBusStation.Position, SpatialModalityType.CarDriving);
 
-        if (startTrainStationNode.Equals(goalTrainStationNode)) return trainRoutes;
-
+        if (startBusStationNode.Equals(goalBusStationNode)) return busRoutes;
         var startLines = startBusStation.Lines;
         var goalLines = goalBusStation.Lines;
 
         if (startLines.Intersect(goalLines).Any()) // find direct line
         {
-            var trainRoute =
-                _environment.FindShortestRoute(startTrainStationNode, goalTrainStationNode, TrainDrivingFilter);
-            trainRoutes.Add(trainRoute);
+            var busRoute =
+                _environment.FindShortestRoute(startBusStationNode, goalBusStationNode, BusDrivingFilter);
+            busRoutes.Add(busRoute);
         }
         else // find line with transfer point
         {
@@ -155,16 +155,16 @@ public class WalkingBusDrivingMultimodalRoute : MultimodalRoute
                            station.Lines.Intersect(goalLines).Any());
             if (transferPoint != null) // single transfer point
             {
-                var transferTrainStationWaterwayNode =
-                    _environment.NearestNode(transferPoint.Position, SpatialModalityType.TrainDriving);
-                var trainRoute1 = _environment.FindShortestRoute(startTrainStationNode,
-                    transferTrainStationWaterwayNode, TrainDrivingFilter);
-                trainRoutes.Add(trainRoute1);
+                var transferBusStationWaterwayNode =
+                    _environment.NearestNode(transferPoint.Position, SpatialModalityType.CarDriving);
+                var busRoute1 = _environment.FindShortestRoute(startBusStationNode,
+                    transferBusStationWaterwayNode, BusDrivingFilter);
+                busRoutes.Add(busRoute1);
 
-                var trainRoute2 = _environment.FindShortestRoute(transferTrainStationWaterwayNode,
-                    goalTrainStationNode,
-                    TrainDrivingFilter);
-                trainRoutes.Add(trainRoute2);
+                var busRoute2 = _environment.FindShortestRoute(transferBusStationWaterwayNode,
+                    goalBusStationNode,
+                    BusDrivingFilter);
+                busRoutes.Add(busRoute2);
             }
             else // multiple transfer points
             {
@@ -183,32 +183,32 @@ public class WalkingBusDrivingMultimodalRoute : MultimodalRoute
                         if (transferStart.Lines.Intersect(transferGoal.Lines).Any())
                         {
                             var transferStartNode = _environment.NearestNode(transferStart.Position,
-                                SpatialModalityType.TrainDriving);
+                                SpatialModalityType.CarDriving);
                             var transferGoalNode = _environment.NearestNode(transferGoal.Position,
-                                SpatialModalityType.TrainDriving);
+                                SpatialModalityType.CarDriving);
 
-                            var trainRoute1 = _environment.FindShortestRoute(startTrainStationNode, transferStartNode,
-                                TrainDrivingFilter);
-                            trainRoutes.Add(trainRoute1);
+                            var busRoute1 = _environment.FindShortestRoute(startBusStationNode, transferStartNode,
+                                BusDrivingFilter);
+                            busRoutes.Add(busRoute1);
 
-                            var trainRoute2 = _environment.FindShortestRoute(transferStartNode, transferGoalNode,
-                                TrainDrivingFilter);
-                            trainRoutes.Add(trainRoute2);
+                            var busRoute2 = _environment.FindShortestRoute(transferStartNode, transferGoalNode,
+                                BusDrivingFilter);
+                            busRoutes.Add(busRoute2);
 
-                            var trainRoute3 = _environment.FindShortestRoute(transferGoalNode, goalTrainStationNode,
-                                TrainDrivingFilter);
-                            trainRoutes.Add(trainRoute3);
+                            var busRoute3 = _environment.FindShortestRoute(transferGoalNode, goalBusStationNode,
+                                BusDrivingFilter);
+                            busRoutes.Add(busRoute3);
                         }
                     }
                 }
             }
         }
 
-        return trainRoutes;
+        return busRoutes;
 
-        bool TrainDrivingFilter(ISpatialEdge edge)
+        static bool BusDrivingFilter(ISpatialEdge edge)
         {
-            return edge.Modalities.Contains(SpatialModalityType.TrainDriving);
+            return edge.Modalities.Contains(SpatialModalityType.CarDriving);
         }
     }
 }
