@@ -21,7 +21,12 @@
       ]
     },
     {
-      "name": "BusDriver"
+      "name": "BusDriver",
+      "outputs": [
+        {
+          "kind": "trips"
+        }
+      ]
     }
   ],
   "layers": [
