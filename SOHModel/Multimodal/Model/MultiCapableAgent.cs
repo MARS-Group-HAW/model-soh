@@ -1,3 +1,4 @@
+using Mars.Common.Core;
 using Mars.Common.Core.Random;
 using Mars.Interfaces.Annotations;
 using Mars.Interfaces.Environments;
@@ -301,7 +302,7 @@ public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>,
                 case ModalChoice.Bus:
                     var busStation = BusStationLayer.Nearest(Position);
                     if (busStation == null) return false;
-                    var bus = busStation.Find(route.Goal);
+                    var bus = busStation.Find(BusStationLayer.Nearest(route.Goal).Position);
                     return TryEnterVehicleAsPassenger(bus, this);
                 default:
                     throw new ArgumentOutOfRangeException();
