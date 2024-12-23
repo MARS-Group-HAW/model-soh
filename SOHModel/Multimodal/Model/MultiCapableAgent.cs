@@ -507,7 +507,7 @@ public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>,
     
     [PropertyDescription] public ICarParkingLayer CarParkingLayer { get; set; }
 
-    [PropertyDescription] public IBusStationLayer BusStationLayer { get; }
+    [PropertyDescription] public IBusStationLayer BusStationLayer { get; set; }
 
     /// <summary>
     ///     The currently active modal type.
