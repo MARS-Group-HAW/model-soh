@@ -1,4 +1,4 @@
-﻿using Mars.Components.Environments;
+using Mars.Components.Environments;
 using Mars.Components.Layers;
 using Mars.Interfaces.Agents;
 using Mars.Interfaces.Annotations;
@@ -60,6 +60,13 @@ public abstract class AbstractMultimodalLayer : AbstractLayer, IMultimodalLayer,
     /// </summary>
     [PropertyDescription]
     public TrainStationLayer? TrainStationLayer { get; set; }
+
+    /// <summary>
+    ///     Gets the <see cref="BusStationLayer" /> holding all stations
+    ///     where the <see cref="ModalChoice.CarDriving" /> is available.
+    /// </summary>
+    [PropertyDescription]
+    public BusStationLayer? BusStationLayer { get; set; }
 
     /// <summary>
     ///     Gets the <see cref="BicycleParkingLayer" /> holding all parking lots
