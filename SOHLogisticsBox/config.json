@@ -1,0 +1,61 @@
+{
+  "id": "autobahn_simulation",
+  "globals": {
+    "deltaT": 1,
+    "startPoint": "2021-10-11T06:00:00",
+    "endPoint": "2021-10-11T18:00:00",
+    "deltaTUnit": "seconds",
+    "console": true
+  },
+  "agents": [
+    {
+      "name": "SemiTruckDriver",
+      "count": 100,
+      "file": "resources/semi_truck_initializer.csv",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": [
+              "StableId",
+              "StartPosition",
+              "EndPosition",
+              "DistanceTraveled",
+              "Duration"
+            ]
+          }
+        }
+      ],
+      "individual": [
+        {
+          "name": "ResultTrajectoryEnabled",
+          "value": true
+        }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "name": "SemiTruckLayer",
+      "inputs": [
+        {
+          "file": "resources/autobahn_und_bundesstrassen_deutschland.geojson",
+          "inputConfiguration": {
+            "modalities": ["CarDriving"],
+            "isBidirectedGraph": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "SemiTruckSchedulerLayer",
+      "file": "resources/semi_truck_scheduler.csv"
+    }
+  ],
+  "entities": [
+    {
+      "name": "SemiTruck",
+      "file": "resources/semi_truck.csv"
+    }
+  ]
+}

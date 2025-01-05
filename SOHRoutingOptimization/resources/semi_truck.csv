@@ -1,2 +1,0 @@
-type,maxAcceleration,maxDeceleration,maxSpeed,length,height,width,trafficCode,passengerCapacity,velocity,mass
-StandardTruck,0.5,1.2,20.83,12,4,2.5,german,2,0,15000

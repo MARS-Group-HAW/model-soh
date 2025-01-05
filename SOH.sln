@@ -19,7 +19,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOHFerryTransferBox", "SOHF
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOHTrainBox", "SOHTrainBox\SOHTrainBox.csproj", "{A9FF79F1-8567-42D6-90EC-6175E1F7249D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOHRoutingOptimization", "SOHRoutingOptimization\SOHRoutingOptimization.csproj", "{ec203d8f-5e84-4803-9f29-14eff6dc0991}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOHLogisticsBox", "SOHLogisticsBox\SOHLogisticsBox.csproj", "{ec203d8f-5e84-4803-9f29-14eff6dc0991}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOHTravellingBox", "SOHTravellingBox\SOHTravellingBox.csproj", "{6481BB71-B8BD-40B3-A5E1-78113314003B}"
 EndProject

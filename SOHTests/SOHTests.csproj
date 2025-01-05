@@ -17,7 +17,7 @@
         </PackageReference>
     </ItemGroup>
     <ItemGroup>
-        <None Update="SOHRoutingOptimization\resources\autobahn_und_bundesstrassen_deutschland.geojson">
+        <None Update="SOHLogisticsBox\resources\autobahn_und_bundesstrassen_deutschland.geojson">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
@@ -26,7 +26,7 @@
         <ProjectReference Include="..\SOHModel\SOHModel.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <Content Include="..\SOHRoutingOptimization\resources\**">
+        <Content Include="..\SOHLogisticsBox\resources\**">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
