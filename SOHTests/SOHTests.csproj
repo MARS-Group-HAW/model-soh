@@ -16,11 +16,21 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
     </ItemGroup>
+    <ItemGroup>
+        <None Update="SOHRoutingOptimization\resources\autobahn_und_bundesstrassen_deutschland.geojson">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\SOHModel\SOHModel.csproj" />
     </ItemGroup>
-
+    <ItemGroup>
+        <Content Include="..\SOHRoutingOptimization\resources\**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+    
     <ItemGroup>
         <Content Include="res\**">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

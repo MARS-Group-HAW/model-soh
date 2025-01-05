@@ -78,7 +78,7 @@ public static class SemiTruckRouteFinder
                 // Finds the shortest route between start and goal nodes
                 currentNode = environment.NearestNode(Position.CreateGeoPosition(startLon, startLat));
                 var goal = environment.NearestNode(Position.CreateGeoPosition(destLon, destLat));
-
+                
                 route = environment.FindShortestRoute(currentNode, goal,
                     edge => edge.Modalities.Contains(SpatialModalityType.CarDriving)) ?? new Route();
 

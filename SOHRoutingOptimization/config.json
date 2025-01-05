@@ -39,7 +39,7 @@
       "name": "SemiTruckLayer",
       "inputs": [
         {
-          "file": "resources/autobahn_and_bundesstreet.geojson",
+          "file": "resources/autobahn_und_bundesstrassen_deutschland.geojson",
           "inputConfiguration": {
             "modalities": ["CarDriving"],
             "isBidirectedGraph": true
