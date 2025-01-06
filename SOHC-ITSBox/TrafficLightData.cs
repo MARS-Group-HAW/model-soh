@@ -28,10 +28,16 @@ namespace SOHC_ITSBox
             // Koordinate in das JSON-Format umwandeln
             string coordinateToFind = $"({latitude}, {longitude})";
 
+            int counter = 0;
             // Durchsuche die Koordinatenpaare in der JSON-Datei
             foreach (var entry in _coordinatesData.Keys)
             {
-                if (entry.Contains(coordinateToFind))
+                string normalizedCoordinateToFind = coordinateToFind.Replace("\r\n", "\n").Replace("\r", "\n").Trim();
+                string normalizedEntry = entry.Replace("\r\n", "\n").Replace("\r", "\n").Trim();
+
+                Console.WriteLine($"var: {++counter} Comparing entry: '{normalizedEntry}' with coordinate: '{normalizedCoordinateToFind}'");
+
+                if (normalizedEntry.Contains(normalizedCoordinateToFind, StringComparison.OrdinalIgnoreCase))
                 {
                     // Gib die gesamte Liste der Phasen zurück
                     return _coordinatesData[entry];
@@ -40,5 +46,6 @@ namespace SOHC_ITSBox
 
             throw new KeyNotFoundException($"Keine Phasen für die Koordinate {coordinateToFind} gefunden.");
         }
+
     }
 }
