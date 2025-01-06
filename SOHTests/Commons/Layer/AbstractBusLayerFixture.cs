@@ -14,9 +14,9 @@ namespace SOHTests.Commons.Layer;
 /// In order to use this fixture, you need to create a derived class and pass the file paths of the line schedule and the station file.
 /// For an example, see <see cref="BigEventBusLayerFixture"/>.
 /// </remarks>
-public abstract class BusLayerFixture : IDisposable
+public abstract class AbstractBusLayerFixture : IDisposable
 {
-    public BusLayerFixture(string lineScheduleFilePath, string stationFilePath) {
+    public AbstractBusLayerFixture(string lineScheduleFilePath, string stationFilePath) {
         CheckInput(new[] { lineScheduleFilePath, stationFilePath });
         LineScheduleFilePath = lineScheduleFilePath;
         StationFilePath = stationFilePath;

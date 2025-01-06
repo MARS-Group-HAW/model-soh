@@ -261,6 +261,8 @@ public class BusDriverTests : IClassFixture<BusRouteLayerFixture>
         Assert.NotEqual(Guid.Empty, driver.ID);
         for (var i = 0; i < 10000; i++, layer.Context.UpdateStep()) driver.Tick();
         Assert.True(goalReached);
+        // FIXME: This tests is bound to the condition of having a route with at least 2 entries. Either the test is not doing what it is supposed to do, or the drivers' inner counting logic is not.
+        // Proof: The test succeeds, if target is set to a position that is at least two route sections away from source.
         Assert.True(driver.StationStops > 0);
         Assert.True(driver.GoalReached);
         Assert.NotEqual(source, driver.Position);

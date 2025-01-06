@@ -7,6 +7,7 @@ using Mars.Interfaces.Layers;
 using SOHModel.Bicycle.Parking;
 using SOHModel.Bicycle.Rental;
 using SOHModel.Bicycle.Steering;
+using SOHModel.Bus.Station;
 using SOHModel.Car.Parking;
 using SOHModel.Car.Rental;
 using SOHModel.Car.Steering;
@@ -60,6 +61,13 @@ public abstract class AbstractMultimodalLayer : AbstractLayer, IMultimodalLayer,
     /// </summary>
     [PropertyDescription]
     public TrainStationLayer? TrainStationLayer { get; set; }
+
+    /// <summary>
+    ///     Gets the <see cref="BusStationLayer" /> holding all stations
+    ///     where the <see cref="ModalChoice.Bus" /> is available.
+    /// </summary>
+    [PropertyDescription]
+    public BusStationLayer? BusStationLayer { get; set; }
 
     /// <summary>
     ///     Gets the <see cref="BicycleParkingLayer" /> holding all parking lots
@@ -129,6 +137,9 @@ public abstract class AbstractMultimodalLayer : AbstractLayer, IMultimodalLayer,
                 case ModalChoice.Train:
                     result = result.Concat(ResolveModalChoice(source, modalChoice, TrainStationLayer));
                     break;
+                case ModalChoice.Bus:
+                    result = result.Concat(ResolveModalChoice(source, modalChoice, BusStationLayer));
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -147,6 +158,7 @@ public abstract class AbstractMultimodalLayer : AbstractLayer, IMultimodalLayer,
             ModalChoice.CarDriving => ConsumeModalChoice(source, CarParkingLayer),
             ModalChoice.Ferry => ConsumeModalChoice(source, FerryStationLayer),
             ModalChoice.Train => ConsumeModalChoice(source, TrainStationLayer),
+            ModalChoice.Bus => ConsumeModalChoice(source, BusStationLayer),
             _ => throw new ArgumentOutOfRangeException()
         };
     }

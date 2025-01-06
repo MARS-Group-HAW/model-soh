@@ -13,7 +13,7 @@ using Xunit;
 
 namespace SOHTests.BigEventTests.PublicTransportTests;
 
-public class BigEventBusLayerFixture : BusLayerFixture
+public class BigEventBusLayerFixture : AbstractBusLayerFixture
 {
     public BigEventBusLayerFixture() : base(ResourcesConstants.BigEventBusLinesCsv, ResourcesConstants.BigEventBusGraph) { }
 }
