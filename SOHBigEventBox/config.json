@@ -113,7 +113,7 @@
     // },
     {
       "name": "BusStationLayer",
-      "file": "resources/public_transport/bus/bus_graph.geojson"
+      "file": "resources/public_transport/bus/bus_stops.geojson"
     },
     {
       "name": "BusLayer",
