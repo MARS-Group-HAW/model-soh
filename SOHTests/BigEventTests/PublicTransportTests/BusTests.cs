@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using Mars.Common.IO.Csv;
 using Mars.Components.Environments;
 using Mars.Core.Data;
@@ -49,6 +50,7 @@ public class BusTests : IClassFixture<BigEventBusLayerFixture>
                 }
             })
         };
+        File.WriteAllText("busgraph_out.geojson", _layer.GraphEnvironment.ToGeoJson());
     }
 
 
