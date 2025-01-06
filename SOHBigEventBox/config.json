@@ -88,10 +88,6 @@
       "name": "BusSchedulerLayer",
       "file": "resources/public_transport/bus/bus_driver_schedule.csv"
     },
-    // {
-    //   "name": "BusGtfsRouteLayer",
-    //   "file": "resources/public_transport/HVV_GTFS"
-    // },
     {
       "name": "BusStationLayer",
       "file": "resources/public_transport/bus/bus_stops.geojson"
