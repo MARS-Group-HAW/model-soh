@@ -20,16 +20,20 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
     private readonly ISpatialNode _node;
     private readonly ISpatialGraphEnvironment _environment;
     private readonly TrafficLightLayer _trafficLightLayer;
-    private Dictionary<Tuple<ISpatialEdge, ISpatialEdge>, SOHModel.Multimodal.Layers.TrafficLight.TrafficLight> _roadLightMappings;
+    private Dictionary<Tuple<ISpatialEdge, ISpatialEdge>, TrafficLight> _roadLightMappings;
+    private List<int> phases;
+    private int tickCounter;
 
-
-    public TrafficLightController(ILayer layer, ISpatialGraphEnvironment environment, double lat, double lon)
+    public TrafficLightController(ILayer layer, ISpatialGraphEnvironment environment, double lat, double lon, TrafficLightData tlData)
     {
         _trafficLightLayer = (TrafficLightLayer)layer;
         Position = Position.CreateGeoPosition(lon, lat);
         this.lat = lat;
         this.lon = lon;
-
+        this.phases = tlData.GetPhasesForCoordinate(lat, lon);
+        this.tickCounter = 0;
+        
+        
         _node = environment.NearestNode(Position);
         _environment = environment;
         
@@ -75,17 +79,26 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
     
     public void UpdateLightPhase()
     {
-        CurrentTick++;
-        if (CycleLength == 0 || _trafficLightLayer.Context.CurrentTick % CycleLength == 1) CurrentTick = 0;
-        
         
         foreach (var tuple in _roadLightMappings)
-            if (tuple.Value.StartRedTick == CurrentTick)
+            if (phases[tickCounter] == 1)
                 tuple.Value.TrafficLightPhase = TrafficLightPhase.Red;
-            else if (tuple.Value.StartYellowTick == CurrentTick)
+            else if (phases[tickCounter] == 2)
                 tuple.Value.TrafficLightPhase = TrafficLightPhase.Yellow;
-            else if (tuple.Value.StartGreenTick == CurrentTick)
+            else if (phases[tickCounter] == 3)
                 tuple.Value.TrafficLightPhase = TrafficLightPhase.Green;
+        tickCounter++;
+        
+        // CurrentTick++;
+        // if (CycleLength == 0 || _trafficLightLayer.Context.CurrentTick % CycleLength == 1) CurrentTick = 0;
+        //
+        // foreach (var tuple in _roadLightMappings)
+        //     if (tuple.Value.StartRedTick == CurrentTick)
+        //         tuple.Value.TrafficLightPhase = TrafficLightPhase.Red;
+        //     else if (tuple.Value.StartYellowTick == CurrentTick)
+        //         tuple.Value.TrafficLightPhase = TrafficLightPhase.Yellow;
+        //     else if (tuple.Value.StartGreenTick == CurrentTick)
+        //         tuple.Value.TrafficLightPhase = TrafficLightPhase.Green;
     }
 
     // todo insert our own schedule based on our traffic light rt-data

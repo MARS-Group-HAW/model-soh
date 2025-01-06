@@ -118,6 +118,7 @@ public class TrafficLightLayer : AbstractActiveLayer
     {
         if (Context.CurrentTick == 1)
         {
+            string phasesFilePath = Path.Combine("./../../../", "SOHC-ITSBox/resources", "output_traffic_light_phases.json");
             //figure out lat/lon columns
             var header = _trafficLightPositions[0].Split(',');
             int latColumn = 0, lonColumn = 0;
@@ -132,7 +133,9 @@ public class TrafficLightLayer : AbstractActiveLayer
                 var lineParts = _trafficLightPositions[i].Split(',');
                 _trafficLightControllers.Add(
                     new TrafficLightController(this, _carLayer.Environment,
-                        lineParts[latColumn].Value<double>(), lineParts[lonColumn].Value<double>()));
+                        lineParts[latColumn].Value<double>(), lineParts[lonColumn].Value<double>(),
+                        new TrafficLightData(phasesFilePath))
+                    );
             }
 
             Logger.LogInfo(_trafficLightControllers.Count + " Traffic light controllers created");

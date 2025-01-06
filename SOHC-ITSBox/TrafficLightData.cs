@@ -17,7 +17,6 @@ namespace SOHC_ITSBox
             {
                 throw new FileNotFoundException($"Die Datei {filePath} wurde nicht gefunden.");
             }
-
             var jsonData = File.ReadAllText(filePath);
             _coordinatesData = JsonConvert.DeserializeObject<Dictionary<string, List<int>>>(jsonData);
         }
