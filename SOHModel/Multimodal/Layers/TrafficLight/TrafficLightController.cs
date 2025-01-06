@@ -2,6 +2,7 @@ using Mars.Common;
 using Mars.Interfaces.Agents;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Layers;
+using SOHModel.Car.Model;
 
 namespace SOHModel.Multimodal.Layers.TrafficLight;
 
@@ -11,6 +12,7 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
     public const int YellowDuration = 3;
 
     private readonly ISpatialNode _node;
+    private readonly ISpatialGraphEnvironment _environment;
     private readonly TrafficLightLayer _trafficLightLayer;
     private Dictionary<Tuple<ISpatialEdge, ISpatialEdge>, SOHModel.Multimodal.Layers.TrafficLight.TrafficLight> _roadLightMappings;
 
@@ -19,8 +21,9 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
     {
         _trafficLightLayer = (TrafficLightLayer)layer;
         Position = Position.CreateGeoPosition(lon, lat);
-
         _node = environment.NearestNode(Position);
+        _environment = environment;
+        
         var distance = _node.Position.DistanceInKmTo(Position) * 1000;
         if (distance > 10)
             _trafficLightLayer.Logger.LogWarning(
@@ -42,10 +45,9 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
     {
         return _roadLightMappings[new Tuple<ISpatialEdge, ISpatialEdge>(from, to)].TrafficLightPhase;
     }
-
+    
     public Position Position { get; set; }
-
-
+    
     public bool AccessEdge(long tick, ISpatialEdge from, ISpatialEdge to)
     {
         var currentPhase = _roadLightMappings[new Tuple<ISpatialEdge, ISpatialEdge>(from, to)].TrafficLightPhase;
@@ -55,11 +57,19 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
         return false;
     }
 
+    private bool detectEmergencyVehicle()
+    {
+        //TODO detect emergency vehicle
+        //_environment.Explore()
+        return false;
+    }
+    
     public void UpdateLightPhase()
     {
         CurrentTick++;
         if (CycleLength == 0 || _trafficLightLayer.Context.CurrentTick % CycleLength == 1) CurrentTick = 0;
-
+        
+        
         foreach (var tuple in _roadLightMappings)
             if (tuple.Value.StartRedTick == CurrentTick)
                 tuple.Value.TrafficLightPhase = TrafficLightPhase.Red;

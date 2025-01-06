@@ -7,6 +7,7 @@ using SOHModel.Domain.Model;
 using SOHModel.Domain.Steering.Acceleration;
 using SOHModel.Domain.Steering.Capables;
 using SOHModel.Domain.Steering.Handles.Intersection;
+using SOHModel.Multimodal.Layers.TrafficLight;
 
 namespace SOHModel.Domain.Steering.Handles;
 
@@ -190,15 +191,22 @@ public class VehicleSteeringHandle
                 //TODO traffic light controller holen und auf grün schalten
                 if (Vehicle.Driver is EmergencyCarDriver)
                 {
-                    //edgeExploreResult.LightPhase = TrafficLightPhase.Green; 
+                    //Console.WriteLine("Emergency vehicle detected");
                     //TODO force green
-                    String entities = edgeExploreResult.Edge.Entities.ToString();
-                    if (entities.Contains("TrafficLight"))
+                    //edgeExploreResult.LightPhase = TrafficLightPhase.Green; 
+                    IReadOnlyCollection<ISpatialGraphEntity> entities = edgeExploreResult.Edge.Entities;
+                    if (entities == null) continue;
+                    foreach (var entity in entities)
                     {
-                        Console.WriteLine("Traffic Light found");
-                        //TODO force green
+                        Console.WriteLine("Entity found: " + entity.GetType().ToString());
+                        
+                        if (entity is TrafficLight trafficLight)
+                        {
+                            //TODO force green 
+                            //Console.WriteLine("Traffic light found");
+                        }
                     }
-                  return biggestDeceleration;  
+                    return biggestDeceleration;  
                 }
                 
                 var speedChange = CalculateSpeedChange(Vehicle.Velocity, MaxSpeed,
