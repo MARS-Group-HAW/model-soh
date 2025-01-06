@@ -52,17 +52,6 @@
           "parameter": "ResultTrajectoryEnabled"
         }
       ]
-    },
-    {
-      "name": "TrainDriver",
-      "outputs": [
-        {
-          "kind": "trips",
-          "outputConfiguration": {
-            "tripsFields": ["LoadPercentage"]
-          }
-        }
-      ]
     }
   ],
   "layers": [
@@ -71,14 +60,6 @@
       "inputs": [
         {
           "file": "resources/walking_and_cycling_base.geojson"
-        },
-        {
-          "file": "resources/public_transport/commuter_train/commuter_train_graph.geojson",
-          "inputConfiguration": {
-            "modalities": ["TrainDriving"],
-            "isBidirectedGraph": true,
-            "noHelperNodes": true
-          }
         },
         {
           "file": "resources/public_transport/bus/bus_graph_all.geojson",
@@ -124,22 +105,6 @@
       "file": "resources/public_transport/bus/bus_lines_stop_times.csv"
     },
     {
-      "name": "TrainStationLayer",
-      "file": "resources/public_transport/commuter_train/commuter_train_stations.geojson"
-    },
-    {
-      "name": "TrainRouteLayer",
-      "file": "resources/public_transport/commuter_train/commuter_train_plan.csv"
-    },
-    {
-      "name": "TrainLayer",
-      "file": "resources/public_transport/commuter_train/commuter_train_graph.geojson"
-    },
-    {
-      "name": "TrainSchedulerLayer",
-      "file": "resources/public_transport/commuter_train/commuter_train_driver_schedule.csv"
-    },
-    {
       "name": "BicycleParkingLayer",
       "file": "resources/barclays_bike_parking.geojson"
     },
@@ -152,10 +117,6 @@
     {
       "name": "Bus",
       "file": "resources/public_transport/bus/bus.csv"
-    },
-    {
-      "name": "Train",
-      "file": "resources/public_transport/commuter_train/commuter_train.csv"
     },
     {
       "name": "Bicycle",
