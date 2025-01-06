@@ -56,8 +56,24 @@ public class BusDriver : AbstractAgent, IBusSteeringCapable
     [PropertyDescription(Name = "reversedRoute")]
     public bool ReversedRoute { get; set; }
 
-    [PropertyDescription] public BusLayer Layer { get; }
+    [PropertyDescription]
+    public float LoadPercentage => (float)Math.Round(getLoadPercentage(), 2);
 
+    [PropertyDescription]
+    public int PassengerCount => Bus.Passengers?.Count ?? 0;
+
+    [PropertyDescription]
+    public int PassengerCapacity => Bus.PassengerCapacity;
+
+    private float getLoadPercentage() {
+        if (PassengerCount > 0)
+        {
+            return PassengerCount * 100 / (float)PassengerCapacity;
+        }
+        return 0;
+    }
+
+    [PropertyDescription] public BusLayer Layer { get; }
     private Mars.Interfaces.Environments.Route Route
     {
         get => _steeringHandle.Route;

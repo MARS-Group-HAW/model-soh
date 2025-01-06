@@ -14,7 +14,7 @@
         {
           "kind": "trips",
           "outputConfiguration": {
-            "tripsFields": ["LoadPercentage"]
+            "tripsFields": ["PassengerCount", "PassengerCapacity", "LoadPercentage"]
           }
         }
       ]
