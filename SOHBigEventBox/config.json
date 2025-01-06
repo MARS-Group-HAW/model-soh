@@ -81,7 +81,7 @@
           }
         },
         {
-          "file": "resources/public_transport/bus/bus_graph.geojson",
+          "file": "resources/public_transport/bus/bus_graph_all.geojson",
           "inputConfiguration": {
             "GeometryAsNodesEnabled": false,
             "isBidirectedGraph": true,
@@ -117,7 +117,7 @@
     },
     {
       "name": "BusLayer",
-      "file": "resources/public_transport/bus/bus_graph.geojson"
+      "file": "resources/public_transport/bus/bus_graph_all.geojson"
     },
     {
       "name": "BusRouteLayer",
