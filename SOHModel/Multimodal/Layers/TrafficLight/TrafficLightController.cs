@@ -9,6 +9,12 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
 {
     public const int GreenDuration = 20;
     public const int YellowDuration = 3;
+    
+    
+
+    // we saved these for that we know for every controller object at which traffic light we currently are
+    public double lat;
+    public double lon;
 
     private readonly ISpatialNode _node;
     private readonly TrafficLightLayer _trafficLightLayer;
@@ -19,6 +25,8 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
     {
         _trafficLightLayer = (TrafficLightLayer)layer;
         Position = Position.CreateGeoPosition(lon, lat);
+        this.lat = lat;
+        this.lon = lon;
 
         _node = environment.NearestNode(Position);
         var distance = _node.Position.DistanceInKmTo(Position) * 1000;
@@ -69,9 +77,10 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
                 tuple.Value.TrafficLightPhase = TrafficLightPhase.Green;
     }
 
+    // todo insert our own schedule based on our traffic light rt-data
     public void GenerateTrafficSchedules()
     {
-        var greenStartTick = 0;
+        var greenStartTick = 0; 
 
         _roadLightMappings = new Dictionary<Tuple<ISpatialEdge, ISpatialEdge>, SOHModel.Multimodal.Layers.TrafficLight.TrafficLight>();
 
