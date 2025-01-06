@@ -189,8 +189,11 @@ public class VehicleSteeringHandle
             {
                 //TODO traffic light controller holen und auf grün schalten
                 if (Vehicle.Driver is EmergencyCarDriver)
-               {
-                    //TODO force green 
+                {
+                    //edgeExploreResult.LightPhase = TrafficLightPhase.Green; 
+                    //TODO force green
+                    String entities = edgeExploreResult.Edge.Entities.ToString();
+                    Console.WriteLine(entities);
                   return biggestDeceleration;  
                 }
                 
