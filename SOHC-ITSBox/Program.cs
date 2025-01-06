@@ -51,16 +51,6 @@ internal static class Program
             Console.WriteLine($"Ein Fehler ist aufgetreten: {ex.Message}");
         }
 
-
-
-
-
-
-
-
-
-
-
         Thread.CurrentThread.CurrentCulture = new CultureInfo("EN-US");
         LoggerFactory.SetLogLevel(LogLevel.Info);
 
