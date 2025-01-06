@@ -21,7 +21,12 @@
       ]
     },
     {
-      "name": "BusDriver"
+      "name": "BusDriver",
+      "outputs": [
+        {
+          "kind": "trips"
+        }
+      ]
     }
   ],
   "layers": [
@@ -32,7 +37,7 @@
       "name": "SpatialGraphMediatorLayer",
       "inputs": [
         {
-          "file": "resources/altona_altstadt_walk_graph.graphml",
+          "file": "Resources/altona_altstadt_walk_graph.graphml",
           "inputConfiguration": {
             "modalities": [
               "Walking",
@@ -44,33 +49,33 @@
     },
     {
       "name": "PassengerTravelerSchedulerLayer",
-      "file": "resources/passenger_traveler_schedule.csv"
+      "file": "Resources/passenger_traveler_schedule.csv"
     },
     {
       "name": "BusStationLayer",
-      "file": "resources/hamburg_bus_113_stations.geojson"
+      "file": "Resources/hamburg_bus_113_stations.geojson"
     },
     {
       "name": "BusRouteLayer",
-      "file": "resources/bus_113_line.csv"
+      "file": "Resources/bus_113_line.csv"
     },
     {
       "name": "BusGtfsRouteLayer",
-      "file": "resources/HVV_GTFS"
+      "file": "Resources/HVV_GTFS"
     },
     {
       "name": "BusLayer",
-      "file": "resources/altona_altstadt_walk_graph.graphml"
+      "file": "Resources/altona_altstadt_walk_graph.graphml"
     },
     {
       "name": "BusSchedulerLayer",
-      "file": "resources/bus_driver_schedule.csv"
+      "file": "Resources/bus_driver_schedule.csv"
     }
   ],
   "entities": [
     {
       "name": "Bus",
-      "file": "resources/bus.csv"
+      "file": "Resources/bus.csv"
     }
   ]
 }

@@ -19,6 +19,8 @@ public class TestMultiCapableAgent : MultiCapableAgent<TestMultimodalLayer>
     public bool HasUsedFerry { get; protected set; }
     public bool HasUsedTrain { get; protected set; }
 
+    public bool HasUsedBus { get; protected set; }
+
     public override void Init(TestMultimodalLayer layer)
     {
         Gender = GenderType.Male;
@@ -31,6 +33,7 @@ public class TestMultiCapableAgent : MultiCapableAgent<TestMultimodalLayer>
         CarRentalLayer = layer.CarRentalLayer;
         FerryStationLayer = layer.FerryStationLayer;
         TrainStationLayer = layer.TrainStationLayer;
+        BusStationLayer = layer.BusStationLayer;
 
         EnableCapability(ModalChoice);
 
@@ -69,6 +72,10 @@ public class TestMultiCapableAgent : MultiCapableAgent<TestMultimodalLayer>
         else if (modalChoice == ModalChoice.Train)
         {
             HasUsedTrain = true;
+        }
+        else if (modalChoice == ModalChoice.Bus)
+        {
+            HasUsedBus = true;
         }
 
         return true;
