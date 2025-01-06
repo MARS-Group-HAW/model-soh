@@ -36,7 +36,7 @@ internal static class Program
         try
         {
             // Pfad zur JSON-Datei
-            string filePath = Path.Combine("..", "resources", "output_traffic_light_phases.json");
+            string filePath = Path.Combine(".", "resources", "output_traffic_light_phases.json");
             // TrafficLightData-Instanz erstellen
             var trafficLightData = new TrafficLightData(filePath);
 
