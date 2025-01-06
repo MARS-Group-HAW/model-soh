@@ -193,7 +193,11 @@ public class VehicleSteeringHandle
                     //edgeExploreResult.LightPhase = TrafficLightPhase.Green; 
                     //TODO force green
                     String entities = edgeExploreResult.Edge.Entities.ToString();
-                    Console.WriteLine(entities);
+                    if (entities.Contains("TrafficLight"))
+                    {
+                        Console.WriteLine("Traffic Light found");
+                        //TODO force green
+                    }
                   return biggestDeceleration;  
                 }
                 
