@@ -151,7 +151,7 @@ public class MultimodalRouteFinder : IMultimodalRouteFinder
         return null;
     }
     
-    private MultimodalRoute? FindBusRoute(IModalCapabilitiesAgent agent, Position start, Position busStop, Position goal)
+    private MultimodalRoute? FindBusRoute(IModalCapabilitiesAgent agent, Position start, Position? busStop, Position goal)
     {
         if (agent is IBusPassenger { BusStationLayer: not null } busPassenger)
         {
