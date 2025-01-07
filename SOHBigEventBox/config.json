@@ -64,11 +64,8 @@
         {
           "file": "resources/public_transport/bus/bus_graph_all.geojson",
           "inputConfiguration": {
-            "GeometryAsNodesEnabled": false,
             "isBidirectedGraph": true,
-            "modalities": [
-              "CarDriving"
-            ]
+            "GeometryAsNodesEnabled": false
           }
         },
         {
