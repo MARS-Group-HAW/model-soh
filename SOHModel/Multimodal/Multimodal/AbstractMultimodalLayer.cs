@@ -165,9 +165,9 @@ public abstract class AbstractMultimodalLayer : AbstractLayer, IMultimodalLayer,
 
 
     public MultimodalRoute Search(IModalCapabilitiesAgent agent, Position start, Position goal,
-        ModalChoice modalChoice)
+        ModalChoice modalChoice, Position busStop = null)
     {
-        return RouteFinder.Search(agent, start, goal, modalChoice);
+        return RouteFinder.Search(agent, start, goal, modalChoice, busStop);
     }
 
     public MultimodalRoute Search(IModalCapabilitiesAgent agent, Position start, Position goal,

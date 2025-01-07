@@ -15,8 +15,9 @@ public interface IMultimodalRouteFinder
     /// <param name="start">Start point of search.</param>
     /// <param name="goal">End point of search.</param>
     /// <param name="modalChoice">Define which modal type is used.</param>
+    /// <param name="busStop">Optional bus stop to use if agent is using bus.</param>
     /// <returns>The multimodal route for given capability.</returns>
-    MultimodalRoute Search(IModalCapabilitiesAgent agent, Position start, Position goal, ModalChoice modalChoice);
+    MultimodalRoute Search(IModalCapabilitiesAgent agent, Position start, Position goal, ModalChoice modalChoice, Position busStop = null);
 
     /// <summary>
     ///     Provides the possibility to search for a <code>MultimodalRoute</code> for given capabilities.

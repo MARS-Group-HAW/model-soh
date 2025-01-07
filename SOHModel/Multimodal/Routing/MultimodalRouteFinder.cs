@@ -27,7 +27,7 @@ public class MultimodalRouteFinder : IMultimodalRouteFinder
     }
 
     public MultimodalRoute Search(IModalCapabilitiesAgent agent, Position start, Position goal,
-        ModalChoice modalChoice)
+        ModalChoice modalChoice, Position busStop = null)
     {
         try
         {
@@ -44,7 +44,7 @@ public class MultimodalRouteFinder : IMultimodalRouteFinder
                 case ModalChoice.Ferry:
                     return FindFerryRoute(agent, start, goal);
                 case ModalChoice.Bus:
-                    return FindBusRoute(agent, start, goal);
+                    return FindBusRoute(agent, start, busStop, goal);
                 case ModalChoice.Train:
                     return FindTrainRoute(agent, start, goal);
             }
@@ -151,16 +151,25 @@ public class MultimodalRouteFinder : IMultimodalRouteFinder
         return null;
     }
     
-    private MultimodalRoute? FindBusRoute(IModalCapabilitiesAgent agent, Position start, Position goal)
+    private MultimodalRoute? FindBusRoute(IModalCapabilitiesAgent agent, Position start, Position busStop, Position goal)
     {
         if (agent is IBusPassenger { BusStationLayer: not null } busPassenger)
         {
-            return new WalkingBusDrivingMultimodalRoute(
-                _environmentMediatorLayer, 
-                busPassenger.BusStationLayer, 
-                start, goal);
+            if (busStop == null)
+            {
+                return new WalkingBusDrivingMultimodalRoute(
+                    _environmentMediatorLayer,
+                    busPassenger.BusStationLayer,
+                    start, goal);
+            }
+            else
+            {
+                return new WalkingBusDrivingMultimodalRoute(
+                    _environmentMediatorLayer,
+                    busPassenger.BusStationLayer,
+                    start, busStop, goal);
+            }
         }
-
         return null;
     }
 

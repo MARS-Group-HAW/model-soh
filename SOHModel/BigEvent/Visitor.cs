@@ -97,13 +97,31 @@ public class Visitor : Traveler<BaseWalkingLayer>
 
     protected override MultimodalRoute FindMultimodalRoute()
     {
-        
+        if (_preferred == ModalChoice.Bus)
+        {
+            return MultimodalLayer.Search(this, StartPosition, GoalPosition, _preferred, GetRandomBarclaysBusStop());
+        }
         //Console.WriteLine("Preferred modal choice: " + _preferred);
         //Console.Write("Visitor's start position: " + StartPosition);
         return MultimodalLayer.Search(this, StartPosition, GoalPosition, _preferred);
         
     }
-    
+
+    private Position GetRandomBarclaysBusStop()
+    {
+        // Hellgrundweg (Arenen) → 53.59257942213128, 9.899664442262846
+        // Arenen → 53.58858198797131, 9.899356525859814
+        // Am Volkspark → 53.58528373684015, 9.90828483429075
+        
+        var busStops = new List<Position>
+        {
+            new Position(53.59257942213128, 9.899664442262846),
+            new Position(53.58858198797131, 9.899356525859814),
+            new Position(53.58528373684015, 9.90828483429075)
+        };
+        return busStops[_random.Next(busStops.Count)];
+    }
+
 
     #region input
 

@@ -48,6 +48,45 @@ public class WalkingBusDrivingMultimodalRoute : MultimodalRoute
         }
     }
 
+    public WalkingBusDrivingMultimodalRoute(
+        ISpatialGraphLayer environmentLayer,
+        IBusStationLayer stationLayer, Position start, Position busstop, Position goal)
+    {
+        _start = busstop;
+        _goal = goal;
+
+        _busStationLayer = stationLayer;
+        _environment = environmentLayer.Environment;
+        
+        var startAgentNode = _environment.NearestNode(start, SpatialModalityType.Walking);
+        var busStopNode = _environment.NearestNode(busstop, SpatialModalityType.Walking);
+
+        if (!startAgentNode.Equals(busStopNode))
+        {
+            var routeToBusStop = _environment.FindShortestRoute(startAgentNode, busStopNode, WalkingFilter);
+            Add(routeToBusStop, ModalChoice.Walking);
+        }
+        
+        var (startBusStation, routeToFirstStation) = FindStartBusStationAndWalkingRoute();
+        var (goalBusStation, routeToGoal) = FindGoalBusStationAndFinalWalkingRoute();
+        var busRoutes = FindBusRoutes(startBusStation, goalBusStation).ToList();
+
+        if (busRoutes.Count == 0)
+            throw new ArgumentException("Could not find any bus route.");
+
+        if (routeToFirstStation != null) Add(routeToFirstStation, ModalChoice.Walking);
+        
+        foreach (var busRoute in busRoutes)
+        {
+            Add(busRoute, ModalChoice.Bus);
+        }
+
+        if (routeToGoal != null)
+        {
+            Add(routeToGoal, ModalChoice.Walking);
+        }
+    }
+
     private (BusStation?, Route?) FindStartBusStationAndWalkingRoute(
         HashSet<BusStation>? unreachable = null)
     {
