@@ -97,14 +97,10 @@ public class Visitor : Traveler<BaseWalkingLayer>
 
     protected override MultimodalRoute FindMultimodalRoute()
     {
-        if (_preferred == ModalChoice.Bus)
-        {
-            return MultimodalLayer.Search(this, StartPosition, GoalPosition, _preferred, GetRandomBarclaysBusStop());
-        }
-        //Console.WriteLine("Preferred modal choice: " + _preferred);
-        //Console.Write("Visitor's start position: " + StartPosition);
-        return MultimodalLayer.Search(this, StartPosition, GoalPosition, _preferred);
-        
+        return _preferred == ModalChoice.Bus ? MultimodalLayer.Search(this, StartPosition, GoalPosition, _preferred, GetRandomBarclaysBusStop()) :
+            //Console.WriteLine("Preferred modal choice: " + _preferred);
+            //Console.Write("Visitor's start position: " + StartPosition);
+            MultimodalLayer.Search(this, StartPosition, GoalPosition, _preferred);
     }
 
     private Position GetRandomBarclaysBusStop()
@@ -115,9 +111,9 @@ public class Visitor : Traveler<BaseWalkingLayer>
         
         var busStops = new List<Position>
         {
-            new Position(53.59257942213128, 9.899664442262846),
-            new Position(53.58858198797131, 9.899356525859814),
-            new Position(53.58528373684015, 9.90828483429075)
+            new Position(9.899664442262846, 53.59257942213128),
+            new Position(9.899356525859814, 53.58858198797131),
+            new Position(9.90828483429075, 53.58528373684015)
         };
         return busStops[_random.Next(busStops.Count)];
     }
