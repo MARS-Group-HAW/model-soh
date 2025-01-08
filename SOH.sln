@@ -29,6 +29,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOHDemonstrationBox", "SOHD
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOHVeddelFloodBox", "SOHVeddelFloodBox\SOHVeddelFloodBox.csproj", "{D9C01F0D-BD23-47B6-BF93-109BAFDC44C6}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SOC", "SOC", "{D0159346-F892-4181-A58D-E3AD9DA94C3C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOCTramBox", "SOCTramBox\SOCTramBox.csproj", "{7F44AC87-5AE9-4434-91E0-D12024A5F39A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -102,6 +106,12 @@ Global
 		{D9C01F0D-BD23-47B6-BF93-109BAFDC44C6}.Full|Any CPU.Build.0 = Debug|Any CPU
 		{D9C01F0D-BD23-47B6-BF93-109BAFDC44C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D9C01F0D-BD23-47B6-BF93-109BAFDC44C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F44AC87-5AE9-4434-91E0-D12024A5F39A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F44AC87-5AE9-4434-91E0-D12024A5F39A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F44AC87-5AE9-4434-91E0-D12024A5F39A}.Full|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F44AC87-5AE9-4434-91E0-D12024A5F39A}.Full|Any CPU.Build.0 = Debug|Any CPU
+		{7F44AC87-5AE9-4434-91E0-D12024A5F39A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F44AC87-5AE9-4434-91E0-D12024A5F39A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -109,6 +119,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{2E94544B-C35C-4988-B7CF-E1A1FF2EADF4} = {B7027C3F-ECBB-42CB-928F-F982832F9869}
 		{FA4F5EE2-FA7E-4974-9853-7207DF8F046E} = {7605A7C5-DDD8-4DE6-9D16-E8B5E839481E}
+		{7F44AC87-5AE9-4434-91E0-D12024A5F39A} = {D0159346-F892-4181-A58D-E3AD9DA94C3C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C4F712B8-6C5C-4036-87BE-AFF59ACFC99C}

@@ -1,0 +1,60 @@
+{
+  "globals": {
+    "deltaT": 1,
+    "startPoint": "2022-09-01T06:00:00",
+    "endPoint": "2022-09-01T08:00:00",
+    "deltaTUnit": "seconds",
+    "console": true
+  },
+  "agents": [
+    {
+      "name": "PassengerTraveler",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": [
+              "ActiveCapability"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "TrainDriver",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": [
+              "LoadPercentage"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "name": "PassengerTravelerLayer"
+    },
+    {
+      "name": "TrainStationLayer",
+      "file": "resources/tram_stops.geojson"
+    },
+    {
+      "name": "TrainRouteLayer",
+      "file": "resources/tram_routes.csv"
+    },
+    {
+      "name": "TrainSchedulerLayer",
+      "file": "resources/tram_schedule.csv"
+    }
+  ],
+  "entities": [
+    {
+      "name": "Train",
+      "file": "resources/tram.csv"
+    }
+  ]
+}
