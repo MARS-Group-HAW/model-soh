@@ -17,9 +17,6 @@ using SOHModel.Car.Model;
 using SOHModel.Bus.Model;
 using SOHModel.Bus.Route;
 using SOHModel.Bus.Station;
-using SOHModel.Train.Model;
-using SOHModel.Train.Station;
-using SOHModel.Train.Route;
 
 namespace SOHBigEventBox;
 
@@ -42,10 +39,6 @@ internal static class Program
         description.AddLayer<BaseWalkingLayer>();
         description.AddLayer<AgentSchedulerLayer<Visitor, BaseWalkingLayer>>("VisitorSchedulerLayer");
         description.AddLayer<AgentSchedulerLayer<Resident, BaseWalkingLayer>>("ResidentSchedulerLayer");
-        description.AddLayer<TrainLayer>();
-        description.AddLayer<TrainSchedulerLayer>();
-        description.AddLayer<TrainStationLayer>();
-        description.AddLayer<TrainRouteLayer>([typeof(ITrainRouteLayer)]);
         description.AddLayer<BicycleParkingLayer>();
         description.AddLayer<BarclaysParkingLayer>();
         description.AddLayer<BusLayer>();
@@ -56,10 +49,8 @@ internal static class Program
 
         description.AddAgent<Resident, BaseWalkingLayer>();
         description.AddAgent<Visitor, BaseWalkingLayer>();
-        description.AddAgent<TrainDriver, TrainLayer>();
         description.AddAgent<BusDriver, BusLayer>();
 
-        description.AddEntity<Train>();
         description.AddEntity<Bicycle>();
         description.AddEntity<Car>();
         description.AddEntity<Bus>();
