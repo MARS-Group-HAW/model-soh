@@ -33,6 +33,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SOC", "SOC", "{D0159346-F89
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOCTramBox", "SOCTramBox\SOCTramBox.csproj", "{7F44AC87-5AE9-4434-91E0-D12024A5F39A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BachelorThesis", "BachelorThesis", "{B80FA175-52F7-4313-A62A-A156B7677C70}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
