@@ -43,7 +43,6 @@ internal static class Program
         description.AddLayer<BarclaysParkingLayer>();
         description.AddLayer<BusLayer>();
         description.AddLayer<BusRouteLayer>([typeof(IBusRouteLayer)]);
-        // description.AddLayer<BusGtfsRouteLayer>([typeof(IBusRouteLayer)]);
         description.AddLayer<BusSchedulerLayer>();
         description.AddLayer<BusStationLayer>();
 
