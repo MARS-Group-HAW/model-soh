@@ -97,11 +97,39 @@ public class Visitor : Traveler<BaseWalkingLayer>
 
     protected override MultimodalRoute FindMultimodalRoute()
     {
-        
+        if (_preferred == ModalChoice.Bus)
+        {
+            Position busStop = GetRandomBarclaysBusStop();
+            var walk = EnvironmentLayer.Environment;
+            var startNode = walk.NearestNode(StartPosition, null, SpatialModalityType.Walking);
+            var busStopNode = walk.NearestNode(busStop, SpatialModalityType.Walking);
+
+            var route = walk.FindShortestRoute(startNode, busStopNode,
+                edge => edge.Modalities.Contains(SpatialModalityType.Walking));
+
+            RouteStop first = new RouteStop(route, ModalChoice.Walking);
+            MultimodalRoute multimodalRoute = MultimodalLayer.Search(this, busStop, GoalPosition, _preferred);
+            multimodalRoute.Stops.Insert(0, first);
+            return multimodalRoute;
+        }
         //Console.WriteLine("Preferred modal choice: " + _preferred);
         //Console.Write("Visitor's start position: " + StartPosition);
         return MultimodalLayer.Search(this, StartPosition, GoalPosition, _preferred);
+    }
+    
+    private Position GetRandomBarclaysBusStop()
+    {
+        // Hellgrundweg (Arenen) → 53.59257942213128, 9.899664442262846
+        // Arenen → 53.58858198797131, 9.899356525859814
+        // Am Volkspark → 53.58528373684015, 9.90828483429075
         
+        var busStops = new List<Position>
+        {
+            new Position(9.899664442262846, 53.59257942213128),
+            new Position(9.899356525859814, 53.58858198797131),
+            new Position(9.90828483429075, 53.58528373684015)
+        };
+        return busStops[_random.Next(busStops.Count)];
     }
     
 
