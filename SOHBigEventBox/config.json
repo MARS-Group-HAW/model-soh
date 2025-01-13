@@ -70,20 +70,31 @@
       "name": "SpatialGraphMediatorLayer",
       "inputs": [
         {
-          "file": "resources/walking_and_cycling_base.geojson"
-        },
-        {
-          "file": "resources/public_transport/bus/bus_graph.geojson",
+          "file": "resources/walking_and_cycling_base.geojson",
           "inputConfiguration": {
-            "GeometryAsNodesEnabled": false,
             "isBidirectedGraph": true,
             "modalities": [
-              "CarDriving"
+              "CarDriving", "Walking", "Cycling"
             ]
           }
         },
         {
-          "file": "resources/fixed_streets_v6.geojson"
+          "file": "resources/public_transport/bus/bus_graph.geojson",
+          "inputConfiguration": {
+            "isBidirectedGraph": true,
+            "modalities": [
+              "CarDriving", "Walking", "Cycling"
+            ]
+          }
+        },
+        {
+          "file": "resources/fixed_streets_v6.geojson",
+          "inputConfiguration": {
+            "isBidirectedGraph": true,
+            "modalities": [
+              "CarDriving", "Walking", "Cycling"
+            ]
+          }
         }
       ]
     },
