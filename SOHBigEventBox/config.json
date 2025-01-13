@@ -73,14 +73,6 @@
           "file": "resources/walking_and_cycling_base.geojson"
         },
         {
-          "file": "resources/public_transport/commuter_train/commuter_train_graph.geojson",
-          "inputConfiguration": {
-            "modalities": ["TrainDriving"],
-            "isBidirectedGraph": true,
-            "noHelperNodes": true
-          }
-        },
-        {
           "file": "resources/public_transport/bus/bus_graph.geojson",
           "inputConfiguration": {
             "GeometryAsNodesEnabled": false,
