@@ -18,6 +18,9 @@ public class TrafficSignalLayer : VectorLayer<SOHModel.Multimodal.Layers.Traffic
 
     [PropertyDescription(Name = "synchronizeAlwaysSince")]
     public DateTime? SynchronizeAlwaysSince { get; set; }
+
+    [PropertyDescription]
+    public ICarLayer CarLayer { get; set; } = default!;
     
     public override bool InitLayer(
         LayerInitData layerInitData, 
@@ -32,7 +35,7 @@ public class TrafficSignalLayer : VectorLayer<SOHModel.Multimodal.Layers.Traffic
 
 public class TrafficLightLayer : AbstractActiveLayer
 {
-    private readonly CarLayer _carLayer;
+    public readonly CarLayer CarLayer;
     private readonly List<TrafficLightController> _trafficLightControllers;
     public readonly ILogger Logger = LoggerFactory.GetLogger(typeof(TrafficLightLayer));
     private string _layerInitFile;
@@ -42,7 +45,7 @@ public class TrafficLightLayer : AbstractActiveLayer
     
     public TrafficLightLayer(CarLayer carLayer)
     {
-        _carLayer = carLayer;
+        CarLayer = carLayer;
         _trafficLightControllers = new List<TrafficLightController>();
     }
 
@@ -132,10 +135,8 @@ public class TrafficLightLayer : AbstractActiveLayer
             {
                 var lineParts = _trafficLightPositions[i].Split(',');
                 _trafficLightControllers.Add(
-                    new TrafficLightController(this, _carLayer.Environment,
-                        lineParts[latColumn].Value<double>(), lineParts[lonColumn].Value<double>(),
-                        new TrafficLightData(phasesFilePath))
-                    );
+                    new TrafficLightController(this, CarLayer.Environment,
+                        lineParts[latColumn].Value<double>(), lineParts[lonColumn].Value<double>()));
             }
 
             Logger.LogInfo(_trafficLightControllers.Count + " Traffic light controllers created");
