@@ -56,13 +56,6 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
 
         return false;
     }
-
-    private bool detectEmergencyVehicle()
-    {
-        //TODO detect emergency vehicle
-        //_environment.Explore()
-        return false;
-    }
     
     public void UpdateLightPhase()
     {

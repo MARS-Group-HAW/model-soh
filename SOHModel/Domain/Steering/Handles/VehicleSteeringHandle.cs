@@ -192,21 +192,15 @@ public class VehicleSteeringHandle
                 if (Vehicle.Driver is EmergencyCarDriver)
                 {
                     //Console.WriteLine("Emergency vehicle detected");
-                    //TODO force green
-                    //edgeExploreResult.LightPhase = TrafficLightPhase.Green; 
-                    IReadOnlyCollection<ISpatialGraphEntity> entities = edgeExploreResult.Edge.Entities;
-                    if (entities == null) continue;
-                    foreach (var entity in entities)
+                    
+                    if (edgeExploreResult.Edge.To.NodeGuard is TrafficLightController trafficLightController)
                     {
-                        Console.WriteLine("Entity found: " + entity.GetType().ToString());
-                        
-                        if (entity is TrafficLight trafficLight)
-                        {
-                            //TODO force green 
-                            //Console.WriteLine("Traffic light found");
-                        }
+                        //Console.WriteLine("Traffic light controller detected");
+                        //TODO send priority request
+                        trafficLightController.UpdateLightPhase();
                     }
-                    return biggestDeceleration;  
+
+                    return biggestDeceleration;
                 }
                 
                 var speedChange = CalculateSpeedChange(Vehicle.Velocity, MaxSpeed,
