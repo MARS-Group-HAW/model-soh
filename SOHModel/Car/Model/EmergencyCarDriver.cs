@@ -35,7 +35,7 @@ namespace SOHModel.Car.Model
 
             register.Invoke(layer, this);
 
-            SirenActive = false;
+            SirenActive = true;
         }
 
         [PropertyDescription(Name = "sirenActive")]
@@ -49,6 +49,11 @@ namespace SOHModel.Car.Model
         public void DeactivateSiren()
         {
             SirenActive = false;
+        }
+
+        public bool OnDuty()
+        {
+            return SirenActive; 
         }
 
         public void Notify(PassengerMessage passengerMessage)

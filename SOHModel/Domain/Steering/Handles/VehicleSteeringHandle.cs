@@ -189,15 +189,17 @@ public class VehicleSteeringHandle
             else if (edgeExploreResult.LightPhase == TrafficLightPhase.Red) //TODO check for emergency vehicles in action
             {
                 //TODO traffic light controller holen und auf grün schalten
-                if (Vehicle.Driver is EmergencyCarDriver)
+                if (Vehicle.Driver is EmergencyCarDriver emergencyCarDriver)
                 {
                     //Console.WriteLine("Emergency vehicle detected");
                     
                     if (edgeExploreResult.Edge.To.NodeGuard is TrafficLightController trafficLightController)
                     {
                         //Console.WriteLine("Traffic light controller detected");
-                        //TODO send priority request
-                        trafficLightController.UpdateLightPhase();
+                        if(emergencyCarDriver.OnDuty())
+                        {
+                            trafficLightController.priorityRequest();
+                        }
                     }
 
                     return biggestDeceleration;

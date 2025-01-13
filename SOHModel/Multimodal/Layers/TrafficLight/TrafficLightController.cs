@@ -10,6 +10,9 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
 {
     public const int GreenDuration = 20;
     public const int YellowDuration = 3;
+    
+    private int _initialcycleLength;
+    private const int TruncationDuration = 15;
 
     private readonly ISpatialNode _node;
     private readonly ISpatialGraphEnvironment _environment;
@@ -60,7 +63,7 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
     public void UpdateLightPhase()
     {
         CurrentTick++;
-        if (CycleLength == 0 || _trafficLightLayer.Context.CurrentTick % CycleLength == 1) CurrentTick = 0;
+        if (CycleLength == 0 || _trafficLightLayer.Context.CurrentTick % CycleLength == 1 || CurrentTick > CycleLength) CurrentTick = 0;
         
         
         foreach (var tuple in _roadLightMappings)
@@ -69,7 +72,34 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
             else if (tuple.Value.StartYellowTick == CurrentTick)
                 tuple.Value.TrafficLightPhase = TrafficLightPhase.Yellow;
             else if (tuple.Value.StartGreenTick == CurrentTick)
+            {
                 tuple.Value.TrafficLightPhase = TrafficLightPhase.Green;
+                if (CycleLength != _initialcycleLength && _initialcycleLength != 0)
+                {
+                    CycleLength = _initialcycleLength; //undo Red Truncation once the green phase starts
+                }
+            }
+        
+    }
+    
+    public void priorityRequest()
+    {
+        //Red truncation 
+        //set _initialcycleLength to the original cycle length once 
+        if (_initialcycleLength == 0)
+        {
+            _initialcycleLength = CycleLength; 
+        }
+        else if(_initialcycleLength != 0 && CycleLength != _initialcycleLength)
+        {
+            return;
+        } 
+        
+        if (CycleLength >= TruncationDuration)
+        {
+            //Truncate the red phase
+            CycleLength -= TruncationDuration;
+        }
     }
 
     public void GenerateTrafficSchedules()
