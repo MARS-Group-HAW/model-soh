@@ -31,8 +31,6 @@ internal static class Program
 {
     public static void Main(string[] args)
     {
-
-        
         string filePath = Path.Combine(".", "resources", "output_traffic_light_phases.json");
         var trafficLightData = new TrafficLightData(filePath);
 
@@ -49,7 +47,7 @@ internal static class Program
         {
             Console.WriteLine($"Ein Fehler ist aufgetreten: {ex.Message}");
         }
-
+    
         Thread.CurrentThread.CurrentCulture = new CultureInfo("EN-US");
         LoggerFactory.SetLogLevel(LogLevel.Info);
         

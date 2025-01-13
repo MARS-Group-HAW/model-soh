@@ -34,7 +34,7 @@ namespace SOHC_ITSBox
                 string normalizedCoordinateToFind = coordinateToFind.Replace("\r\n", "\n").Replace("\r", "\n").Trim();
                 string normalizedEntry = entry.Replace("\r\n", "\n").Replace("\r", "\n").Trim();
 
-                Console.WriteLine($"var: {++counter} Comparing entry: '{normalizedEntry}' with coordinate: '{normalizedCoordinateToFind}'");
+                //Console.WriteLine($"var: {++counter} Comparing entry: '{normalizedEntry}' with coordinate: '{normalizedCoordinateToFind}'");
 
                 if (normalizedEntry.Contains(normalizedCoordinateToFind, StringComparison.OrdinalIgnoreCase))
                 {

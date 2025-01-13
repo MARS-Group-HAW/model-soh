@@ -121,7 +121,6 @@ public class TrafficLightLayer : AbstractActiveLayer
     {
         if (Context.CurrentTick == 1)
         {
-            string phasesFilePath = Path.Combine("./../../../", "SOHC-ITSBox/resources", "output_traffic_light_phases.json");
             //figure out lat/lon columns
             var header = _trafficLightPositions[0].Split(',');
             int latColumn = 0, lonColumn = 0;
