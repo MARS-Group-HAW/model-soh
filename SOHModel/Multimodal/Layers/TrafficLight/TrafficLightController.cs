@@ -11,7 +11,8 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
     public const int GreenDuration = 20;
     public const int YellowDuration = 3;
     
-    
+    private int _initialcycleLength;
+    private const int TruncationDuration = 15;
 
     // we saved these for that we know for every controller object at which traffic light we currently are
     public double lat;
@@ -72,26 +73,43 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
     
     public void UpdateLightPhase()
     {
+        CurrentTick++;
+        if (CycleLength == 0 || _trafficLightLayer.Context.CurrentTick % CycleLength == 1 || CurrentTick > CycleLength) CurrentTick = 0;
         
         foreach (var tuple in _roadLightMappings)
             if (phases[tickCounter] == 1)
                 tuple.Value.TrafficLightPhase = TrafficLightPhase.Red;
             else if (phases[tickCounter] == 2)
                 tuple.Value.TrafficLightPhase = TrafficLightPhase.Yellow;
-            else if (phases[tickCounter] == 3)
+            else if (tuple.Value.StartGreenTick == CurrentTick)
+            {
                 tuple.Value.TrafficLightPhase = TrafficLightPhase.Green;
-        tickCounter++;
+                if (CycleLength != _initialcycleLength && _initialcycleLength != 0)
+                {
+                    CycleLength = _initialcycleLength; //undo Red Truncation once the green phase starts
+                }
+            }
         
-        // CurrentTick++;
-        // if (CycleLength == 0 || _trafficLightLayer.Context.CurrentTick % CycleLength == 1) CurrentTick = 0;
-        //
-        // foreach (var tuple in _roadLightMappings)
-        //     if (tuple.Value.StartRedTick == CurrentTick)
-        //         tuple.Value.TrafficLightPhase = TrafficLightPhase.Red;
-        //     else if (tuple.Value.StartYellowTick == CurrentTick)
-        //         tuple.Value.TrafficLightPhase = TrafficLightPhase.Yellow;
-        //     else if (tuple.Value.StartGreenTick == CurrentTick)
-        //         tuple.Value.TrafficLightPhase = TrafficLightPhase.Green;
+    }
+    
+    public void priorityRequest()
+    {
+        //Red truncation 
+        //set _initialcycleLength to the original cycle length once 
+        if (_initialcycleLength == 0)
+        {
+            _initialcycleLength = CycleLength; 
+        }
+        else if(_initialcycleLength != 0 && CycleLength != _initialcycleLength)
+        {
+            return;
+        } 
+        
+        if (CycleLength >= TruncationDuration)
+        {
+            //Truncate the red phase
+            CycleLength -= TruncationDuration;
+        }
     }
 
     // todo insert our own schedule based on our traffic light rt-data
