@@ -50,6 +50,10 @@ public class BusDriver : AbstractAgent, IBusSteeringCapable
     [PropertyDescription(Name = "waitingInSeconds")]
     public int MinimumBoardingTimeInSeconds { get; set; }
 
+    [PropertyDescription] public int PassengerAmount => Bus.Passengers.Count;
+
+    [PropertyDescription] public int PassengerCapacity => Bus.PassengerCapacity;
+
     /// <summary>
     ///     The route will be proceeded in the opposite direction.
     /// </summary>
