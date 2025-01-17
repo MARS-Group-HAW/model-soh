@@ -32,8 +32,8 @@ internal static class Program
         // Add car-related entities
         description.AddEntity<SemiTruck>();
 
-        
-        
+
+
 
         ISimulationContainer application;
         if (args != null && args.Length != 0)
@@ -50,8 +50,8 @@ internal static class Program
             application = SimulationStarter.BuildApplication(description, simConfig);
         }
 
-        
-        
+
+
         var simulation = application.Resolve<ISimulation>();
 
         var watch = Stopwatch.StartNew();
@@ -62,114 +62,6 @@ internal static class Program
         Console.WriteLine($"Executed iterations {state.Iterations} lasted {watch.Elapsed}");
         application.Dispose();
     }
-
-    private static SimulationConfig CreateDefaultConfig()
-    {
-        Console.WriteLine("Creating default configuration...");
-        var startPoint = DateTime.Parse("2021-10-11T06:00:00");
-        var endPoint = DateTime.Parse("2021-10-11T11:00:00");
-        var config = new SimulationConfig
-        {
-            SimulationIdentifier = "autobahn_simulation",
-            Globals =
-            {
-                StartPoint = startPoint,
-                EndPoint = endPoint,
-                DeltaTUnit = TimeSpanUnit.Seconds,
-                ShowConsoleProgress = true,
-                DeltaT = 1,
-                OutputTarget = OutputTargetType.GeoJsonFile,
-                // simulation output formats
-            },
-            AgentMappings =
-            {
-                new AgentMapping()
-                {
-                    Name = "CarDriver",
-                    InstanceCount = 10,
-                    OutputKind = OutputKind.Full,
-                    Outputs = new List<Output>
-                        {
-                            new Output
-                            {
-                    OutputConfiguration = new OutputConfiguration()
-                    {
-                        TripsDiscriminatorFields = new string[]
-                        {
-                            "StableId",
-                            "StartPosition",
-                            "EndPosition",
-                            "DistanceTraveled", 
-                            "Duration"
-                        }
-                    }
-                    }
-                            },
-                    IndividualMapping = new List<IndividualMapping>()
-                    {
-                        new IndividualMapping() { Name = "startLat", Value = 48.23607 },
-                        new IndividualMapping { Name = "startLon", Value = 11.59965 },
-                        new IndividualMapping { Name = "destLat", Value = 52.684 },
-                        new IndividualMapping { Name = "destLon", Value = 13.2158 },
-                        new IndividualMapping { Name = "ResultTrajectoryEnabled", Value = true },
-                        new IndividualMapping { Name = "driveMode", Value = 1 }
-                    }
-                    
-                }
-            },
-            LayerMappings =
-            {
-                new LayerMapping
-                {
-                    Name = "CarLayer",
-                    File = "resources/autobahn_and_bundesstreet.geojson",
-                    InputConfiguration = new InputConfiguration()
-                    {
-                        IsBiDirectedImport = true,
-                        Modalities = new HashSet<SpatialModalityType>
-                        {
-                            SpatialModalityType.CarDriving
-                        },
-                    }
-                    
-                }
-            },
-            EntityMappings =
-            {
-                new EntityMapping()
-                {
-                    Name = "Car",
-                    File = "resources/car.csv"
-                }
-                 
-            }
-            
-            // layer configuration
-            // agent configuration
-            
-        };
-        return config;
-    }
 }
 
-
-// {
-// "parameter": "startLat",
-// "value": 48.23607
-// },
-// {
-//     "parameter": "startLon",
-//     "value": 11.59965
-// },
-// {
-//     "parameter": "destLat",
-//     "value": 52.684
-// },
-// {
-//     "parameter": "destLon",
-//     "value": 13.2158
-// },
-// {
-//     "parameter": "driveMode",
-//     "value": 1
-// },
+   
