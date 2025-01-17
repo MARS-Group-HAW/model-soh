@@ -1,3 +1,7 @@
+using Mars.Components.Environments;
+using NetTopologySuite.Planargraph;
+using ServiceStack;
+
 namespace SOHModel.SemiTruck.Common;
 
 using Mars.Interfaces.Environments;
@@ -14,7 +18,8 @@ public static class SemiTruckRouteFinder
     /// </summary>
     public static Route Find(ISpatialGraphEnvironment environment, int driveMode,
         double startLat, double startLon, double destLat, double destLon,
-        ISpatialEdge startingEdge, string osmRoute)
+        ISpatialEdge startingEdge, string osmRoute, double truckHeight, double truckWeight, double truckWidth,
+        double truckLength, int truckMaxIncline)
     {
         Route route = null;
         ISpatialNode currentNode;
@@ -61,29 +66,204 @@ public static class SemiTruckRouteFinder
                 // Random start and goal nodes, finds a route between them
                 while (route == null)
                 {
-                    //TODO Random Node can be out of range
+                    // Get a random starting node
                     currentNode = environment.GetRandomNode();
                     if (currentNode == null) continue;
 
+                    // Get a random goal node
                     var goal = environment.GetRandomNode();
                     if (goal == null || goal.Equals(currentNode)) continue;
 
-                    route = environment.FindRoute(currentNode, goal);
+                    // Heuristic: Minimize edge length (shortest route)
+                    Func<ISpatialNode, ISpatialEdge, ISpatialNode, double> heuristic = (from, edge, to) => edge.Length;
+
+                    // Filter: Apply the same restrictions as Case 3
+                    Func<ISpatialEdge, bool> filter = edge =>
+                    {
+                        const double DEFAULT_MAXHEIGHT = 4.5;
+                        const double BELOW_DEFAULT_MAXHEIGHT = 3.5;
+
+                        // Validate maxheight
+                        if (edge.Attributes.TryGetValue("maxheight", out var maxHeightValue) && maxHeightValue != null)
+                        {
+                            var maxHeightString = maxHeightValue.ToString().Trim().ToLower();
+                            if (maxHeightString == "default" && DEFAULT_MAXHEIGHT < truckHeight) return false;
+                            if (maxHeightString == "below_default" && BELOW_DEFAULT_MAXHEIGHT < truckHeight)
+                                return false;
+                            if (maxHeightString != "none" && maxHeightString != "unsigned" &&
+                                double.TryParse(maxHeightString.Split(' ')[0], out double maxHeight))
+                            {
+                                if (maxHeight < truckHeight) return false;
+                            }
+                        }
+
+                        // Validate maxweight
+                        if (edge.Attributes.TryGetValue("maxweight", out var maxWeightValue) && maxWeightValue != null)
+                        {
+                            var maxWeightString = maxWeightValue.ToString().Trim().ToLower();
+                            if (maxWeightString != "none" && maxWeightString != "unsigned" &&
+                                double.TryParse(maxWeightString.Split(' ')[0], out double maxWeight))
+                            {
+                                if (maxWeight < truckWeight) return false;
+                            }
+                        }
+
+                        // Validate maxwidth
+                        if (edge.Attributes.TryGetValue("maxwidth", out var maxWidthValue) && maxWidthValue != null)
+                        {
+                            var maxWidthString = maxWidthValue.ToString().Trim().ToLower();
+                            if (maxWidthString != "none" &&
+                                double.TryParse(maxWidthString.Split(' ')[0], out double maxWidth))
+                            {
+                                if (maxWidth < truckWidth) return false;
+                            }
+                        }
+
+                        // Validate maxlength
+                        if (edge.Attributes.TryGetValue("maxlength", out var maxLengthValue) && maxLengthValue != null)
+                        {
+                            var maxLengthString = maxLengthValue.ToString().Trim().ToLower();
+                            if (double.TryParse(maxLengthString, out double maxLength))
+                            {
+                                if (maxLength < truckLength) return false;
+                            }
+                        }
+
+                        // Validate incline
+                        if (edge.Attributes.TryGetValue("incline", out var inclineValue) && inclineValue != null)
+                        {
+                            var inclineString = inclineValue.ToString().Trim().ToLower();
+
+                            // Ignore "up", "down", "yes" (they don't provide a specific value)
+                            if (inclineString == "up" || inclineString == "down" || inclineString == "yes")
+                            {
+                                return true; // Ignore these values
+                            }
+
+                            // Extract numeric incline value
+                            if (inclineString.EndsWith("%")) // Handle "10%" or "-10%"
+                            {
+                                inclineString = inclineString.Replace("%", "").Trim();
+                            }
+
+                            if (double.TryParse(inclineString, out double incline))
+                            {
+                                if (Math.Abs(incline) > truckMaxIncline) return false;
+                            }
+                        }
+
+                        return true; // Edge is valid
+                    };
+
+                    // Apply the heuristic and filter when finding a route
+                    route = environment.FindRoute(currentNode, goal, heuristic, filter);
                 }
 
                 break;
             }
+
             case 3:
             {
                 // Finds the shortest route between start and goal nodes
                 currentNode = environment.NearestNode(Position.CreateGeoPosition(startLon, startLat));
                 var goal = environment.NearestNode(Position.CreateGeoPosition(destLon, destLat));
-                
-                route = environment.FindShortestRoute(currentNode, goal,
-                    edge => edge.Modalities.Contains(SpatialModalityType.CarDriving)) ?? new Route();
+
+                route = environment.FindShortestRoute(currentNode, goal, edge =>
+                {
+                    const double DEFAULT_MAXHEIGHT = 4.5;
+                    const double BELOW_DEFAULT_MAXHEIGHT = 3.5;
+
+                    // Validate maxheight
+                    if (edge.Attributes.TryGetValue("maxheight", out var maxHeightValue) && maxHeightValue != null)
+                    {
+                        var maxHeightString = maxHeightValue.ToString().Trim().ToLower();
+                        if (maxHeightString == "default")
+                        {
+                            if (DEFAULT_MAXHEIGHT < truckHeight) return false;
+                        }
+                        else if (maxHeightString == "below_default")
+                        {
+                            if (BELOW_DEFAULT_MAXHEIGHT < truckHeight) return false;
+                        }
+                        else if (maxHeightString == "none" || maxHeightString == "unsigned")
+                        {
+                            return true; // Unrestricted
+                        }
+                        else if (double.TryParse(maxHeightString.Split(' ')[0], out double maxHeight))
+                        {
+                            if (maxHeight < truckHeight) return false;
+                        }
+                    }
+
+                    // Validate maxweight
+                    if (edge.Attributes.TryGetValue("maxweight", out var maxWeightValue) && maxWeightValue != null)
+                    {
+                        var maxWeightString = maxWeightValue.ToString().Trim().ToLower();
+                        if (maxWeightString != "none" && maxWeightString != "unsigned" &&
+                            double.TryParse(maxWeightString.Split(' ')[0], out double maxWeight))
+                        {
+                            if (maxWeight < truckWeight) return false; // Exclude if maxweight < truck weight
+                        }
+                    }
+
+                    // Validate maxwidth
+                    if (edge.Attributes.TryGetValue("maxwidth", out var maxWidthValue) && maxWidthValue != null)
+                    {
+                        var maxWidthString = maxWidthValue.ToString().Trim().ToLower();
+                        if (maxWidthString != "none" &&
+                            double.TryParse(maxWidthString.Split(' ')[0], out double maxWidth))
+                        {
+                            if (maxWidth < truckWidth) return false;
+                        }
+                    }
+
+                    // Validate maxlength
+                    if (edge.Attributes.TryGetValue("maxlength", out var maxLengthValue) && maxLengthValue != null)
+                    {
+                        var maxLengthString = maxLengthValue.ToString().Trim().ToLower();
+                        if (double.TryParse(maxLengthString, out double maxLength))
+                        {
+                            if (maxLength < truckLength) return false; // Exclude if maxlength < truck length
+                        }
+                    }
+
+                    // Validate incline
+                    if (edge.Attributes.TryGetValue("incline", out var inclineValue) && inclineValue != null)
+                    {
+                        var inclineString = inclineValue.ToString().Trim().ToLower();
+
+                        // Ignore "up", "down", "yes" (no value)
+                        if (inclineString == "up" || inclineString == "down" || inclineString == "yes")
+                        {
+                            return true; // Ignore these values
+                        }
+
+                        // Extract numeric incline value
+                        if (inclineString.EndsWith("%")) // Handle "10%" or "-10%"
+                        {
+                            inclineString = inclineString.Replace("%", "").Trim();
+                        }
+
+                        if (double.TryParse(inclineString, out double incline))
+                        {
+                            if (Math.Abs(incline) > truckMaxIncline)
+                                return false; // Exclude if incline exceeds max limit
+                        }
+                    }
+
+                    return true; // Include edges that pass all constraints
+                }) ?? new Route();
+
+                // Validate the resulting route
+                if (route == null || route.Count == 0)
+                {
+                    Console.WriteLine("No valid route found. Constraints may be too strict or data incomplete.");
+                }
 
                 break;
             }
+
+
             case 4:
             {
                 // Random goal selection from the nearest start node

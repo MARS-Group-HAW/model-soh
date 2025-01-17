@@ -41,13 +41,13 @@ namespace SOHModel.SemiTruck.Model
             ISpatialEdge startingEdge = null;
             // var startNode = _environment.NearestNode(Position.CreateGeoPosition(StartLon, StartLat));
             // startingEdge = startNode.OutgoingEdges.Values.FirstOrDefault();
-            var route = SemiTruckRouteFinder.Find(_environment, DriveMode, StartLat,StartLon, DestLat, DestLon, startingEdge, "");
+            var route = SemiTruckRouteFinder.Find(_environment, DriveMode, StartLat,StartLon, DestLat, DestLon, startingEdge, "", SemiTruck.Height, SemiTruck.Mass, SemiTruck.Width, SemiTruck.Length, SemiTruck.MaxIncline);
             // Insert the SemiTruck into the environment at the starting node
-            
             var node = route.First().Edge.From;
             _environment.Insert(SemiTruck, node);
             SemiTruck.TryEnterDriver(this, out _steeringHandle);
             _steeringHandle.Route = route;
+            
             
             // Register the agent
             layer.RegisterAgent.Invoke(layer, this);

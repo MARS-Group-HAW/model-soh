@@ -88,6 +88,12 @@ public abstract class RoadUser : ISpatialGraphEntity
     public double Length { get; set; }
 
     /// <summary>
+    ///     Gets or sets the maxIncline of this entity in <c>percentage (%)</c>.
+    /// </summary>
+    [PropertyDescription(Name = "maxIncline", Ignore = true)]
+    public virtual int MaxIncline { get; set; }
+    
+    /// <summary>
     ///     Gets or sets the position of this entity with (lon/x, lat/y) coordinate.
     /// </summary>
     public virtual Position Position { get; set; }
