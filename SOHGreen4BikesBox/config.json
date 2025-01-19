@@ -43,10 +43,6 @@
   ],
   "layers": [
     {
-      "name": "SidewalkLayer",
-      "file": "resources/harburg_walk_graph.geojson"
-    },
-    {
       "name": "SpatialGraphMediatorLayer",
       "inputs": [
         {
@@ -60,10 +56,6 @@
           }
         }
       ]
-    },
-    {
-      "name": "BicycleLayer",
-      "file": "resources/harburg_bike_graph.geojson"
     },
     {
       "name": "GatewayLayer",

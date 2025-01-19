@@ -1,114 +1,44 @@
 # SOHCitizenDailyPlanBox
 
-TODO: Describe the goal and the structure of this scenario
+CitizenDaily provides a scenario that uses the day-plan-dependent `Citizen` agents. Depending on the time of day, the `Citizen` selects a `TripReason` relevant to their precomputed daily plan.
 
-The `Program.cs` contains the simulation configuration for the model logic defined in a given model of the project
-structure. Here, a simulation of the model can be configured and executed. The configuration of a model is defined
-within a SimulationConfig object in `Program.cs`. Its main components are `Globals`, `LayerMappings`,
-and `AgentMappings`.
+Through the `MediatorLayer`, which aggregates data sources from the `VectorBuildingsLayer`, `VectorPoiLayer`, and `VectorLandUseLayer`, a corresponding destination is chosen for the selected action (e.g., Errands, Freetime, etc.).
 
-___
+The `TripReason` represents the activity carried out at the selected destination based on the data. The `HomeTime` and `Work` activities are fixed and all other activities are freely selectable during each search.
 
-## ModelDescription
+The default scenario covers the area and data around Altona Altstadt, Hamburg, Germany.
 
-In the `main` of `Program.cs`, a ModelDescription object is defined. It contains references to agent types and layer
-types that are defined in the model. Below is an example:
+## Model Structure
 
-```c#
-var description = new ModelDescription();
-description.AddLayer<CitizenLayer>();
-description.AddAgent<Citizen, CitizenLayer>();
+The following table shows the required layers with input, used by the agents or entities:
+
+| Layer                         | Responsibility                                                                                                                                                             |
+|-------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ``SpatialGraphMediatorLayer`` | The multimodal spatial graph layer, allowing agents to move across different lanes on edges, restricted by modalities                                                      |
+| ``BicycleRentalLayer``        | The data vector-layer providing slots and areas for parking lots, allowing to occupy the place using car                                                                   |
+| ``BicycleRentalLayer``        | The data vector-layer providing a set of `RentalBicycle`, which can be accessed by agents, used within a walking-bicycle route                                             |
+| ``CitizenLayer``              | The agent layer, spawning and managing the `Citizen` agents, created by the pvoided input file                                                                             |
+| ``TrafficLightLayer``         | The active-layer with time-series of multiple traffic signs, allowing to update single traffic controller to indicate which edge-to-edge crossing can passed               |
+| ``VectorBuildingsLayer``      | The vector-layer, providing (multi-)polygon data of buildings with specified service, which can be mapped to `TripReason` activities                                       |
+| ``VectorPoiLayer``            | The vector-layer, providing point data of of relevant services, which can be mapped to `TripReason` activities                                                             |
+| ``VectorLandUseLayer``        | The vector-layer, providing (multi-)polygon data, representing areas with services, which can be mapped to `TripReason` activities                                         |
+| ``MediatorLayer``             | The aggregating layer, encapsulate the different vector-layer such as `VectorPoiLayer` to allow to retrieve next travelling goals according to given `TripReason` activity |
+
+The following table shows the agent and entities active acting within the environment and using the objects:
+
+| Agent or Entity   | Responsibility                                                                                                                                                                                                               |
+|-------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ``Citizen``       | The agent, travelling layer, using the multimodality capabilities to travel from a start to a specific goal using `ShipDriving` and `Walking` modalities.                                                                    |
+| ``RentalBicycle`` | The vehicle entity, representing a rental bicycle, as part of the `BicycleRentalLayer`, allowing move on `Cycling` edges of the `SpatialModalityType` restrictions and provide different to attributes to describe a bike    |
+| ``Car``           | The vehicle entity, representing a car, as part of the `CarParkingLayer`, allowing to move on `CarDriving` edges of the `SpatialModalityType` restricted roads and provide different to attributes to describe this vehicle. |
+
+
+## Start the model
+
+To start the model, navigate into this directory from a terminal and execute the following command:
+
+```bash
+dotnet run
 ```
 
-**Note:** the layer types and agent types added to `description` need to be referenced in the LayerMappings and
-AgentMappings (see below).
-
-___
-
-## Globals
-
-This section contains a set of attributes that allow for general configuration of the model. Below is an example and
-brief description of the main attributes.
-
-```C#
-Globals = {
-    StartPoint = startPoint,
-    EndPoint = startPoint + TimeSpan.FromHours(24),
-    DeltaTUnit = TimeSpanUnit.Seconds,
-    ShowConsoleProgress = true,
-    OutputTarget = OutputTargetType.SqLite,
-    SqLiteOptions =
-    {
-        DistinctTable = false
-    }
-}
-```
-
-* `StartPoint`: the time at which the simulation begins (type: `DateTime`)
-* `endPoint`: the time at which the simulation ends (type: `DateTime`)
-* `DeltaTUnit`: the duration of a time step in the simulation (type: `TimeSpanUnit`)
-* `ShowConsoleProgress`: defines if progress bar is displayed in console during simulation run (type: `boolean`)
-* `OutputTarget`: defines the medium in which simulation output is stored (type: `OutputTargetType`)
-    * `OutputTargetType.None`: create no output
-    * `OutputTargetType.Csv`: write output into a .csv file and store it in bin/Debug/netcoreapp3.1
-    * `OutputTargetType.SqLite`: write output into a SQLite database
-    * `OutputTargetType.PostgreSql`: write output into a PostgreSQL database
-    * `OutputTargetType.MongoDB`: write output into a MongoDB database
-    * **Note:** when writing results into a database, a database and a valid connection to it need to be set up
-
-For more information, please see [https://mars.haw-hamburg.de](https://mars.haw-hamburg.de).
-
-___
-
-## Layer Mappings
-
-In this section, the layer types that are defined in the model logic (and that were added to `description` above) are
-configured and populated with external data.
-
-```c#
-LayerMappings =
-{
-    new LayerMapping
-    {
-    Name = nameof(CitizenLayer),
-	File = Path.Combine(ResourcesConstants.GraphFolder,"altona_altstadt_walk_graph.graphml")
-	}
-}
-```
-
-For each layer type added to `description`, a LayerMapping needs to be defined. A LayerMapping consists of at least two
-keys:
-
-* `Name`: (the name of the layer type, which needs to match the type specified in `description`)
-* `File`: (the external data that is to be used to populate the layer)
-
-___
-
-## AgentMappings
-
-In this section, the agent types that are defined in the model logic (and that were added to `desciption` above) are
-configured. An initialization file can be specified as well.
-
-```c#
-AgentMappings =
-{
-    new AgentMapping
-    {
-        Name = nameof(Citizen),
-        InstanceCount = 1,
-        OutputTarget = OutputTargetType.Csv,
-        File = Path.Combine("res", "agent_inits", "CitizenInit10k.csv")
-	}
-}
-```
-
-For each agent type added to `description`, an AgentMapping needs to be defined. An AgentMapping consists of at least
-three keys:
-
-* `Name`: the name of the layer type, which needs to match the type specified in `description`)
-* `InstanceCount`: the number of agents of this agent type that are to be instantiated
-* `File`: the path to the agent type's initialization file (see [SOHResources](../SOHResources/README.md) documentation
-  for more information)
-
-The `OutputTarget` key defines the medium into which simulation output data is to be saved. It is optional at the
-AgentMapping level. Alternatively, it can be defined globally (see "Globals" above).
+This uses the default ``config_altona_altstadt.json`` configuration where all inputs and outputs are defined.

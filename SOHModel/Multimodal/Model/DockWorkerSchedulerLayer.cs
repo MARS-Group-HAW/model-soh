@@ -29,27 +29,30 @@ public class DockWorkerSchedulerLayer : SchedulerLayer
 
     protected override void Schedule(SchedulerEntry dataRow)
     {
-        var start = dataRow.SourceGeometry.RandomPositionFromGeometry();
-        var goal = dataRow.TargetGeometry.RandomPositionFromGeometry();
-
-        var dockWorker = new DockWorker
+        if (RegisterAgent != null)
         {
-            FerryStationLayer = StationLayer,
-            EnvironmentLayer = Environment,
-            StartPosition = start,
-            GoalPosition = goal,
-            TravelScheduleId = dataRow.Data.TryGetValue("id", out var id) ? id.Value<int>() : 0
-        };
-        dockWorker.Init(WorkerLayer);
+            var start = dataRow.SourceGeometry.RandomPositionFromGeometry();
+            var goal = dataRow.TargetGeometry.RandomPositionFromGeometry();
+        
+            var dockWorker = new DockWorker
+            {
+                FerryStationLayer = StationLayer,
+                EnvironmentLayer = Environment,
+                StartPosition = start,
+                GoalPosition = goal,
+                TravelScheduleId = dataRow.Data.TryGetValue("id", out var id) ? id.Value<int>() : 0
+            };
+            dockWorker.Init(WorkerLayer);
 
-        if (dataRow.Data.TryGetValue("gender", out var gender) && gender != null)
-            dockWorker.Gender = gender.Value<GenderType>();
-        if (dataRow.Data.TryGetValue("mass", out var mass) && mass != null)
-            dockWorker.Mass = mass.Value<double>();
-        if (dataRow.Data.TryGetValue("perceptionInMeter", out var perception) && perception != null)
-            dockWorker.PerceptionInMeter = perception.Value<double>();
-
-        WorkerLayer.Agents.Add(dockWorker.ID, dockWorker);
-        RegisterAgent(WorkerLayer, dockWorker);
+            if (dataRow.Data.TryGetValue("gender", out var gender) && gender != null)
+                dockWorker.Gender = gender.Value<GenderType>();
+            if (dataRow.Data.TryGetValue("mass", out var mass) && mass != null)
+                dockWorker.Mass = mass.Value<double>();
+            if (dataRow.Data.TryGetValue("perceptionInMeter", out var perception) && perception != null)
+                dockWorker.PerceptionInMeter = perception.Value<double>();
+        
+            WorkerLayer.Agents.Add(dockWorker.ID, dockWorker);
+            RegisterAgent(WorkerLayer, dockWorker);
+        }
     }
 }

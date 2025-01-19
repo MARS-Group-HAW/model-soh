@@ -7,6 +7,7 @@ using Mars.Components.Starter;
 using Mars.Core.Simulation;
 using Mars.Interfaces;
 using Mars.Interfaces.Model;
+using SOHModel;
 using SOHModel.Domain.Graph;
 using SOHModel.Ferry.Model;
 using SOHModel.Ferry.Route;
@@ -22,20 +23,8 @@ internal static class Program
         // Thread.CurrentThread.CurrentCulture = new CultureInfo("EN-US");
         LoggerFactory.SetLogLevel(LogLevel.Info);
 
-        var description = new ModelDescription();
-        description.AddLayer<FerryLayer>();
-        description.AddLayer<FerrySchedulerLayer>();
-        description.AddLayer<FerryStationLayer>(new[] { typeof(IFerryStationLayer) });
-        description.AddLayer<FerryRouteLayer>();
-        description.AddLayer<DockWorkerLayer>();
-        description.AddLayer<DockWorkerSchedulerLayer>();
-        description.AddLayer<SpatialGraphMediatorLayer>(new[] { typeof(ISpatialGraphLayer) });
 
-        description.AddAgent<FerryDriver, FerryLayer>();
-        description.AddAgent<DockWorker, DockWorkerLayer>();
-
-        description.AddEntity<Ferry>();
-
+        var description = Startup.CreateModelDescription();
         ISimulationContainer application;
         if (args != null && args.Any())
         {

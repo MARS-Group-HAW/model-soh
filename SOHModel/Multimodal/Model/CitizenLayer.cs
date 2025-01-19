@@ -21,7 +21,7 @@ public class CitizenLayer : AbstractMultimodalLayer
 
     /// <summary>
     ///     The data mediator layer to delegate data driven queries
-    ///     for agent decision making to different sources.
+    ///     for agent decision-making to different sources.
     /// </summary>
     public MediatorLayer MediatorLayer { get; set; } = default!;
 
@@ -37,13 +37,16 @@ public class CitizenLayer : AbstractMultimodalLayer
     {
         base.InitLayer(layerInitData, registerAgentHandle, unregisterAgent);
 
-        var agentInitConfig = layerInitData.AgentInitConfigs.FirstOrDefault();
-        if (agentInitConfig?.IndividualMapping == null) return false;
+        var agentInitConfig = layerInitData.AgentInitConfigs
+            .FirstOrDefault(agentMapping => agentMapping.ModelType.MetaType == typeof(Citizen));
+        if (agentInitConfig == null) return true;
+        if (agentInitConfig.InstanceCount.GetValueOrDefault() <= 0) return true;
+        if (agentInitConfig.IndividualMapping == null) return false;
 
         var agentManager = layerInitData.Container.Resolve<IAgentManager>();
         var dependencies = new List<IModelObject>
         {
-            MediatorLayer, SpatialGraphMediatorLayer, 
+            MediatorLayer, SpatialGraphMediatorLayer,
             CarParkingLayer, BicycleRentalLayer, FerryStationLayer
         };
 
@@ -53,8 +56,8 @@ public class CitizenLayer : AbstractMultimodalLayer
         var layerParameters = layerInitData.LayerInitConfig.ParameterMapping;
         if (layerParameters.TryGetValue("ParkingOccupancy", out var mapping))
         {
-            var occupiedParkingPercentage = mapping.Value.Value<double>();
-            var carCount = _agents.Values.Count(p => p.CapabilityDrivingOwnCar);
+            double occupiedParkingPercentage = mapping.Value.Value<double>();
+            int carCount = _agents.Values.Count(p => p.CapabilityDrivingOwnCar);
             CarParkingLayer?.UpdateOccupancy(occupiedParkingPercentage, carCount);
         }
 

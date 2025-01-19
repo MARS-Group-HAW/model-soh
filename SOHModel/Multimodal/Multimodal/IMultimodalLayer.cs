@@ -18,5 +18,5 @@ public interface IMultimodalLayer : ILayer, IMultimodalRouteFinder
     ///     Gets the unregister handle to deactivate an <see cref="ITickClient" />s at the runtime system to prevent
     ///     any execution and stop the observation.
     /// </summary>
-    UnregisterAgent UnregisterAgent { get; }
+    UnregisterAgent? UnregisterAgent { get; }
 }

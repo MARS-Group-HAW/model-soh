@@ -76,7 +76,7 @@ public class InfiniteSteeringDriver : IAgent, ICarSteeringCapable, ITripSavingAg
 
         if (PositionOnCurrentEdge < previousPosition) RoundsFinished++;
 
-        TripsCollection.Add(null, Position);
+        TripsCollection.Add(new[] { (object)1 }, Position);
     }
 
     public Guid ID { get; set; }

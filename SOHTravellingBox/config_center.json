@@ -45,10 +45,6 @@
   ],
   "layers": [
     {
-      "name": "SidewalkLayer",
-      "file": "resources/walk_graph_hamburg_center.geojson"
-    },
-    {
       "name": "CyclePathLayer",
       "file": "resources/walk_graph_hamburg_center.geojson"
     },
