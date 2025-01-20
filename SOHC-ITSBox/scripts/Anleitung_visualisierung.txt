@@ -1,0 +1,3 @@
+Anleitung zur Auswertung und Visualisierung: 
+
+Nachdem die Simulation ausgeführt wurde, liegen unter SOHC-ITSBOX/bin/Debug/net8.0 csv Dateien als Output vor. Um diese in geojson Dateien umzuwandeln, steht die csv_to_geojson.py Datei bereit. Beim Ausführen werden entweder eine geojson Datei für die CarDriver erstellt (output.geojson) oder eine für die EmergencyCarDriver (e_output.geojson), je nachdem welche Option der Nutzer zur Laufzeit wählt. Im Ordner auswertung sind Beispiel-Dateien zu finden. Bei den Beispiel-Dateien gibt es zum einen geojson Output mit EmergencyCarDrivern, die priority requests an Ampeln stellen und Output bei dem keine priority requests gestellt werden. 
