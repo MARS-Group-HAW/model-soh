@@ -62,8 +62,12 @@ internal static class Program
         var watch = Stopwatch.StartNew();
         var state = simulation.StartSimulation();
         watch.Stop();
-        
+        Console.WriteLine($"Priority request sent: {TrafficLightController.Monitor.PriorityRequestSent}");
+        Console.WriteLine();
         Console.WriteLine($"Executed iterations {state.Iterations} lasted {watch.Elapsed}");
         application.Dispose();
     }
+    
+    
+    
 }

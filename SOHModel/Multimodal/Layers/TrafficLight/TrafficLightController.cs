@@ -107,6 +107,9 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
             //Truncate the red phase
             CycleLength -= TruncationDuration;
         }
+
+        Monitor.PriorityRequestSent = true;
+
     }
 
     // todo insert our own schedule based on our traffic light rt-data
@@ -174,4 +177,12 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
         CycleLength = greenStartTick;
         CurrentTick = 0;
     }
+    
+    
+    // Monitor class
+    public static class Monitor
+    {
+        public static bool PriorityRequestSent { get; set; } = false;
+    }
+    
 }
