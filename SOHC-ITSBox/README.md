@@ -53,6 +53,46 @@ Zuerst müssen alle Koordianten der Ampeln aus dem Area of Interest aus Schritt 
 
 Das Ergebnis steht in traffic_lights_observations.json. Um nur Koordianten daraus zu extrahieren verwende das Script generate_csv.py. Der Output traffic_lights_observations.csv enthällt jetzt nur die Ampel-Koordinaten aus dem Area of Interest.
 
+Für weitere Informationen zur API siehe hier: \doc\Realtime_Traffic_Lights_Data_Hamburg_API.pdf
+
 **3. Live Ampel-Phasen**
 
-Um die Live Ampel-Phasen zu den jeweiligen Ampeln
+Die aufgezeichneten Live-Ampel-Phasen zu den jeweiligen Ampeln müssen auch aus traffic_lights_observations.json extrahiert werden.
+Dazu verwendet man das Script traffic_light_phase_parser.py. Um es auszuführen, verwendet man als 1. Parameter die traffic_lights_observations.json. Der 2. Parameter ist der Name der Output Datei und muss mit .json enden.
+
+Als Ergebnis bekommt man die Ampelphasen für jede Sekunde pro Ampel. Eine Sekunde entspricht ein Tick im Programm.
+
+Beispiel:
+"((9.9839458, 53.5556457), (9.9843108, 53.555496))": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        1,
+        1,
+        1,
+        ...
+]
+
+Die beiden Ampeln an den Koordianten (9.9839458, 53.5556457) und (9.9843108, 53.555496) sind in den ersten 5 Sekunden grün geschaltet. Das sieht man daran, dass in den ersten fünf Zeilen eine 3 ist. Jede Zeile ist der Zustand einer Ampel pro Sekunde. In dem Beispiel oben ist die Ampel in Sekunde 6, 7 und 8 auf rot geschaltet, weil in der Zeile 6,7 und 8 die 1 steht.
+
+grün entspricht 3.
+rot entspricht 4.
+
+Für weitere Informationen zu den Ampelphasen siehe hier unter 'Ampelphasen': \doc\Realtime_Traffic_Lights_Data_Hamburg_API.pdf
+
+
+## Parametrisierungsanleitung
+
+**Anzahl Emergency cars ändern**
+
+Um die Anzahl der Emergency cars zu verändern muss in config.json der count geändert werden. Außerdem muss man in der Datei resources/emergency_car_driver.csv entsprechend neue emergency cars eingefügen, bzw. entfernen.
+
+**Zeitspanne zum fetchen der Ampelphasen ändern**
+
+Aktuell werden die Ampalephasen der letzen 15 Minuten mit dem Script 'fetch_traffic_lights.py' gefetched. Um dies zu ändern muss man in folgender URL '$top' anpassen:
+
+url = f"{base_url}?$filter=properties/serviceName eq 'HH_STA_traffic_lights' and properties/layerName eq 'primary_signal'&$expand=Observations($orderby=phenomenonTime desc;$top=15)&$orderby=id&$top=1000&$skip={skip}"
+
+Erhöhe beipsielsweise $top auf 30, um ungefähr die letzen 30 Minuten zu fetchen.
