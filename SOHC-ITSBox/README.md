@@ -121,3 +121,19 @@ Aktuell werden die Ampalephasen der letzen 15 Minuten mit dem Script `fetch_traf
 
 
 Erhöhe beipsielsweise `top` auf 30, um ungefähr die letzen 30 Minuten zu fetchen.
+
+## Mögliche Erweiterungen
+
+**gefetchte Live-Ampelphasen ins Programm einbinden**
+
+Die Live-Ampelphasen können erfolgreich gefetched werden. Außerdem können sie in ein Format umgewandelt werden, in dem die Ampelphasen jeder Ampel pro Sekunde (pro Tick) angezeigt werden (siehe bei Datenakquisition, Live Ampel-Phasen).
+
+In einer nächste Erweiterung, soll das Programm diese Live-Ampelphasen nutzen. Das würde die Simulation realistischer machen.
+
+Mögliche Implementierung:
+Der traffic_light_controller bekommt die Live-Ampelphasen als Parameter und nutzt diese dann. Dabei sollte beachtet werden, dass jeder Controller die passenden Zeiten zu der richtigen Ampel bekommt.
+
+**Busse und Polizeiautos können priority requests schicken**
+
+Aktuell können Emergency cars erstellt werden, die priority-requests an die Ampeln schicken können. Das kann noch auf Busse und Polizeiautos erweitert werden.
+
