@@ -31,23 +31,7 @@ internal static class Program
 {
     public static void Main(string[] args)
     {
-        string filePath = Path.Combine(".", "resources", "output_traffic_light_phases.json");
-        var trafficLightData = new TrafficLightData(filePath);
-
-        // Beispielkoordinate: (Latitude, Longitude)
-        double latitude = 9.9822394;
-        double longitude = 53.5641432;
-        try
-        {
-            // Phasenliste für die Koordinate abrufen
-            var phases = trafficLightData.GetPhasesForCoordinate(latitude, longitude);
-            Console.WriteLine($"Phasen für Koordinate ({latitude}, {longitude}): {string.Join(", ", phases)}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Ein Fehler ist aufgetreten: {ex.Message}");
-        }
-    
+        
         Thread.CurrentThread.CurrentCulture = new CultureInfo("EN-US");
         LoggerFactory.SetLogLevel(LogLevel.Info);
         
@@ -57,7 +41,6 @@ internal static class Program
         description.AddLayer<CarLayer>();
         description.AddAgent<CarDriver, CarLayer>();
         description.AddAgent<EmergencyCarDriver, CarLayer>();
-        //description.AddLayer<CarDriverSchedulerLayer>();
         description.AddEntity<Car>();
         
         
