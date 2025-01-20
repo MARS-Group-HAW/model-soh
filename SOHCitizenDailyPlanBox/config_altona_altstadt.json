@@ -17,8 +17,7 @@
       ],
       "outputs": [
         {
-          "kind": "trips",
-          "kind": "csv"
+          "kind": "trips"
         }
       ],
       "individual": [

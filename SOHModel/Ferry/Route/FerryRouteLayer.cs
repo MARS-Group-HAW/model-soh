@@ -5,21 +5,16 @@ using SOHModel.Ferry.Station;
 
 namespace SOHModel.Ferry.Route;
 
-public class FerryRouteLayer : AbstractLayer
+public class FerryRouteLayer(FerryStationLayer stationLayer) : AbstractLayer
 {
-    public readonly FerryStationLayer StationLayer;
+    public readonly FerryStationLayer StationLayer = stationLayer;
 
-    public FerryRouteLayer(FerryStationLayer stationLayer)
-    {
-        StationLayer = stationLayer;
-    }
-
-    public Dictionary<int, FerryRoute> FerryRoutes { get; private set; }
+    public Dictionary<int, FerryRoute> FerryRoutes { get; private set; } = new();
 
     public override bool InitLayer(
         LayerInitData layerInitData,
-        RegisterAgent registerAgentHandle = null,
-        UnregisterAgent unregisterAgent = null)
+        RegisterAgent? registerAgentHandle = null,
+        UnregisterAgent? unregisterAgent = null)
     {
         base.InitLayer(layerInitData, registerAgentHandle, unregisterAgent);
         FerryRoutes = FerryRouteReader.Read(Mapping.File, StationLayer);

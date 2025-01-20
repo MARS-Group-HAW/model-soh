@@ -7,17 +7,12 @@ namespace SOHModel.Multimodal.Model;
 
 public class DockWorkerLayer : AbstractMultimodalLayer
 {
-    public DockWorkerLayer()
-    {
-        Agents = new Dictionary<Guid, DockWorker>();
-    }
-
-    public IDictionary<Guid, DockWorker> Agents { get; set; }
+    public IDictionary<Guid, DockWorker> Agents { get; set; } = new Dictionary<Guid, DockWorker>();
 
     public override bool InitLayer(
         LayerInitData layerInitData,
-        RegisterAgent registerAgentHandle = null,
-        UnregisterAgent unregisterAgent = null)
+        RegisterAgent? registerAgentHandle = null,
+        UnregisterAgent? unregisterAgent = null)
     {
         base.InitLayer(layerInitData, registerAgentHandle, unregisterAgent);
 
@@ -25,9 +20,11 @@ public class DockWorkerLayer : AbstractMultimodalLayer
             layerInitData.AgentInitConfigs.FirstOrDefault(mapping =>
                 mapping.ModelType.MetaType == typeof(DockWorker));
 
-        if (agentMapping != null)
-            Agents = AgentManager.SpawnAgents<DockWorker>(agentMapping, registerAgentHandle, unregisterAgent,
-                new List<ILayer> { this });
+        if (agentMapping != null && registerAgentHandle != null && unregisterAgent != null)
+        {
+            Agents = AgentManager.SpawnAgents<DockWorker>(agentMapping,
+                registerAgentHandle, unregisterAgent, [this]);
+        }
 
         return true;
     }

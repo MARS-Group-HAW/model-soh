@@ -20,7 +20,7 @@ public class FerryStationLayer : VectorLayer<FerryStation>, IFerryStationLayer
 
     public ModalChoice ModalChoice => ModalChoice.Ferry;
 
-    public FerryStation Find(string stationId)
+    public FerryStation? Find(string stationId)
     {
         return Nearest(AnyPosition.PositionArray, station => station.Id == stationId);
     }
