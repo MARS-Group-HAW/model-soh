@@ -36,6 +36,9 @@ This simulation models visitor behavior during and after a large event at the Ba
 **July 16, 2024, 22:30** to **July 17, 2024, 02:30**, assuming the event ends at **23:00**.
 
 For the generation of the graph, the program **QGIS** was used. Most of the graphs were created using the **OSM** plugin.
+We deleted all the disconnected islands and saved the graph's edges in a **GeoJSON** file. The graph was then loaded into
+an environment in the SOH framework. With using the **GeometryAsNodesEnabled** parameter, the nodes were created at the
+endpoints of the edges. 
 
 ## Visitor Data
 
