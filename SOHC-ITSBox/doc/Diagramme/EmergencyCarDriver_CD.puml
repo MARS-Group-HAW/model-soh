@@ -1,0 +1,39 @@
+@startuml EmergencyCarDriver_CD
+
+namespace SOHModel.Car.Model {
+    class EmergencyCarDriver {
+        - CarSteeringHandle _steeringHandle
+        - UnregisterAgent _unregister
+        - ISpatialGraphEnvironment _environment
+        - CarLayer Layer
+        - Car Car
+        - bool SirenActive
+        - string StableId
+        - string TrafficCode
+        - bool OvertakingActivated
+        - bool BrakingActivated
+        
+        + EmergencyCarDriver(CarLayer, RegisterAgent, UnregisterAgent, int, double, double, double, double, ISpatialEdge, string, string)
+        + void ActivateSiren()
+        + void DeactivateSiren()
+        + bool OnDuty()
+        + void Notify(PassengerMessage)
+        + override void Tick()
+        + Position Position { get; set; }
+        + Route Route { get; }
+        + double Latitude { get; }
+        + double Longitude { get; }
+        + string NextTrafficLightPhase { get; }
+        + double Velocity { get; set; }
+        + double VelocityInKm { get; }
+        + double MaxSpeed { get; set; }
+        + double SpeedLimit { get; }
+        + double RemainingDistanceOnEdge { get; }
+        + double PositionOnEdge { get; }
+        + bool GoalReached { get; }
+        + double RemainingRouteDistanceToGoal { get; }
+        + string CurrentEdgeId { get; }
+    }
+}
+
+@enduml
