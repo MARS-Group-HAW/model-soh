@@ -1,40 +1,5 @@
 # Simulation Model of Demonstration and Police Interaction with MARS
-
-Project members: ***, ***, ***, ***, ***
-
-## Tasks and Responsibilities
-The work that was done for this project can be broken down (roughly) into the following categories.
-
-- Recherche 
-  - Demonstrationsdaten
-- Datenakquise 
-  - Erstellung von georeferenzierten Daten mit QGIS und `osmnx`
-- Konfiguration 
-  - Dynamisches Einladen von Geometrien
-  - Scheduler
-  - Parametrierung von Agenten
-- Initialisierung 
-  - Registrierung von Agenten und Layer
-  - `PoliceChief` (initiale Verteilung von `Police`)
-- Agenten 
-  - Verhalten von `RadicalDemonstrator`
-  - Verhalten der `Police`
-  - Routenplanung und -anpassung
-- Auswertung 
-  - Erstellung von Diagrammen anhand von CSV-Ausgabedateien
-  - Visualisierung in [kepler.gl](https://kepler.gl) (Einfärbung über agent_type))
-
-The following table shows the tasks that each member worked on and contributed to. When there is no specification in parentheses, the member took part in all of the sublisted topics.
-
-| Teilnehmer*in         | Aufgaben                                                                                                                                                             |
-|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| *** | Recherche, Datenakquise, Konfiguration (Scheduler, Parametrierung der Agenten), Initialisierung (`PoliceChief`, Verteilung von `Police`), Agenten, Auswertung ([kepler.gl](https://kepler.gl))               |
-| ***           | Recherche, Konfiguration (Scheduler) Initalisierung (Agenten und Layer), Agenten (Verhalten von `RadicalDemonstrator`, `Police`), Auswertung ([kepler.gl](https://kepler.gl))                |
-| ***      | Konfiguration (Scheduler, dynamisches Einladen von Geometrien), Agenten (Verhalten von `RadicalDemonstrator`), Auswertung ([kepler.gl](https://kepler.gl))                                             |
-| ***     | Recherche, Datenakquise, Konfiguration (Scheduler, Parametrisierung der Agenten), Initialisierung (`PoliceChief`, Verteilung von `Police`), Agenten, Auswertung ([kepler.gl](https://kepler.gl)) |
-| ***      | Datenakquise, Konfiguration (Scheduler, Parametrisierung der Agenten), Initalisierung, Agenten (Verhalten von `RadicalDemonstrator`, `Police`), Auswertung           |
-
-## Project Overview 
+ 
 This repository contains a simulation model of the "GeMAInsam Zukunft Gestalten" demonstration which took place in Hamburg, Germany on May 1st, 2022. The model is focused on interactions between radical demonstrators and police units. The goal is to study the examplary demonstration and derive optimal numbers of police units by comparing different simulation runs.
 
 For a detailed description of the project, please see the presentation under `DemonstrationsProject/2022-06-08-final-praesentation.pdf`.

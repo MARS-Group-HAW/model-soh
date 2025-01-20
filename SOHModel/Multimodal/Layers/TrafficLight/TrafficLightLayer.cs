@@ -9,7 +9,7 @@ using SOHModel.Car.Model;
 
 namespace SOHModel.Multimodal.Layers.TrafficLight;
 
-public class TrafficSignalLayer : VectorLayer<SOHModel.Multimodal.Layers.TrafficLight.TrafficLight>
+public class TrafficSignalLayer : VectorLayer<TrafficLight>
 {
     public bool IsInitialized { get; set; }
     
