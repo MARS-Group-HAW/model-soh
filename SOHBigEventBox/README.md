@@ -163,6 +163,11 @@ traffic around the arena.
 
 ---
 
+## Design Overview
+
+![UML Diagram](docs/design/uml.jpg)
+
+---
 # Time-Dependent Heatmap Generator
 
 This Python script generates a time-dependent heatmap using visitor trip data from a GeoJSON file. The heatmap visualizes the density of visitors' locations over different time intervals and creates an interactive map using **Folium**.
