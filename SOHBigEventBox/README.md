@@ -238,6 +238,14 @@ generate_time_dependent_heatmap('resources/Visitor_trips.geojson')
     - At present, all roads can be used by any vehicle or transportation modality, which does not reflect real-world restrictions.
    The reason for this is the `SpatialGraphMediatorLayer`. Visitors try to switch the lane into a lane that doesn't support 
    their modality. This leads to the simulation stopping because the visitor can't find a path to his destination.
+
+5. **Buses in the Framework**:  
+   Currently, buses are implemented in such a way that the next bus stop is selected based on the start and destination
+   points. However, if there is no bus route between these points, no route is found. As a result, we had to add a 
+   non-existing street in the graph to make the route work.
+   - **Location**: This issue is mainly in the `WalkingBusDrivingMultimodalRoute` class.
+   - **Improvement Needed**: The route calculation and bus stop selection need to be reworked to handle cases where no 
+   direct bus route exists, ensuring a more accurate multimodal routing process.
     
 ---
 *GitHub accounts of the contributors:*
