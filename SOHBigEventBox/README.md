@@ -246,6 +246,9 @@ generate_time_dependent_heatmap('resources/Visitor_trips.geojson')
    - **Location**: This issue is mainly in the `WalkingBusDrivingMultimodalRoute` class.
    - **Improvement Needed**: The route calculation and bus stop selection need to be reworked to handle cases where no 
    direct bus route exists, ensuring a more accurate multimodal routing process.
+   - **Currently**: We fixed this problem by adding a new route into the multimodal route list outside the method in the
+     `Visitor` class. This should only be a temporary solution, but still works. You can see the implementation for that
+   in the `FindMultimodalRoute()` method in the `Visitor` class.
     
 ---
 *GitHub accounts of the contributors:*
