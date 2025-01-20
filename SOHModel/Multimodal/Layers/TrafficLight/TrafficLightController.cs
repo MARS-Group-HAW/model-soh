@@ -88,6 +88,7 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
         
     }
     
+    //TODO unit test priority request
     public void priorityRequest()
     {
         //Red truncation 
