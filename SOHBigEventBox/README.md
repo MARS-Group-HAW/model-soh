@@ -43,7 +43,7 @@ endpoints of the edges.
 ## Visitor Data
 
 There are two CSV files for the visitor data:
-1. **Presentation File**: Contains data for approximately **4,000 agents**. This smaller dataset is used for demonstration purposes.
+1. **Presentation File**: Contains data for approximately **2,000 agents**. This smaller dataset is used for demonstration purposes.
 2. **Analysis File**: Contains data for approximately **16,000 agents**. This larger dataset is used for analysis but may cause performance issues in Kepler, which is why the number of agents in the presentation file has been reduced to one-quarter of the original count. Despite this reduction, the distribution of transportation modalities remains approximately the same.
 
 This approach allows for better performance while maintaining the essential characteristics of the simulation.
@@ -241,8 +241,8 @@ generate_time_dependent_heatmap('resources/Visitor_trips.geojson')
 
 5. **Buses in the Framework**:  
    Currently, buses are implemented in such a way that the next bus stop is selected based on the start and destination
-   points. However, if there is no bus route between these points, no route is found. As a result, we had to add a 
-   non-existing street in the graph to make the route work.
+   points. However, if there is no bus route between these points, no route is found. As a result, we implemented an alternative
+   route finding algorithm (see below).
    - **Location**: This issue is mainly in the `WalkingBusDrivingMultimodalRoute` class.
    - **Improvement Needed**: The route calculation and bus stop selection need to be reworked to handle cases where no 
    direct bus route exists, ensuring a more accurate multimodal routing process.
