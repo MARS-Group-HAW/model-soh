@@ -10,7 +10,12 @@ visitors after a big event at the Barclays arena in Hamburg. The visitors start 
 and move to their destinations using their preferred mode of transport. The visitors can use i.e. cars, bikes or buses to
 reach their destinations. The model uses a simple walking and cycling layer to simulate the movement of the visitors.
 
-The 
+The project aims to leverage the SOH framework to simulate and analyze traffic flow following a large-scale event at the 
+Barclays Arena. By modeling the behavior of attendees leaving the venue via various modes of transportation—such as cars, 
+public transport, bicycles, and walking—the simulation identifies potential traffic bottlenecks and congestion points. 
+This enables more effective planning and optimization of traffic management strategies to improve post-event mobility 
+and reduce delays.
+
 In the `main` of `Program.cs`, a ModelDescription object is defined. It contains references to agent types and layer
 types that are defined in the model. Below is an example:
 
@@ -27,7 +32,13 @@ ___
 
 ## Simulation Overview
 
-This simulation models visitor behavior during and after a large event at the Barclays Arena. The simulation runs from **July 16, 2024, 22:30** to **July 17, 2024, 02:30**, assuming the event ends at **23:00**.
+This simulation models visitor behavior during and after a large event at the Barclays Arena. The simulation runs from 
+**July 16, 2024, 22:30** to **July 17, 2024, 02:30**, assuming the event ends at **23:00**.
+
+For the generation of the graph, the program **QGIS** was used. Most of the graphs were created using the **OSM** plugin.
+We deleted all the disconnected islands and saved the graph's edges in a **GeoJSON** file. The graph was then loaded into
+an environment in the SOH framework. With using the **GeometryAsNodesEnabled** parameter, the nodes were created at the
+endpoints of the edges. 
 
 ## Visitor Data
 
@@ -72,7 +83,7 @@ configured and populated with external data.
 ```json
 {
   "name": "BaseWalkingSchedulerLayer",
-  "file": "resources/visitor_spawning.csv"
+  "file": "resources/visitor_spawning_presentation.csv"
 }
 ```
 
@@ -152,6 +163,11 @@ traffic around the arena.
 
 ---
 
+## Design Overview
+
+![UML Diagram](docs/design/uml.jpg)
+
+---
 # Time-Dependent Heatmap Generator
 
 This Python script generates a time-dependent heatmap using visitor trip data from a GeoJSON file. The heatmap visualizes the density of visitors' locations over different time intervals and creates an interactive map using **Folium**.
@@ -201,4 +217,41 @@ To generate the heatmap for the provided GeoJSON file (`Visitor_trips.geojson`),
 
 ```python
 generate_time_dependent_heatmap('resources/Visitor_trips.geojson')
+```
 
+---
+## Current Problems and Possible Improvements (Status: 20 January 2025)
+1. **Buses and Cars Operate on Separate Layers**
+    - Currently, buses and cars operate on separate layers, which results in them using different roads. This limits the ability to simulate realistic traffic congestion on shared roads.
+    - **Proposed Solution**: Adjust the `SpatialGraphMediatorLayer` so that buses and cars share the same roads, allowing for more accurate congestion analysis.
+
+2. **Realistic Movement of Agents on the Barclays / Volksparkstadion Grounds**
+    - The movement of agents on the stadium grounds lacks realism and requires improvement.
+    - **Proposed Solution**: Refine the movement logic to better reflect real-world behavior, i.e. with adding a grid 
+   into the graph to simulate the stadium grounds.
+
+3. **Bicycle Parking Lot Capacity**
+    - The current `BicycleParkingLot` implementation does not account for capacity constraints.
+    - **Proposed Solution**: Update the `BicycleParkingLot` to recognize and enforce capacity limits.
+
+4. **Universal Road Usage by All Vehicle Modalities**
+    - At present, all roads can be used by any vehicle or transportation modality, which does not reflect real-world restrictions.
+   The reason for this is the `SpatialGraphMediatorLayer`. Visitors try to switch the lane into a lane that doesn't support 
+   their modality. This leads to the simulation stopping because the visitor can't find a path to his destination.
+
+5. **Buses in the Framework**:  
+   Currently, buses are implemented in such a way that the next bus stop is selected based on the start and destination
+   points. However, if there is no bus route between these points, no route is found. As a result, we had to add a 
+   non-existing street in the graph to make the route work.
+   - **Location**: This issue is mainly in the `WalkingBusDrivingMultimodalRoute` class.
+   - **Improvement Needed**: The route calculation and bus stop selection need to be reworked to handle cases where no 
+   direct bus route exists, ensuring a more accurate multimodal routing process.
+   - **Currently**: We fixed this problem by adding a new route into the multimodal route list outside the method in the
+     `Visitor` class. This should only be a temporary solution, but still works. You can see the implementation for that
+   in the `FindMultimodalRoute()` method in the `Visitor` class.
+    
+---
+*GitHub accounts of the contributors:*
+- [niklasdikkafa](https://github.com/niklasdikkafa)
+- [pscheinert](https://github.com/pscheinert)
+- [SimSon2710](https://github.com/SimSon2710)

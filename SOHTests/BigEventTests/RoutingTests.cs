@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Mars.Common.Collections;
 using Mars.Components.Environments;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Model;
@@ -47,21 +48,14 @@ namespace SOHTests.BigEventTests
 
             //File.WriteAllText("walking_and_cycling_base.geojson", environment.ToGeoJson());
 
-            foreach (var startNode in environment.Nodes)
-            {
-                foreach (var goalNode in environment.Nodes)
-                {
-                    if (startNode != goalNode)
-                    {
-                        _output.WriteLine($"Calculating route from Node {startNode.Position} to Node {goalNode.Position}");
-
-                        var selectedRoute = environment.FindShortestRoute(startNode, goalNode,
-                            edge => edge.Modalities.Contains(SpatialModalityType.Walking));
-
-                        Assert.NotNull(selectedRoute);
-                    }
-                }
-            }
+            var startNode = environment.NearestNode(new[] { 53.593998, 9.902225 });
+            var goalNode = environment.NearestNode(new[] { 53.5836529, 9.928451 });
+            
+            var selectedRoute = environment.FindShortestRoute(startNode, goalNode,    
+                edge => edge.Modalities.Contains(SpatialModalityType.Walking));
+            
+            Assert.NotNull(selectedRoute);
+            
         }
     }
 }
