@@ -22,7 +22,12 @@
       ]
     },
     {
-      "name": "FerryDriver"
+      "name": "FerryDriver",
+      "outputs": [
+        {
+          "kind": "trips"
+        }
+      ]
     }
   ],
   "layers": [

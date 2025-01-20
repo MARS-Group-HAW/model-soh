@@ -27,15 +27,18 @@ public class FerrySchedulerLayer : SchedulerLayer
         if (!dataRow.Data.ContainsKey("line"))
             throw new ArgumentException("Missing line number for ferry of field 'line' in input");
 
-        var driver = new FerryDriver(_ferryLayer, UnregisterAgent, ferryType)
+        if (RegisterAgent != null && UnregisterAgent != null)
         {
-            Line = dataRow.Data["line"].Value<int>(),
-            MinimumBoardingTimeInSeconds = dataRow.Data.TryGetValue("minimumBoardingTimeInSeconds", out var wait)
-                ? wait.Value<int>()
-                : 0
-        };
+            var driver = new FerryDriver(_ferryLayer, UnregisterAgent, ferryType)
+            {
+                Line = dataRow.Data["line"].Value<int>(),
+                MinimumBoardingTimeInSeconds = dataRow.Data.TryGetValue("minimumBoardingTimeInSeconds", out var wait)
+                    ? wait.Value<int>()
+                    : 0
+            };
 
-        _ferryLayer.Driver.Add(driver.ID, driver);
-        RegisterAgent(_ferryLayer, driver);
+            _ferryLayer.Driver.Add(driver.ID, driver);
+            RegisterAgent(_ferryLayer, driver);
+        }
     }
 }

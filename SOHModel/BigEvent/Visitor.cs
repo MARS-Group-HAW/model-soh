@@ -98,8 +98,6 @@ public class Visitor : Traveler<BaseWalkingLayer>
     protected override MultimodalRoute FindMultimodalRoute()
     {
         
-        //Console.WriteLine("Preferred modal choice: " + _preferred);
-        //Console.Write("Visitor's start position: " + StartPosition);
         return MultimodalLayer.Search(this, StartPosition, GoalPosition, _preferred);
         
     }
