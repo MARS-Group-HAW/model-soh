@@ -1,5 +1,4 @@
-﻿using Mars.Common;
-using Mars.Common.Core.Collections;
+﻿using Mars.Common.Core.Collections;
 using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
@@ -8,7 +7,7 @@ using SensorThings.Core;
 using SensorThings.OData;
 using Location = SensorThings.Core.Location;
 
-namespace SOHBicycleRealTime;
+namespace SOHTrafficSignalRealTimeBox;
 
 public static class SensorThingsImporter
 {

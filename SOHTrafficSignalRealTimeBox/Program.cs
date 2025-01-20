@@ -1,20 +1,7 @@
-﻿using System;
-using System.Diagnostics;
-using System.Globalization;
-using System.IO;
-using System.Threading;
+﻿using System.Globalization;
 using Mars.Common.Core.Logging;
-using Mars.Components.Starter;
-using Mars.Core.Simulation;
-using Mars.Interfaces;
-using Mars.Interfaces.Model;
-using SOHModel.Bicycle.Rental;
-using SOHModel.Domain.Graph;
-using SOHModel.Multimodal.Layers.TrafficLight;
-using SOHModel.Multimodal.Model;
-using SOHModel.Multimodal.Routing;
 
-namespace SOHBicycleRealTime;
+namespace SOHTrafficSignalRealTimeBox;
 
 /// <summary>
 ///     This pre-defined starter program runs the the Green4Bike scenario with outside passed arguments or

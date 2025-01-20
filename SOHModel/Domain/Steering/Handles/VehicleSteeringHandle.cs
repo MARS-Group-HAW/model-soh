@@ -198,7 +198,7 @@ public class VehicleSteeringHandle
                         //Console.WriteLine("Traffic light controller detected");
                         if(emergencyCarDriver.OnDuty())
                         {
-                            trafficLightController.priorityRequest();
+                            trafficLightController.PriorityRequest();
                         }
                     }
 

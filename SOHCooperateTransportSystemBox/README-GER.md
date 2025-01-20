@@ -22,10 +22,7 @@
   - [Mögliche Erweiterungen](#mögliche-erweiterungen)
     - [Gefetchte Live-Ampelphasen ins Programm einbinden](#Gefetchte-live-ampelphasen-ins-programm-einbinden)
     - [Busse und Polizeiautos können priority requests schicken](#busse-und-polizeiautos-können-priority-requests-schicken)
-  - [Quellen](#quellen)
-
-
-## Projekt: Smart-Open-Hamburg Cooperative Intelligent Transport Systems
+  - ## Projekt: Smart-Open-Hamburg Cooperative Intelligent Transport Systems
 
 **Projekt-Mitglieder**  
 
@@ -95,18 +92,20 @@ Dazu verwendet man das Script traffic_light_phase_parser.py. Um es auszuführen,
 
 Als Ergebnis bekommt man die Ampelphasen für jede Sekunde pro Ampel. Eine Sekunde entspricht ein Tick im Programm.
 
-Beispiel:
+*Beispiel*
+```json
 "((9.9839458, 53.5556457), (9.9843108, 53.555496))": [
-        3,
-        3,
-        3,
-        3,
-        3,
-        1,
-        1,
-        1,
-        ...
+    3,
+    3,
+    3,
+    3,
+    3,
+    1,
+    1,
+    1,
+    ...
 ]
+```
 
 Die beiden Ampeln an den Koordianten (9.9839458, 53.5556457) und (9.9843108, 53.555496) sind in den ersten 5 Sekunden grün geschaltet. Das sieht man daran, dass in den ersten fünf Zeilen eine 3 ist. Jede Zeile ist der Zustand einer Ampel pro Sekunde. In dem Beispiel oben ist die Ampel in Sekunde 6, 7 und 8 auf rot geschaltet, weil in der Zeile 6,7 und 8 die 1 steht.
 
@@ -122,7 +121,9 @@ Um die Anzahl der Emergency cars zu verändern muss in config.json der count ge�
 
 Aktuell werden die Ampalephasen der letzen 15 Minuten mit dem Script `fetch_traffic_lights.py` gefetched. Um dies zu ändern muss man in der folgender URL `top` anpassen sowie `skip` variabel durch eine Schleifen-Index bestimmen:
 
-<https://tld.iot.hamburg.de/v1.0/Datastreams?$filter=properties/serviceName%eq%'HH_STA_traffic_lights'%and%properties/layerName%eq%'primary_signal'&$expand=Observations($orderby=phenomenonTime%desc;$top=15)&$orderby=id&$top=1000&$skip={skip}>
+```plaintext
+https://tld.iot.hamburg.de/v1.0/Datastreams?$filter=properties/serviceName%eq%'HH_STA_traffic_lights'%and%properties/layerName%eq%'primary_signal'&$expand=Observations($orderby=phenomenonTime%desc;$top=15)&$orderby=id&$top=1000&$skip={skip}
+```
 
 Erhöhe beipsielsweise `top` auf 30, um ungefähr die letzen 30 Minuten zu fetchen.
 

@@ -2,7 +2,6 @@ using Mars.Common;
 using Mars.Interfaces.Agents;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Layers;
-using SOHModel.Car.Model;
 
 namespace SOHModel.Multimodal.Layers.TrafficLight;
 
@@ -13,26 +12,17 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
     
     private int _initialcycleLength;
     private const int TruncationDuration = 15;
-
-    // we saved these for that we know for every controller object at which traffic light we currently are
-    public double lat;
-    public double lon;
-
+    
     private readonly ISpatialNode _node;
-    private readonly ISpatialGraphEnvironment _environment;
     private readonly TrafficLightLayer _trafficLightLayer;
-    private Dictionary<Tuple<ISpatialEdge, ISpatialEdge>, SOHModel.Multimodal.Layers.TrafficLight.TrafficLight> _roadLightMappings;
-
-
+    private Dictionary<Tuple<ISpatialEdge, ISpatialEdge>, TrafficLight>? _roadLightMappings;
+    
     public TrafficLightController(ILayer layer, ISpatialGraphEnvironment environment, double lat, double lon)
     {
         _trafficLightLayer = (TrafficLightLayer)layer;
         Position = Position.CreateGeoPosition(lon, lat);
-        this.lat = lat;
-        this.lon = lon;
-
+        _roadLightMappings = new Dictionary<Tuple<ISpatialEdge, ISpatialEdge>, TrafficLight>();
         _node = environment.NearestNode(Position);
-        _environment = environment;
         
         var distance = _node.Position.DistanceInKmTo(Position) * 1000;
         if (distance > 10)
@@ -51,6 +41,8 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
 
     public Guid ID { get; set; } = Guid.NewGuid();
 
+    public bool PriorityRequestSent { get; set; } = false;
+    
     public TrafficLightPhase GetTrafficLightPhase(ISpatialEdge from, ISpatialEdge to)
     {
         return _roadLightMappings[new Tuple<ISpatialEdge, ISpatialEdge>(from, to)].TrafficLightPhase;
@@ -89,7 +81,7 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
     }
     
     //TODO unit test priority request
-    public void priorityRequest()
+    public void PriorityRequest()
     {
         //Red truncation 
         //set _initialcycleLength to the original cycle length once 
@@ -107,18 +99,12 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
             //Truncate the red phase
             CycleLength -= TruncationDuration;
         }
-
-        Monitor.PriorityRequestSent = true;
-
     }
 
     // todo insert our own schedule based on our traffic light rt-data
     public void GenerateTrafficSchedules()
     {
         var greenStartTick = 0; 
-
-        _roadLightMappings = new Dictionary<Tuple<ISpatialEdge, ISpatialEdge>, SOHModel.Multimodal.Layers.TrafficLight.TrafficLight>();
-
         if (_node.IncomingEdges.Count == 0)
         {
             _trafficLightLayer.Logger.LogWarning("Traffic light controller at position (" + Position[0] + "/" +
@@ -153,7 +139,7 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
                 var direction = PositionHelper.GetDirectionType(incomingBearing, outgoingBearing);
                 if (direction != DirectionType.Down)
                 {
-                    var trafficLight = new SOHModel.Multimodal.Layers.TrafficLight.TrafficLight(TrafficLightPhase.Red, greenStartTick,
+                    var trafficLight = new TrafficLight(TrafficLightPhase.Red, greenStartTick,
                         greenStartTick + GreenDuration,
                         greenStartTick + GreenDuration + YellowDuration);
                     _roadLightMappings.Add(new Tuple<ISpatialEdge, ISpatialEdge>(incomingEdge, adjacentEdge),
@@ -161,7 +147,7 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
                 }
                 else
                 {
-                    var trafficLight = new SOHModel.Multimodal.Layers.TrafficLight.TrafficLight(TrafficLightPhase.None, 1000, 1000, 1000);
+                    var trafficLight = new TrafficLight(TrafficLightPhase.None, 1000, 1000, 1000);
                     _roadLightMappings.Add(new Tuple<ISpatialEdge, ISpatialEdge>(incomingEdge, adjacentEdge),
                         trafficLight);
                 }
@@ -177,12 +163,4 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
         CycleLength = greenStartTick;
         CurrentTick = 0;
     }
-    
-    
-    // Monitor class
-    public static class Monitor
-    {
-        public static bool PriorityRequestSent { get; set; } = false;
-    }
-    
 }

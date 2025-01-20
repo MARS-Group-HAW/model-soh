@@ -10,9 +10,8 @@ using SensorThings.Client;
 using SensorThings.Core;
 using SensorThings.OData;
 using Location = SensorThings.Core.Location;
-using Mars.Common;
 
-namespace SOHC_ITSBox
+namespace SOHCooperateTransportSystemBox
 {
     public static class SensorThingsImporter
     {
