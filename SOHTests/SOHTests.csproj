@@ -30,14 +30,17 @@
 
     <ItemGroup>
         <Compile Remove="SimulationTests\BicycleTests\**"/>
+        <Compile Remove="BigEventTests\**" />
     </ItemGroup>
 
     <ItemGroup>
         <EmbeddedResource Remove="SimulationTests\BicycleTests\**"/>
+        <EmbeddedResource Remove="BigEventTests\**" />
     </ItemGroup>
 
     <ItemGroup>
         <None Remove="SimulationTests\BicycleTests\**"/>
+        <None Remove="BigEventTests\**" />
     </ItemGroup>
 
     <ItemGroup>
