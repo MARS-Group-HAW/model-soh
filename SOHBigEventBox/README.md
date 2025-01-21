@@ -44,7 +44,13 @@ endpoints of the edges.
 
 There are two CSV files for the visitor data:
 1. **Presentation File**: Contains data for approximately **2,000 agents**. This smaller dataset is used for demonstration purposes.
-2. **Analysis File**: Contains data for approximately **16,000 agents**. This larger dataset is used for analysis but may cause performance issues in Kepler, which is why the number of agents in the presentation file has been reduced to one-quarter of the original count. Despite this reduction, the distribution of transportation modalities remains approximately the same.
+2. **Analysis File**: Contains data for approximately **8,000 agents**. This larger dataset is used for analysis but may 
+cause performance issues in Kepler, which is why the number of agents in the presentation file has been reduced to 
+one-quarter of the original count. Despite this reduction, the distribution of transportation modalities remains approximately the same.
+
+It's important to remember, that the Barclays Arena has a capacity of 16,000 people. The reason why we chose 8,000 agents
+is that the heatmap that was generated with the visitor data was too big for the browser to handle. But that is no problem,
+because the result would be similar to the one with 16,000 agents which would use a lower threshold for the heatmap.
 
 This approach allows for better performance while maintaining the essential characteristics of the simulation.
 
