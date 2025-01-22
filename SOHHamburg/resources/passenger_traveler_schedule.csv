@@ -1,0 +1,10 @@
+startTime,endTime,spawningIntervalInMinutes,spawningAmount,source,destination
+6:00,07:00,3,1,"MULTIPOLYGON (((10.2101 53.4851, 10.2101 53.4871, 10.2121 53.4871, 10.2121 53.4851, 10.2101 53.4851)))
+","MULTIPOLYGON(((
+  10.0940 53.5145,
+  10.0940 53.5175,
+  10.0980 53.5175,
+  10.0980 53.5145,
+  10.0940 53.5145
+)))
+"
