@@ -104,7 +104,7 @@ public class TrainStation : IVectorFeature
         foreach (var train in Trains.Keys)
             if (train.Driver is TrainDriver trainDriver)
                 if (trainDriver.RemainingStations
-                    .Any(entry => Distance.Haversine(entry.To.Position.PositionArray, goal.PositionArray) < 30))
+                    .Any(entry => Distance.Haversine(entry.To.Position.PositionArray, goal.PositionArray) < 300))
                     return train;
 
         return null;

@@ -33,7 +33,7 @@ public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>,
     ICarRentalCapable, IBusPassenger, IFerryPassenger, ITrainPassenger
     where TLayer : IMultimodalLayer
 {
-    private const double DeltaDistanceEqualsInM = 3d;
+    protected virtual double DeltaDistanceEqualsInM => 3d;
     private readonly bool[] _capabilities = new bool[Enum.GetNames(typeof(ModalChoice)).Length];
     private int _mainModalActualTravelTime;
     private bool _resultOutputStored;
