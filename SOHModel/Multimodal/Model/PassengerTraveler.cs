@@ -4,6 +4,7 @@ namespace SOHModel.Multimodal.Model;
 
 public class PassengerTraveler : Traveler<PassengerTravelerLayer>
 {
+    protected override double DeltaDistanceEqualsInM => 300d;
     public override void Init(PassengerTravelerLayer layer)
     {
         base.Init(layer);
