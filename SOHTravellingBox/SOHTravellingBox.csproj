@@ -25,4 +25,8 @@
         </None>
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Mars.Life.Simulations" Version="5.1.0" />
+    </ItemGroup>
+
 </Project>

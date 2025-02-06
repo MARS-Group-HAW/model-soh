@@ -1,0 +1,47 @@
+{
+  "id": "C-ITS_2024",
+  "globals": {
+    "deltaT": 1,
+    "startPoint": "2024-11-21T11:00:00",
+    "endPoint": "2024-11-21T11:15:00",
+    "deltaTUnit": "seconds",
+    "console": true,
+    "output": "csv"
+  },
+  "agents": [
+    {
+      "name": "CarDriver",
+      "output": "csv",
+      "count": 2000,
+      "file": "resources/car_driver.csv"
+    },
+    {
+      "name": "EmergencyCarDriver",
+      "output": "csv",
+      "count": 20,
+      "file": "resources/emergency_car_driver.csv"
+    }
+  ],
+  "layers": [
+    {
+      "name": "CarLayer",
+      "output": "geojson",
+      "outputFrequency": 1000,
+      "file": "resources/c_its_teststrecke_street_graph.geojson"
+    },
+    {
+      "name": "CarDriverSchedulerLayer"
+    },
+    {
+      "name": "TrafficLightLayer", 
+      "file": "resources/ampel-coordinaten-komplett.zip"
+    }
+  ],
+  "entities": [
+    {
+      "name": "Car",
+      "output": "none",
+      "file": "resources/car.csv"
+    }
+  ]
+}

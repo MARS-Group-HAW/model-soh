@@ -1,0 +1,28 @@
+<mxfile host="Electron" modified="2025-01-20T13:15:10.695Z" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.1.0 Chrome/120.0.6099.109 Electron/28.1.0 Safari/537.36" etag="typyAtGKq2ogppQgvjVk" version="24.1.0" type="device">
+  <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
+    <mxGraphModel dx="1434" dy="820" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="WIyWlLk6GJQsqaUBKTNV-0" />
+        <mxCell id="WIyWlLk6GJQsqaUBKTNV-1" parent="WIyWlLk6GJQsqaUBKTNV-0" />
+        <mxCell id="UMaO4WP3-oxwi6m_Yht4-0" value="TSP TrafficLightController Seite PrioRequest" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;recursiveResize=0;container=1;collapsible=0;width=160;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="80" y="40" width="360" height="320" as="geometry" />
+        </mxCell>
+        <mxCell id="UMaO4WP3-oxwi6m_Yht4-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="UMaO4WP3-oxwi6m_Yht4-0" source="UMaO4WP3-oxwi6m_Yht4-1" target="WIyWlLk6GJQsqaUBKTNV-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="UMaO4WP3-oxwi6m_Yht4-1" value="speichere ursprüngliche CycleLength" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;" vertex="1" parent="UMaO4WP3-oxwi6m_Yht4-0">
+          <mxGeometry x="150" y="130" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="UMaO4WP3-oxwi6m_Yht4-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="UMaO4WP3-oxwi6m_Yht4-0" source="WIyWlLk6GJQsqaUBKTNV-3" target="UMaO4WP3-oxwi6m_Yht4-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="WIyWlLk6GJQsqaUBKTNV-3" value="priority request wird aufgerufen" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;" parent="UMaO4WP3-oxwi6m_Yht4-0" vertex="1">
+          <mxGeometry x="150" y="40" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="WIyWlLk6GJQsqaUBKTNV-11" value="verkürze CycleLength" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;" parent="UMaO4WP3-oxwi6m_Yht4-0" vertex="1">
+          <mxGeometry x="150" y="220" width="120" height="40" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
