@@ -21,5 +21,4 @@
     <ItemGroup>
         <ProjectReference Include="..\SOHModel\SOHModel.csproj" />
     </ItemGroup>
-
 </Project>

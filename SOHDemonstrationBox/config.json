@@ -44,7 +44,7 @@
     },
     {
       "name": "Police",
-      "count": 30,
+      "count": 15,
       "outputs": [
         {
           "kind": "trips",

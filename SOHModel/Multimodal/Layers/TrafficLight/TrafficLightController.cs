@@ -9,18 +9,21 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
 {
     public const int GreenDuration = 20;
     public const int YellowDuration = 3;
-
+    
+    private int _initialcycleLength;
+    private const int TruncationDuration = 15;
+    
     private readonly ISpatialNode _node;
     private readonly TrafficLightLayer _trafficLightLayer;
-    private Dictionary<Tuple<ISpatialEdge, ISpatialEdge>, SOHModel.Multimodal.Layers.TrafficLight.TrafficLight> _roadLightMappings;
-
-
+    private Dictionary<Tuple<ISpatialEdge, ISpatialEdge>, TrafficLight>? _roadLightMappings;
+    
     public TrafficLightController(ILayer layer, ISpatialGraphEnvironment environment, double lat, double lon)
     {
         _trafficLightLayer = (TrafficLightLayer)layer;
         Position = Position.CreateGeoPosition(lon, lat);
-
+        _roadLightMappings = new Dictionary<Tuple<ISpatialEdge, ISpatialEdge>, TrafficLight>();
         _node = environment.NearestNode(Position);
+        
         var distance = _node.Position.DistanceInKmTo(Position) * 1000;
         if (distance > 10)
             _trafficLightLayer.Logger.LogWarning(
@@ -38,14 +41,15 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
 
     public Guid ID { get; set; } = Guid.NewGuid();
 
+    public bool PriorityRequestSent { get; set; } = false;
+    
     public TrafficLightPhase GetTrafficLightPhase(ISpatialEdge from, ISpatialEdge to)
     {
         return _roadLightMappings[new Tuple<ISpatialEdge, ISpatialEdge>(from, to)].TrafficLightPhase;
     }
-
+    
     public Position Position { get; set; }
-
-
+    
     public bool AccessEdge(long tick, ISpatialEdge from, ISpatialEdge to)
     {
         var currentPhase = _roadLightMappings[new Tuple<ISpatialEdge, ISpatialEdge>(from, to)].TrafficLightPhase;
@@ -54,27 +58,53 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
 
         return false;
     }
-
+    
     public void UpdateLightPhase()
     {
         CurrentTick++;
-        if (CycleLength == 0 || _trafficLightLayer.Context.CurrentTick % CycleLength == 1) CurrentTick = 0;
-
+        if (CycleLength == 0 || _trafficLightLayer.Context.CurrentTick % CycleLength == 1 || CurrentTick > CycleLength) CurrentTick = 0;
+        
         foreach (var tuple in _roadLightMappings)
             if (tuple.Value.StartRedTick == CurrentTick)
                 tuple.Value.TrafficLightPhase = TrafficLightPhase.Red;
             else if (tuple.Value.StartYellowTick == CurrentTick)
                 tuple.Value.TrafficLightPhase = TrafficLightPhase.Yellow;
             else if (tuple.Value.StartGreenTick == CurrentTick)
+            {
                 tuple.Value.TrafficLightPhase = TrafficLightPhase.Green;
+                if (CycleLength != _initialcycleLength && _initialcycleLength != 0)
+                {
+                    CycleLength = _initialcycleLength; //undo Red Truncation once the green phase starts
+                }
+            }
+        
+    }
+    
+    //TODO unit test priority request
+    public void PriorityRequest()
+    {
+        //Red truncation 
+        //set _initialcycleLength to the original cycle length once 
+        if (_initialcycleLength == 0)
+        {
+            _initialcycleLength = CycleLength; 
+        }
+        else if(_initialcycleLength != 0 && CycleLength != _initialcycleLength)
+        {
+            return;
+        } 
+        
+        if (CycleLength >= TruncationDuration)
+        {
+            //Truncate the red phase
+            CycleLength -= TruncationDuration;
+        }
     }
 
+    // todo insert our own schedule based on our traffic light rt-data
     public void GenerateTrafficSchedules()
     {
-        var greenStartTick = 0;
-
-        _roadLightMappings = new Dictionary<Tuple<ISpatialEdge, ISpatialEdge>, SOHModel.Multimodal.Layers.TrafficLight.TrafficLight>();
-
+        var greenStartTick = 0; 
         if (_node.IncomingEdges.Count == 0)
         {
             _trafficLightLayer.Logger.LogWarning("Traffic light controller at position (" + Position[0] + "/" +
@@ -109,7 +139,7 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
                 var direction = PositionHelper.GetDirectionType(incomingBearing, outgoingBearing);
                 if (direction != DirectionType.Down)
                 {
-                    var trafficLight = new SOHModel.Multimodal.Layers.TrafficLight.TrafficLight(TrafficLightPhase.Red, greenStartTick,
+                    var trafficLight = new TrafficLight(TrafficLightPhase.Red, greenStartTick,
                         greenStartTick + GreenDuration,
                         greenStartTick + GreenDuration + YellowDuration);
                     _roadLightMappings.Add(new Tuple<ISpatialEdge, ISpatialEdge>(incomingEdge, adjacentEdge),
@@ -117,7 +147,7 @@ public class TrafficLightController : IPositionable, IEntity, INodeGuard
                 }
                 else
                 {
-                    var trafficLight = new SOHModel.Multimodal.Layers.TrafficLight.TrafficLight(TrafficLightPhase.None, 1000, 1000, 1000);
+                    var trafficLight = new TrafficLight(TrafficLightPhase.None, 1000, 1000, 1000);
                     _roadLightMappings.Add(new Tuple<ISpatialEdge, ISpatialEdge>(incomingEdge, adjacentEdge),
                         trafficLight);
                 }

@@ -1,8 +1,8 @@
 ﻿{
   "globals": {
     "deltaT": 1,
-    "startPoint": "2020-12-03T16:00:00",
-    "endPoint": "2020-12-10T20:00:00",
+    "startPoint": "2024-11-04T15:35:00",
+    "endPoint": "2024-11-4T16:05:00",
     // future time to get and process input from sensors. 
     "deltaTUnit": "seconds",
     "csvOptions": {
