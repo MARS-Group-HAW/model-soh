@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "barclays_bike_parking",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "full_id": "w536678049", "osm_id": "536678049", "osm_type": "way", "amenity": "bicycle_parking", "website": null, "operator:wikidata": null, "opening_hours": null, "fee": null, "covered": "no", "check_date:capacity": "2023-05-11", "capacity": "300", "bicycle_parking": "stands" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 9.9017098, 53.5880856 ], [ 9.9014953, 53.5881904 ], [ 9.9013786, 53.5885661 ], [ 9.9014548, 53.5886536 ], [ 9.9015181, 53.5886561 ], [ 9.9017098, 53.5880856 ] ] ] ] } },
+{ "type": "Feature", "properties": { "full_id": "w1305228517", "osm_id": "1305228517", "osm_type": "way", "amenity": "bicycle_parking", "website": "https://www.hsv.de/volksparkstadion/anreise/oeff-spieltag", "operator:wikidata": "Q150933", "opening_hours": "\"during events\"", "fee": "no", "covered": "no", "check_date:capacity": null, "capacity": "200", "bicycle_parking": "stands" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 9.903039, 53.5873893 ], [ 9.9029301, 53.5869092 ], [ 9.9030451, 53.5868986 ], [ 9.9031924, 53.5873546 ], [ 9.903039, 53.5873893 ] ] ] ] } }
+]
+}
