@@ -21,9 +21,4 @@
     <ItemGroup>
         <ProjectReference Include="..\SOHModel\SOHModel.csproj" />
     </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="Mars.Life.Simulations" Version="5.1.0" />
-    </ItemGroup>
-
 </Project>
