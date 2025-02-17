@@ -1,7 +1,11 @@
+using Mars.Common.Core;
+using Mars.Components.Environments;
 using Mars.Interfaces.Agents;
 using Mars.Interfaces.Annotations;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Layers;
+using Mars.Interfaces.Model;
+using ServiceStack;
 using SOHModel.Domain.Steering.Common;
 using SOHModel.SemiTruck.Common;
 using SOHModel.SemiTruck.Steering;
@@ -19,6 +23,7 @@ namespace SOHModel.SemiTruck.Model
         private UnregisterAgent _unregister;
         private ISpatialGraphEnvironment _environment;
         private SemiTruckLayer _layer;
+        private static int truckCounter = 0; // Shared counter across all instances
 
         // Public property for the associated SemiTruck
         public SemiTruck SemiTruck { get; set; }
@@ -39,15 +44,29 @@ namespace SOHModel.SemiTruck.Model
             
             //Define SpatialEdge for driveMode 5 as First Outgoing Edge
             ISpatialEdge startingEdge = null;
-            // var startNode = _environment.NearestNode(Position.CreateGeoPosition(StartLon, StartLat));
-            // startingEdge = startNode.OutgoingEdges.Values.FirstOrDefault();
+            //Console.WriteLine($"Total edges in graph: {_environment.Edges.Count}");
+
             var route = SemiTruckRouteFinder.Find(_environment, DriveMode, StartLat,StartLon, DestLat, DestLon, startingEdge, "", SemiTruck.Height, SemiTruck.Mass, SemiTruck.Width, SemiTruck.Length, SemiTruck.MaxIncline);
+
+            truckCounter++;
+            if (truckCounter % 100 == 0) 
+            {
+                Console.WriteLine($"Created routes for {truckCounter} trucks...");
+            }
+            
+            if (route == null || route.Count == 0)
+            {
+                Console.WriteLine($"No valid route found for truck {ID}. Removing from simulation.");
+                _unregister.Invoke(_layer, this);  // Remove agent from simulation
+                return;
+            }
+            
+            
             // Insert the SemiTruck into the environment at the starting node
             var node = route.First().Edge.From;
             _environment.Insert(SemiTruck, node);
             SemiTruck.TryEnterDriver(this, out _steeringHandle);
             _steeringHandle.Route = route;
-            
             
             // Register the agent
             layer.RegisterAgent.Invoke(layer, this);
@@ -58,13 +77,21 @@ namespace SOHModel.SemiTruck.Model
         /// </summary>
         public void Tick()
         {
+            if (_steeringHandle == null)
+            {
+                Console.WriteLine($"Error: _steeringHandle is null for truck {ID}. Cannot check route.");
+                return;
+            }
             _steeringHandle.Move();
             if (GoalReached)
             {
+                Console.WriteLine($"SemiTruck {ID} reached its goal.");
                 _environment.Remove(SemiTruck);
                 _unregister.Invoke(_layer, this);
             }
+
         }
+
 
 
         /// <summary>
@@ -81,6 +108,7 @@ namespace SOHModel.SemiTruck.Model
 
         // Indicates whether the SemiTruck has reached its goal
         public bool GoalReached => _steeringHandle.GoalReached;
+        
 
         // Current position of the SemiTruckDriver
         public Position Position

@@ -8,8 +8,10 @@ using Mars.Interfaces.Agents;
 using Mars.Interfaces.Data;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Layers;
+using Mars.Interfaces.Model;
 using ServiceStack.Text;
 using SOHModel.Domain.Graph;
+using System.Threading.Tasks;
 
 namespace SOHModel.SemiTruck.Model
 {
@@ -54,16 +56,22 @@ namespace SOHModel.SemiTruck.Model
             }
             else if (!string.IsNullOrEmpty(Mapping.File))
             {
-                // Load the environment from a specified file
-                    Environment = new SpatialGraphEnvironment(layerInitData.LayerInitConfig.File);
+                Environment = new SpatialGraphEnvironment(new Input
+                {
+                    File = layerInitData.LayerInitConfig.File,
+                    InputConfiguration = new InputConfiguration
+                    {
+                        IsBiDirectedImport = layerInitData.LayerInitConfig.InputConfiguration?.IsBiDirectedImport ?? false //If Bidirectional Value is not in config it will be false
+                    }
+                });
             }
-            
             var agentManager = layerInitData.Container.Resolve<IAgentManager>();
         
             // Create and register objects of type MyAgentType.
             var agents = agentManager.Spawn<SemiTruckDriver, SemiTruckLayer>(
                 dependencies: new List<IModelObject> { this, Environment });
-        
+            
+            
             // Otherwise only create them but do not registering 
             // to trigger their Tick() method. 
             agentManager.Create<SemiTruckDriver>().ToList();
@@ -71,6 +79,7 @@ namespace SOHModel.SemiTruck.Model
             // Add the spawned agents to the Driver dictionary for tracking
             Driver.AddRange(agents.ToDictionary(agent => agent.ID, agent => (IAgent)agent));
 
+            
             return true;
         }
     }

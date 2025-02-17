@@ -4,6 +4,7 @@ using System.IO;
 using Mars.Components.Environments;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Model;
+using ServiceStack;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -23,7 +24,7 @@ namespace SOHTests.SOHLogisticsTests
 
             // Construct the full path to the GeoJSON file
             // GeoJsonPath = Path.Combine(projectRoot, "SOHLogisticsBox", "resources", "autobahn_and_bundesstreet_fixed.geojson");
-            GeoJsonPath = Path.Combine(projectRoot, "SOHLogisticsBox", "resources", "autobahn_und_bundesstrassen_deutschland.geojson");
+            GeoJsonPath = Path.Combine(projectRoot, "SOHLogisticsBox", "resources", "autobahn_und_bundesstrassen_deutschland_elevation_03.geojson");
             Console.WriteLine($"Looking for GeoJSON file at: {Path.GetFullPath(GeoJsonPath)}");
             if (!File.Exists(GeoJsonPath))
             {
@@ -121,9 +122,10 @@ namespace SOHTests.SOHLogisticsTests
                 // Frankfurt to Leipzig
                 (50.1109, 8.6821, 51.3397, 12.3731, "Frankfurt to Leipzig (West-Central to East-Central)"),
                 //Street with Roundabout
-                (53.297275,  9.25525, 53.289782,  9.257121, "Drive through Roundabout")
+                (53.297275,  9.25525, 53.289782,  9.257121, "Drive through Roundabout"),
+                (48.80294943528551,9.245803249413523,48.777766504072794,9.951289174408013, "Failure Route")
             };
-
+            Console.WriteLine($"Total edges in graph: {_environment.Edges.Count}");
             foreach (var route in criticalRoutes)
             {
                 _output.WriteLine($"Testing route: {route.description}");
@@ -135,11 +137,12 @@ namespace SOHTests.SOHLogisticsTests
                     _output.WriteLine($"Failed to find nearest nodes for: {route.description}");
                     Assert.True(false, $"Nearest node could not be found for route: {route.description}");
                 }
-
+                
+                
                 var shortestRoute = _environment.FindShortestRoute(startNode, endNode, edge => true);
                 
 
-                if (shortestRoute == null)
+                if (shortestRoute == null || shortestRoute.Count == 0)
                 {
                     _output.WriteLine($"No route found for: {route.description}");
                 }
