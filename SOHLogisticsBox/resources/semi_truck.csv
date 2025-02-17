@@ -1,8 +1,13 @@
 type,maxAcceleration,maxDeceleration,maxSpeed,length,height,width,trafficCode,passengerCapacity,velocity,mass,maxIncline
-StandardTruck,0.5,1.2,20.83,12,2.5,2.5,german,2,0,15.0,15
-HighTruck,0.5,1.2,20.83,12,4.0,2.5,german,2,0,15.0,15
-LightTruck,0.5,1.2,20.83,12,2.5,2.5,german,2,0,3.0,15
-WideTruck,0.5,1.2,20.83,12,2.5,3.5,german,2,0,3.0,15
-ShortTruck,0.5,1.2,20.83,8,2.5,2.5,german,2,0,3.0,15
-SmallInclineTruck,0.5,1.2,20.83,8,2.5,2.5,german,2,0,3.0,8
+SmallTruck,0.5,1.2,30.83,6,2.5,2.5,german,2,0,5.0,25
+MediumLoadTruck,0.5,1.2,30.83,8,2.5,2.5,german,2,0,10.0,22
+HeavyLoadTruck,0.5,1.2,30.83,10,2.5,2.5,german,2,0,15.0,18
+ExtendedLoadTruck,0.5,1.2,30.83,12,2.5,2.5,german,2,0,20.0,15
+LargeCapacityTruck,0.5,1.2,30.83,12,2.5,2.5,german,2,0,25.0,13
+ExtraCapacityTruck,0.5,1.2,30.83,14,2.5,2.5,german,2,0,30.0,12
+HighVolumeTruck,0.5,1.2,30.83,14,2.5,2.5,german,2,0,35.0,10
+MaximumLoadTruck,0.5,1.2,30.83,16,2.5,2.5,german,2,0,40.0,8
+OverloadTruck,0.5,1.2,30.83,16,2.5,2.5,german,2,0,50.0,6
+UnlimitedTruck,0.5,1.2,30.83,1,1.0,1.0,german,2,0,2.0,25
+
 

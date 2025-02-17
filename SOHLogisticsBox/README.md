@@ -206,14 +206,13 @@ configured:
 
 The **`SemiTrucks`** are initialized in **`semi_truck_initializer.csv`** like the following:
 
-| Truck Type      | Start Latitude | Start Longitude | Destination Latitude | Destination Longitude | Drive Mode |
-|---------------|---------------|----------------|----------------------|----------------------|------------|
-| StandardTruck | 51.3030184    | 7.2630005      | 52.5476332           | 8.1139535            | 3          |
-| StandardTruck | 51.3030184    | 7.2630005      | 52.5476332           | 8.1139535            | 2          |
-| StandardTruck | 53.5577323    | 10.2174148     | 52.8067652           | 12.7941436           | 2          |
-| StandardTruck | 50.82306      | 10.02379       | 50.49248             | 9.98912              | 3          |
-| HighTruck    | 50.82306      | 10.02379       | 50.49248             | 9.98912              | 3          |
-
+| Truck Type          | Start Latitude | Start Longitude | Destination Latitude | Destination Longitude | Drive Mode |
+|---------------------|----------------|-----------------|----------------------|-----------------------|------------|
+| SmallTruck          | 51.3030184     | 7.2630005       | 52.5476332           | 8.1139535             | 3          |
+| MediumLoadTruck     | 51.3030184     | 7.2630005       | 52.5476332           | 8.1139535             | 2          |
+| HeavyLoadTruck      | 53.5577323     | 10.2174148      | 52.8067652           | 12.7941436            | 2          |
+| ExtraCapacityTruck  | 50.82306       | 10.02379        | 50.49248             | 9.98912               | 3          |
+| OverloadTruck       | 50.82306       | 10.02379        | 50.49248             | 9.98912               | 3          |
 
 ## EntityMappings
 
@@ -236,25 +235,30 @@ configured:
     * `file`: the file path to the CSV file containing the attributes and properties of semi-trucks used in the
       simulation (type: `string`)
 
-The **`semi_truck.csv`** defines different types of **`SemiTrucks`** like the follwing:
+The **`semi_truck.csv`** defines different types of **`SemiTrucks`** like the following:
 
-| Type              | Max Acceleration | Max Deceleration | Max Speed (m/s) | Length (m) | Height (m) | Width (m) | Traffic Code | Passenger Capacity | Velocity | Mass (tons) | Max Incline (%) |
-|------------------|-----------------|------------------|----------------|------------|------------|-----------|--------------|------------------|----------|-------------|----------------|
-| StandardTruck    | 0.5             | 1.2              | 20.83          | 12         | 2.5        | 2.5       | German       | 2                | 0        | 15.0        | 15             |
-| HighTruck       | 0.5             | 1.2              | 20.83          | 12         | 4.0        | 2.5       | German       | 2                | 0        | 15.0        | 15             |
-| LightTruck      | 0.5             | 1.2              | 20.83          | 12         | 2.5        | 2.5       | German       | 2                | 0        | 3.0         | 15             |
-| WideTruck       | 0.5             | 1.2              | 20.83          | 12         | 2.5        | 3.5       | German       | 2                | 0        | 3.0         | 15             |
-| ShortTruck      | 0.5             | 1.2              | 20.83          | 8          | 2.5        | 2.5       | German       | 2                | 0        | 3.0         | 15             |
-| SmallInclineTruck | 0.5           | 1.2              | 20.83          | 8          | 2.5        | 2.5       | German       | 2                | 0        | 3.0         | 8              |
+| Type                | Max Acceleration | Max Deceleration | Max Speed (m/s) | Length (m) | Height (m) | Width (m) | Traffic Code | Passenger Capacity | Velocity | Mass (tons) | Max Incline (%) |
+|---------------------|------------------|------------------|-----------------|------------|------------|-----------|--------------|--------------------|----------|-------------|-----------------|
+| SmallTruck          | 0.5              | 1.2              | 30.83           | 6          | 2.5        | 2.5       | German       | 2                  | 0        | 5.0         | 25              |
+| MediumLoadTruck     | 0.5              | 1.2              | 30.83           | 8          | 2.5        | 2.5       | German       | 2                  | 0        | 10.0        | 22              |
+| HeavyLoadTruck      | 0.5              | 1.2              | 30.83           | 10         | 2.5        | 2.5       | German       | 2                  | 0        | 15.0        | 18              |
+| ExtendedLoadTruck   | 0.5              | 1.2              | 30.83           | 12         | 2.5        | 2.5       | German       | 2                  | 0        | 20.0        | 15              |
+| LargeCapacityTruck  | 0.5              | 1.2              | 30.83           | 12         | 2.5        | 2.5       | German       | 2                  | 0        | 25.0        | 13              |
+| ExtraCapacityTruck  | 0.5              | 1.2              | 30.83           | 14         | 2.5        | 2.5       | German       | 2                  | 0        | 30.0        | 12              |
+| HighVolumeTruck     | 0.5              | 1.2              | 30.83           | 14         | 2.5        | 2.5       | German       | 2                  | 0        | 35.0        | 10              |
+| MaximumLoadTruck    | 0.5              | 1.2              | 30.83           | 16         | 2.5        | 2.5       | German       | 2                  | 0        | 40.0        | 8               |
+| OverloadTruck       | 0.5              | 1.2              | 30.83           | 16         | 2.5        | 2.5       | German       | 2                  | 0        | 50.0        | 6               |
+| UnlimitedTruck      | 0.5              | 1.2              | 30.83           | 1          | 1.0        | 1.0       | German       | 2                  | 0        | 2.0         | 25              |
 
 ## SemiTruck
 
 The **`SemiTruck`** class models semi-truck behavior within the MARS simulation, integrating steering,
 passenger handling, and road network navigation. It extends the **`Vehicle`** class, operating in the **`CarDriving`**
-modality, allowing it to follow realistic traffic rules and interact dynamically with other vehicles. The **`SemiTruck`
-** is connected to the **`StreetLayer`**, representing highways and major roads, and leverages a spatial graph
-environment for precise routing, pathfinding, and decision-making. It is designed for large-scale logistics and freight
-transport simulations, it accounts for real-world constraints such as road restrictions or blocked roads.
+modality, allowing it to follow realistic traffic rules and interact dynamically with other vehicles.
+The **`SemiTruck`** is connected to the **`StreetLayer`**, representing highways and major roads, and leverages a
+spatial graph environment for precise routing, pathfinding, and decision-making.
+It is designed for large-scale logistics and freight transport simulations, it accounts for real-world constraints such
+as road restrictions or blocked roads.
 
 ## SemiTruckDriver
 
@@ -263,7 +267,7 @@ planning, vehicle control, and environmental interactions. It navigates using **
 adjusting to constraints and blocked roads. Integrated with the **`SemiTruckLayer`**, it registers with the simulation,
 manages a **`SemiTruck`**, and ensures realistic freight transport behavior. The driver interacts with road networks,
 optimizing truck-specific routes while considering constraints like weight, height, length, width, incline and
-restricted roads**. Once the destination is reached, the driver exits the simulation, ensuring efficient lifecycle
+restricted roads. Once the destination is reached, the driver exits the simulation, ensuring efficient lifecycle
 management within large-scale logistics and mobility simulations.
 
 ## SemiTruckLayer
@@ -289,19 +293,17 @@ drivers are then registered and tracked within the simulation environment, ensur
 modeling. This plays a crucial role in traffic simulation to efficiently manage and time the placing of truck
 drivers.
 
-The SemiTrucks in the  **`SemiTruckSchedulerLayer`** are initialized in  **`semi_truck_scheduler.csv`** like the following:
+The SemiTrucks in the  **`SemiTruckSchedulerLayer`** are initialized in  **`semi_truck_scheduler.csv`** like the
+following:
 
-| Start Time | End Time | Spawn Interval (min) | Spawn Amount | Start Longitude | Start Latitude | Destination Longitude | Destination Latitude | Truck Type      | Drive Mode |
-|-----------|---------|---------------------|--------------|-----------------|---------------|----------------------|----------------------|---------------|------------|
-| 07:00    | 13:00  | 1000                | 1            | 10.1355085      | 53.5667347    | 11.4522277           | 53.4306468           | StandardTruck | 2          |
-| 08:00    | 14:00  | 1000                | 1            | 10.1355085      | 53.5667347    | 11.4522277           | 53.4306468           | StandardTruck | 2          |
-| 09:00    | 15:00  | 1000                | 1            | 10.1355085      | 53.5667347    | 11.4522277           | 53.4306468           | StandardTruck | 2          |
-| 10:00    | 16:00  | 1000                | 1            | 10.1355085      | 53.5667347    | 11.4522277           | 53.4306468           | StandardTruck | 2          |
-
+| Start Time | End Time | Spawn Interval (min) | Spawn Amount | Start Longitude | Start Latitude | Destination Longitude | Destination Latitude | Truck Type    | Drive Mode |
+|------------|----------|----------------------|--------------|-----------------|----------------|-----------------------|----------------------|---------------|------------|
+| 07:00      | 13:00    | 1000                 | 1            | 10.1355085      | 53.5667347     | 11.4522277            | 53.4306468           | StandardTruck | 2          |
+| 08:00      | 14:00    | 1000                 | 1            | 10.1355085      | 53.5667347     | 11.4522277            | 53.4306468           | StandardTruck | 2          |
+| 09:00      | 15:00    | 1000                 | 1            | 10.1355085      | 53.5667347     | 11.4522277            | 53.4306468           | StandardTruck | 2          |
+| 10:00      | 16:00    | 1000                 | 1            | 10.1355085      | 53.5667347     | 11.4522277            | 53.4306468           | StandardTruck | 2          |
 
 ## SemiTruckRouteFinder
-
-### **SemiTruckRouteFinder in MARS Simulation**
 
 The **`SemiTruckRouteFinder`** is a route-planning utility for semi-truck navigation within the MARS
 simulation. It determines optimal truck routes while considering road constraints such as height, weight,
