@@ -15,6 +15,7 @@ using SOHModel.Domain.Graph;
 using SOHModel.Domain.Model;
 using SOHModel.Domain.Steering.Capables;
 using SOHModel.Domain.Steering.Common;
+using SOHModel.Domain.Steering.Handles;
 using SOHModel.Ferry.Station;
 using SOHModel.Ferry.Steering;
 using SOHModel.Multimodal.Commons;
@@ -33,7 +34,7 @@ public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>,
     ICarRentalCapable, IBusPassenger, IFerryPassenger, ITrainPassenger
     where TLayer : IMultimodalLayer
 {
-    protected virtual double DeltaDistanceEqualsInM => 3d;
+    private const double DeltaDistanceEqualsInM = 3d;
     private readonly bool[] _capabilities = new bool[Enum.GetNames(typeof(ModalChoice)).Length];
     private int _mainModalActualTravelTime;
     private bool _resultOutputStored;
@@ -297,8 +298,12 @@ public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>,
                 case ModalChoice.Train:
                     var trainStation = TrainStationLayer.Nearest(Position);
                     if (trainStation == null) return false;
-                    var train = trainStation.Find(route.Goal);
-                    return TryEnterVehicleAsPassenger(train, this);
+                    var train = trainStation.Find(route[0].Edge.To.Position);
+                    Guid? vehicleGuid = train.ID;
+                    var entered = TryEnterVehicleAsPassenger(train, this);
+                    if (ActiveSteering is IdlePassengerSteeringHandle idlePassengerSteeringHandle)
+                        idlePassengerSteeringHandle.VehicleID = vehicleGuid ?? Guid.Empty;
+                    return entered;
                 case ModalChoice.Bus:
                     var busStation = BusStationLayer.Nearest(Position);
                     if (busStation == null) return false;
@@ -361,6 +366,15 @@ public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>,
             }
             case PassengerMessage.GoalReached:
             {
+                if (ActiveCapability == ModalChoice.Train)
+                    if (ActiveSteering is IdlePassengerSteeringHandle idlePassengerSteeringHandle)
+                        if (TrainStationLayer.Nearest(Position).GetNextStation(idlePassengerSteeringHandle.VehicleID)
+                                .DistanceInMTo(MultimodalRoute
+                                    .CurrentRoute[MultimodalRoute.CurrentRoute.PassedStops + 1].Edge.To.Position) > 5d)
+                        {
+                            LeaveModalType(MultimodalRoute.CurrentModalChoice);
+                        }
+                            
                 if (Position.DistanceInMTo(MultimodalRoute.CurrentRoute.Goal) < DeltaDistanceEqualsInM)
                     if (LeaveModalType(MultimodalRoute.CurrentModalChoice))
                     {

@@ -34,4 +34,9 @@ public class IdlePassengerSteeringHandle : ISteeringHandle
     {
         //do nothing, the vehicle is moving without the influence of the passengerCapable
     }
+    
+    /// <summary>
+    ///     Gets or sets the unique identifier of the vehicle.
+    /// </summary>
+    public Guid VehicleID { get; set; }
 }

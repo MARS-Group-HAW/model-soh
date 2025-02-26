@@ -25,6 +25,7 @@ public static class ResourcesConstants
     public static readonly string BigEventBusLinesCsv = Path.Combine(EntityInitsFolder, "big_event_bus_lines.csv");
     public static readonly string FerryLineCsv = Path.Combine(EntityInitsFolder, "ferry_line.csv");
     public static readonly string TrainU1LineCsv = Path.Combine(EntityInitsFolder, "train_u1_line.csv");
+    public static readonly string TrainLineCsv = Path.Combine(EntityInitsFolder, "hamburg_train_line.csv");
     public static readonly string FerryDriverCsv = Path.Combine(AgentInitsFolder, "ferry_driver.csv");
     public static readonly string TestFerryDriverCsv = Path.Combine(AgentInitsFolder, "ferry_driver_test.csv");
     public static readonly string DockWorkerCsv = Path.Combine(AgentInitsFolder, "dock_worker.csv");
@@ -64,6 +65,9 @@ public static class ResourcesConstants
 
     public static readonly string TrainU1NorthGraph =
         Path.Combine(NetworkFolder, "hamburg_u1_north_graph.geojson");
+    
+    public static readonly string TrainGraph =
+        Path.Combine(NetworkFolder, "hamburg_train_graph.geojson");
 
     public static readonly string Bus113Graph =
         Path.Combine(NetworkFolder, "hamburg_bus_113_graph.geojson");
@@ -79,6 +83,9 @@ public static class ResourcesConstants
 
     public static readonly string WalkGraphAltonaAltstadt =
         Path.Combine(NetworkFolder, "walk_graph_altona_altstadt.graphml");
+    
+    public static readonly string WalkGraphHamburg =
+        Path.Combine(NetworkFolder, "walk_graph_hamburg.geojson");
 
     public static readonly string WalkGraphBus113Test = Path.Combine(NetworkFolder, "walk_graph_bustest113.geojson");
 
@@ -97,6 +104,9 @@ public static class ResourcesConstants
 
     public static readonly string TrainStationsU1 =
         Path.Combine(VectorDataFolder, "gateway", "hamburg_u1_stations.geojson");
+    
+    public static readonly string TrainStations =
+        Path.Combine(VectorDataFolder, "gateway", "hamburg_train_stations.geojson");
 
     public static readonly string BusStations113 =
         Path.Combine(VectorDataFolder, "gateway", "hamburg_bus_113_stations.geojson");

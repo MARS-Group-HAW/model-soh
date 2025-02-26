@@ -21,7 +21,7 @@ public class TrainStation : IVectorFeature
     /// <summary>
     ///     The centroid of this <see cref="TrainStation" />.
     /// </summary>
-    public Position Position { get; set; }
+    public Position? Position { get; set; }
 
     /// <summary>
     ///     Identifies the train station.
@@ -95,18 +95,43 @@ public class TrainStation : IVectorFeature
     }
 
     /// <summary>
-    ///     Finds the next train that is currently at this station and drives to given goal.
+    ///     Finds the next train that is currently at this station and drives to the given goal.
     /// </summary>
-    /// <param name="goal">That a train to use is reaching.</param>
-    /// <returns>The next train that drives to that goal, null if none found</returns>
+    /// <param name="goal">The position that a train to use is reaching.</param>
+    /// <returns>A tuple containing the next train that drives to that goal and the GUID of the
+    /// train's driver, or (null, null) if none found.</returns>
     public Model.Train Find(Position goal)
     {
         foreach (var train in Trains.Keys)
+        {
             if (train.Driver is TrainDriver trainDriver)
+            {
                 if (trainDriver.RemainingStations
-                    .Any(entry => Distance.Haversine(entry.To.Position.PositionArray, goal.PositionArray) < 300))
+                    .Any(entry => Distance.Haversine(entry.To.Position.PositionArray, goal.PositionArray) < 30))
+                {
                     return train;
-
+                }
+            }
+        }
         return null;
     }
+    
+    /// <summary>
+    ///     Retrieves the position of the next route entry of the train driver for the train with the specified GUID.
+    /// </summary>
+    /// <param name="trainGuid">The GUID of the train.</param>
+    /// <returns>The positionn of the next route entry of the train driver, or null if not found.</returns>
+    public Position? GetNextStation(Guid trainGuid)
+    {
+        foreach (var train in Trains.Keys)
+        {
+            if (train.ID == trainGuid && train.Driver is TrainDriver trainDriver)
+            {
+                return trainDriver.RemainingStations.FirstOrDefault()?.To.Position;
+            }
+        }
+        return null;
+    }
+    
+    
 }
