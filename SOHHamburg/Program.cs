@@ -32,12 +32,12 @@ internal static class Program
         description.AddLayer<TrainRouteLayer>(new[] { typeof(ITrainRouteLayer) });
         // description.AddLayer<TrainGtfsRouteLayer>(new[] {typeof(ITrainRouteLayer)});
 
-        description.AddLayer<PassengerTravelerLayer>();
-        description.AddLayer<AgentSchedulerLayer<PassengerTraveler, PassengerTravelerLayer>>(
-            "PassengerTravelerSchedulerLayer");
+        // description.AddLayer<PassengerTravelerLayer>();
+        // description.AddLayer<AgentSchedulerLayer<PassengerTraveler, PassengerTravelerLayer>>(
+        //     "PassengerTravelerSchedulerLayer");
 
         description.AddAgent<TrainDriver, TrainLayer>();
-        description.AddAgent<PassengerTraveler, PassengerTravelerLayer>();
+        // description.AddAgent<PassengerTraveler, PassengerTravelerLayer>();
 
         description.AddEntity<Train>();
 

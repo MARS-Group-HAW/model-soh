@@ -2,7 +2,7 @@
   "globals": {
     "deltaT": 1,
     "startPoint": "2022-09-01T06:00:00",
-    "endPoint": "2022-09-01T07:00:00",
+    "endPoint": "2022-09-01T12:00:00",
     "deltaTUnit": "seconds",
     "console": true,
     "outputType": "csv"
@@ -29,7 +29,7 @@
           "kind": "trips",
           "outputConfiguration": {
             "tripsFields": [
-              "ActiveCapability"
+              "Line"
             ]
           }
         }
