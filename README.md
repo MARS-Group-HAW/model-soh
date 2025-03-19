@@ -11,7 +11,7 @@ Clone the Git Repo:
 ```
 git clone https://github.com/MARS-Group-HAW/model-soh.git
 ```
-[Program.cs](SOHTravellingBox%2FProgram.cs)
+
 Download and install the SDK for NetCore from the official [website](https://dotnet.microsoft.com/download/dotnet-core/).  Navigate into the cloned directory and make sure that all required dependencies are installed automatically by building the model in the directory where the SOHModel.sln file is located:
 
 ```
@@ -54,9 +54,9 @@ The model provides a variety of modalities that can be used. We call them `Modal
 
 `CyclingOwnBike` is quite similar to walking, because the bike can either be parked at the node or in a bike station. Because it can be parked quite everywhere, agents can move from start to goal with the bike (if the bike is available at the start node).
 
-`CyclingRentalBike` is using a rental bike. The agent walks to a near by rental station that has remaining bikes, takes a bike that needs to be returned at another rental station and then finishes the remaining route by foot.
+`CyclingRentalBike` is using a rental bike. The agent walks to a nearby rental station that has remaining bikes, takes a bike that needs to be returned at another rental station and then finishes the remaining route by foot.
 
-`Train` can be used to drive as a passenger. Therefore the agents searches a reasonable train station near by and exits the train station near the goal. A transfer between lines is possible at stations that provide different lines.
+`Train` can be used to drive as a passenger. Therefore, the agents searches a reasonable train station near by and exits the train station near the goal. A transfer between lines is possible at stations that provide different lines.
 
 `Ferry` is quite similar to using the train just with ships moving over water.
 
@@ -64,7 +64,7 @@ The model provides a variety of modalities that can be used. We call them `Modal
 
 Although there are different modal choices, some of these share the same environment, for instance bikes might also use the streets like cars. We therefore have the `SpatialModalityType` discriminator that describes which lanes can be used by which transportation devices.
 
-For movement we need a [graph](https://www.mars-group.org/docs/tutorial/development/layers#vector-layer) because all transportation devices require it. The graph is stored in the [`SpatialGraphEnvironment`](https://www.mars-group.org/docs/tutorial/development/environments/spatialgraphenv) (`SGE`) that provides route searching capabilities and supervises movement concerning validity constraints like collision detection.
+For movement, we need a [graph](https://www.mars-group.org/docs/tutorial/development/layers#vector-layer) because all transportation devices require it. The graph is stored in the [`SpatialGraphEnvironment`](https://www.mars-group.org/docs/tutorial/development/environments/spatialgraphenv) (`SGE`) that provides route searching capabilities and supervises movement concerning validity constraints like collision detection.
 
 ![railroad_graph](https://www.mars-group.org/assets/images/s-bahn-hh-9959647534f628d49aeb340d9a24d227.png)
 
