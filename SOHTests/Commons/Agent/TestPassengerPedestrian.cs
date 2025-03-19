@@ -1,4 +1,5 @@
 using Mars.Interfaces.Environments;
+using SOHModel.Bus.Model;
 using SOHModel.Ferry.Model;
 using SOHModel.Train.Model;
 
@@ -11,6 +12,8 @@ public class TestPassengerPedestrian : TestMultiCapableAgent
 {
     public Ferry UsedFerry { get; private set; }
     public Train UsedTrain { get; private set; }
+
+    public Bus UsedBus { get; private set; }
 
     protected override bool EnterModalType(ModalChoice modalChoice, Route route)
     {
@@ -37,6 +40,20 @@ public class TestPassengerPedestrian : TestMultiCapableAgent
             {
                 UsedTrain = train;
                 HasUsedTrain = true;
+            }
+
+            return result;
+        }
+
+        if (modalChoice == ModalChoice.Bus)
+        {
+            var station = BusStationLayer.Nearest(Position);
+            var bus = station.Find(route.Goal);
+            var result = TryEnterVehicleAsPassenger(bus, this);
+            if (result)
+            {
+                UsedBus = bus;
+                HasUsedBus = true;
             }
 
             return result;

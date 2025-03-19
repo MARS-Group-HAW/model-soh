@@ -261,8 +261,63 @@ public class BusDriverTests : IClassFixture<BusRouteLayerFixture>
         Assert.NotEqual(Guid.Empty, driver.ID);
         for (var i = 0; i < 10000; i++, layer.Context.UpdateStep()) driver.Tick();
         Assert.True(goalReached);
+        // FIXME: This tests is bound to the condition of having a route with at least 2 entries. Either the test is not doing what it is supposed to do, or the drivers' inner counting logic is not.
+        // Proof: The test succeeds, if target is set to a position that is at least two route sections away from source.
         Assert.True(driver.StationStops > 0);
         Assert.True(driver.GoalReached);
         Assert.NotEqual(source, driver.Position);
+    }
+
+    [Theory]
+    [InlineData(1, false)]
+    [InlineData(0, true)]
+    public void TestRouteNeedsAtLeastOneSection(int remainingStations, bool shouldFail)
+    {
+        BusDriver busDriver = new(_layer, (_, _) => { })
+        {
+            Line = "113",
+        };
+
+        // run Tick once, to setup initial values from the _layer
+        busDriver.Tick();
+
+        // preconditions: BusRoute is not null and has at least one entry
+        Assert.True(busDriver.BusRoute != null && busDriver.BusRoute.Entries != null && busDriver.BusRoute.Entries.Count > 0);
+
+        // copy the original BusRoute, to restore it later
+        List<BusRouteEntry> busRouteEntriesCopy = CopyRouteEntries(busDriver.BusRoute.Entries);
+        
+        busDriver.BusRoute.Entries.RemoveRange(0, busDriver.BusRoute.Entries.Count - remainingStations);
+        if (shouldFail) busDriver.BusRoute = null; // trigger bus driver to search for new route in next tick
+
+        Exception exception = null;
+        try
+        {
+            busDriver.Tick();
+        }
+        catch (Exception e)
+        {
+            exception = e;
+        }
+        
+        if (!shouldFail) {
+            Assert.Null(exception);
+        } else {
+            Assert.NotNull(exception);
+            Assert.Equal(typeof(ArgumentException), exception.GetType());
+        }
+
+        // restore the original BusRoute
+        busDriver.BusRoute.Entries = busRouteEntriesCopy;
+    }
+
+    private List<BusRouteEntry> CopyRouteEntries(List<BusRouteEntry> routeEntries)
+    {
+        List<BusRouteEntry> copy = new();
+        foreach (BusRouteEntry entry in routeEntries)
+        {
+            copy.Add(new BusRouteEntry(entry.From, entry.To, entry.Minutes));
+        }
+        return copy;
     }
 }

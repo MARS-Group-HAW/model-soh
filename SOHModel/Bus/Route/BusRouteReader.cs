@@ -11,7 +11,7 @@ namespace SOHModel.Bus.Route;
 public static class BusRouteReader
 {
     /// <summary>
-    ///     Reads the input csv and builds a bus schedule by line
+    ///     Reads the input csv and builds a bus schedule by line.
     /// </summary>
     /// <param name="file">Holds schedule and route information.</param>
     /// <param name="busStationLayer">Provides access to the bus stations that are referenced in the csv.</param>
@@ -20,35 +20,44 @@ public static class BusRouteReader
     {
         var routes = new Dictionary<string, BusRoute>();
 
+        if (string.IsNullOrEmpty(file)) return routes;
+
         var dataTable = CsvReader.MapData(file);
 
         if (dataTable.Rows.Count < 2) return routes;
 
-        BusStation startStation = null;
+        ReadLines(busStationLayer, dataTable, routes);
+
+        return routes;
+    }
+
+    private static void ReadLines(BusStationLayer busStationLayer,
+        DataTable dataTable,
+        Dictionary<string, BusRoute> routes)
+    {
+        BusStation? startStation = null;
         foreach (DataRow row in dataTable.Rows)
         {
             if (row.ItemArray.Length <= 2) continue;
 
-            var line = row[0].Value<string>();
-            if (!routes.ContainsKey(line))
+            string? line = row[0].Value<string>();
+            if (!routes.TryGetValue(line, out var route))
             {
-                routes.Add(line, new BusRoute());
+                route = new BusRoute();
+                routes.Add(line, route);
                 startStation = null;
             }
 
-            var route = routes[line];
-            var stationId = row[1].Value<string>();
+            string? stationId = row[1].Value<string>();
             var station = busStationLayer.Find(stationId);
             if (station == null) continue;
 
-            var minutes = row[2].Value<int>();
+            int minutes = row[2].Value<int>();
             station.Lines.Add(line.Value<string>());
 
             if (startStation != null) route.Entries.Add(new BusRouteEntry(startStation, station, minutes));
 
             startStation = station;
         }
-
-        return routes;
     }
 }

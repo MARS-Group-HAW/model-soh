@@ -17,6 +17,7 @@ using SOHModel.Car.Parking;
 using SOHModel.Car.Rental;
 using SOHModel.Domain.Graph;
 using SOHModel.Multimodal.Model;
+using SOHModel.Multimodal.Layers;
 
 namespace SOHChristmasMarketBox;
 
@@ -28,14 +29,28 @@ internal static class Program
         LoggerFactory.SetLogLevel(LogLevel.Off);
 
         var description = new ModelDescription();
-        description.AddLayer<SpatialGraphMediatorLayer>(new[] { typeof(ISpatialGraphLayer) });
+        /*description.AddLayer<SpatialGraphMediatorLayer>(new[] { typeof(ISpatialGraphLayer) });
         
         description.AddLayer<HumanTravelerLayer>();
         description.AddLayer<AgentSchedulerLayer<HumanTraveler, HumanTravelerLayer>>(
             "HumanTravelerSchedulerLayer");
 
-        description.AddAgent<HumanTraveler, HumanTravelerLayer>();
+        description.AddAgent<HumanTraveler, HumanTravelerLayer>();*/
+        
+        // Spatial Graph Environment
+        description.AddLayer<SpatialGraphMediatorLayer>(new[] { typeof(ISpatialGraphLayer) });
+        description.AddLayer<SidewalkLayer>();
+        description.AddLayer<StreetLayer>();
 
+        // Kartesisches Environment
+        description.AddLayer<VectorBuildingsLayer>();
+        description.AddLayer<VectorPoiLayer>();
+
+        // Agenten und Scheduler
+        description.AddLayer<HumanTravelerLayer>();
+        description.AddLayer<AgentSchedulerLayer<HumanTraveler, HumanTravelerLayer>>("HumanTravelerSchedulerLayer");
+        description.AddAgent<HumanTraveler, HumanTravelerLayer>();
+        
         ISimulationContainer application;
         if (args != null && args.Length != 0)
         {

@@ -50,6 +50,10 @@ public class BusDriver : AbstractAgent, IBusSteeringCapable
     [PropertyDescription(Name = "waitingInSeconds")]
     public int MinimumBoardingTimeInSeconds { get; set; }
 
+    [PropertyDescription] public int PassengerAmount => Bus.Passengers.Count;
+
+    [PropertyDescription] public int PassengerCapacity => Bus.PassengerCapacity;
+
     /// <summary>
     ///     The route will be proceeded in the opposite direction.
     /// </summary>
@@ -139,7 +143,7 @@ public class BusDriver : AbstractAgent, IBusSteeringCapable
         else
             throw new ArgumentException($"No bus route provided by {nameof(BusRouteLayer)}");
 
-        if (BusRoute.Count() < 2)
+        if (BusRoute.Count() < 1)
             throw new ArgumentException("Bus route requires at least two stops");
 
         if (ReversedRoute)
