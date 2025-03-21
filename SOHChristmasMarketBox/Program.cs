@@ -9,12 +9,6 @@ using Mars.Components.Starter;
 using Mars.Core.Simulation;
 using Mars.Interfaces;
 using Mars.Interfaces.Model;
-using SOHModel.Bicycle.Model;
-using SOHModel.Bicycle.Parking;
-using SOHModel.Bicycle.Rental;
-using SOHModel.Car.Model;
-using SOHModel.Car.Parking;
-using SOHModel.Car.Rental;
 using SOHModel.Domain.Graph;
 using SOHModel.Multimodal.Model;
 using SOHModel.Multimodal.Layers;
@@ -29,6 +23,7 @@ internal static class Program
         LoggerFactory.SetLogLevel(LogLevel.Off);
 
         var description = new ModelDescription();
+        
         /*description.AddLayer<SpatialGraphMediatorLayer>(new[] { typeof(ISpatialGraphLayer) });
         
         description.AddLayer<HumanTravelerLayer>();
@@ -39,7 +34,6 @@ internal static class Program
         
         // Spatial Graph Environment
         description.AddLayer<SpatialGraphMediatorLayer>(new[] { typeof(ISpatialGraphLayer) });
-        description.AddLayer<SidewalkLayer>();
         description.AddLayer<StreetLayer>();
 
         // Kartesisches Environment
