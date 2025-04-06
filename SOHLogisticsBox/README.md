@@ -381,7 +381,7 @@ freight transport simulations.
 > This ensures that trucks do not fail silently and can reach at least a partial goal location. 
 > Although this does require that the truck can move on the road it starts on.
 
-## Docker & ☁ICC Cloud Deployment
+## Docker & ICC Cloud Deployment
 
 The simulation can also be executed in the **cloud environment of HAW Hamburg** using the **Infrastructure Cloud Computing (ICC)** platform. This is particularly useful for large-scale experiments or performance-intensive runs.
 
