@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: pvc-access-pod
-  namespace: wwr434-default
+  namespace: Username-default
 spec:
   containers:
     - name: pvc-access-container
