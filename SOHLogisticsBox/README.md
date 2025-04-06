@@ -62,7 +62,7 @@ The current final output is a file named:
 However, due to its large size, it is **not directly stored in the repository**. Instead, it is **compressed as a `.rar` file**:
 
 > ⚠️ **Important**  
-> The file `autobahn_und_bundesstrassen_deutschland_attributes_02.geojson` is stored as  
+> The file `autobahn_und_bundesstrassen_deutschland_attributes_08.geojson` is stored as  
 > **`autobahn_und_bundesstrassen_deutschland.rar`** in the repository.  
 > Please extract it **before running the simulation**.
 
