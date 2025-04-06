@@ -51,7 +51,7 @@ gdf_nodes = ox.graph_to_gdfs(all_roads, edges=False, nodes=True)
 # Extract edges (road segments)
 gdf_edges = ox.graph_to_gdfs(all_roads, edges=True, nodes=False)
 
-# Remove the "maxspeed" attribute from edges if it exists
+# Remove the "maxspeed" attribute from edges if it exists because it causes error when null / none or 0
 if "maxspeed" in gdf_edges.columns:
     gdf_edges = gdf_edges.drop(columns=["maxspeed"])
 

@@ -8,54 +8,64 @@ paths in case of
 blockages.
 ___
 
-## Map Export
+## Map Export & Preprocessing
 
-For this project the Map consists of all Highways and Federal Streets in Germany. For this purpose the Map was exported
-with osmnx. Furthermore the tags maxheight, maxlength, surface, maxweight, maxwidth and incline were additionally added.
-The Map can be exported via the following python code (Colab Script):
+The base map for this project consists of **all highways and federal roads in Germany**. The initial export was done using [**OSMnx**](https://github.com/gboeing/osmnx), including key tags like:
 
-```python
-%%capture
-!pip install osmnx geopandas
-import osmnx as ox
-import geopandas as gpd
-import pandas as pd
-additional_tags = [
-    "maxheight",
-    "maxlength",
-    "surface",
-    "maxweight",
-    "maxwidth",
-    "incline",
-]
-# Add Additional Tags to Tags
-ox.settings.useful_tags_way += additional_tags
-custom_filter = (
-    '["highway"~"motorway|trunk|primary"]'
-)
-# Download all Federal and Highway Streets in Germany
-all_roads = ox.graph_from_place(
-    "Germany",
-    network_type="drive",
-    custom_filter=custom_filter,
-    simplify=True
-)
-# Extract Nodes
-gdf_nodes = ox.graph_to_gdfs(all_roads, edges=False, nodes=True)
+- `maxheight`
+- `maxlength`
+- `surface`
+- `maxweight`
+- `maxwidth`
+- `incline`
 
-# Extract Edges
-gdf_edges = ox.graph_to_gdfs(all_roads, edges=True, nodes=False)
-# Remove maxspeed Tag as it currently crashes MARS simulation (TO BE FIXED)
-if "maxspeed" in gdf_edges.columns:
-    gdf_edges = gdf_edges.drop(columns=["maxspeed"])
-    # Add a type-tag for nodes and edges
-gdf_nodes["type"] = "node"
-gdf_edges["type"] = "edge"
+The full export and preprocessing pipeline is implemented in Python and can be found under:
+`SOHLogisticsBox/resources/Scripts/GeoJSON/`
 
-# Combine GeoDataFrames
-gdf_combined = pd.concat([gdf_nodes, gdf_edges], ignore_index=True)
-# Save GeoJSON file
-gdf_combined.to_file("autobahn_und_bundesstrassen_deutschland_attributes_02.geojson", driver="GeoJSON")
+### Relevant Scripts
+
+- **`export_Initial_Map.py`**  
+  Exports the raw highway and federal road network of Germany using OSMnx and adds useful attributes.  
+  The `maxspeed` tag is **explicitly removed** during this step to avoid known runtime errors in MARS.
+
+- **`add_MaxSpeed.py`**  
+  Adds the `maxspeed` tag back in after the initial export.  
+  This was done **after** the `.geojson` structure had been successfully integrated into MARS.
+
+- **`add_Elevation.py`**  
+  Adds elevation data for each coordinate using an external elevation API.
+
+- **`calculate_Incline_By_Elevation.py`**  
+  Calculates missing `incline` values for edges where OpenStreetMap doesn't provide them.  
+  It uses elevation data and **haversine distance** for a realistic slope approximation.
+
+- **`compress_geojson.py`** *(optional)*  
+  Removes unnecessary whitespace from the `.geojson` file to reduce its size by ~50%.
+  
+- **`calculateEdgeCapacity.py`**  
+  Calculates the capacity of each edge in the network based on its **length** and **number of lanes**,  
+  using a standardized unit called **Fahrzeugeinheiten (FE)**. Each vehicle type occupies a specific number of FE,  
+  derived from its length and the minimum safety distance depending on driving speed.
+
+  For example, a road with 500m length and 2 lanes has a total capacity of 1000 FE.  
+  The script adds a `max_capacity_fe` field to each edge in the GeoJSON, which can be used during simulation to track  
+  real-time traffic load and perform congestion modeling.
+
+---
+
+### File Information
+
+The current final output is a file named:
+
+`autobahn_und_bundesstrassen_deutschland_attributes_08.geojson`
+
+However, due to its large size, it is **not directly stored in the repository**. Instead, it is **compressed as a `.rar` file**:
+
+> ⚠️ **Important**  
+> The file `autobahn_und_bundesstrassen_deutschland_attributes_02.geojson` is stored as  
+> **`autobahn_und_bundesstrassen_deutschland.rar`** in the repository.  
+> Please extract it **before running the simulation**.
+
 ```
 
 ___
@@ -235,6 +245,8 @@ configured:
     * `file`: the file path to the CSV file containing the attributes and properties of semi-trucks used in the
       simulation (type: `string`)
 
+## SemiTruck Initialization
+
 The **`semi_truck.csv`** defines different types of **`SemiTrucks`** like the following:
 
 | Type                | Max Acceleration | Max Deceleration | Max Speed (m/s) | Length (m) | Height (m) | Width (m) | Traffic Code | Passenger Capacity | Velocity | Mass (tons) | Max Incline (%) |
@@ -250,6 +262,42 @@ The **`semi_truck.csv`** defines different types of **`SemiTrucks`** like the fo
 | OverloadTruck       | 0.5              | 1.2              | 30.83           | 16         | 2.5        | 2.5       | German       | 2                  | 0        | 50.0        | 6               |
 | UnlimitedTruck      | 0.5              | 1.2              | 30.83           | 1          | 1.0        | 1.0       | German       | 2                  | 0        | 2.0         | 25              |
 
+## Realistic SemiTruck Data based on German Federal Statistics
+
+A second file named **`semi_truck_real_data.csv`** is based on official data from the **Kraftfahrt-Bundesamt Deutschland** (German Federal Motor Transport Authority). To create this file, multiple datasets were merged to extract:
+
+- Origin and destination districts
+- Truck weight classifications
+- Estimated route distances
+
+Due to mismatches and inconsistencies between the source files, proportional methods (e.g. matching via weight categories) were used to align the data. The resulting file represents the **average daily freight truck traffic** in Germany.
+
+In future development, the simulation could be extended by integrating weekday-specific distributions to reflect fluctuations over the course of a week.
+
+---
+
+## Data Sources & Scripts
+
+All related resources and documentation used to generate the simulation data can be found here:
+`SohLogisticBox/resources/Scripts/SemiTruckData/resources`
+
+This folder includes:
+
+- Official statistics from the **Kraftfahrt-Bundesamt**
+- Reference handbooks
+- A full **NUTS** directory (Nomenclature of Territorial Units for Statistics)
+
+### Processing Workflow
+
+Two Python scripts were used to transform the raw data into a format suitable for simulation:
+
+- **`merge_TruckData.py`**  
+  Creates the intermediate file `trucks_per_area.csv`, listing route requirements per district with estimated distances and weights.
+
+- **`truck_Initializer.py`**  
+  Converts district-level route data into **coordinate-based truck routes** for the simulation, producing the final `semi_truck_real_data.csv`.
+
+---
 ## SemiTruck
 
 The **`SemiTruck`** class models semi-truck behavior within the MARS simulation, integrating steering,
@@ -270,16 +318,30 @@ optimizing truck-specific routes while considering constraints like weight, heig
 restricted roads. Once the destination is reached, the driver exits the simulation, ensuring efficient lifecycle
 management within large-scale logistics and mobility simulations.
 
+During each simulation tick, the driver continuously checks the upcoming edges of the route (currently defined as 5km lookahead) of its planned route. If a blocked
+road segment is detected within this distance—based on the list of currently closed edges—the driver immediately
+triggers a rerouting process. A new bypass route is calculated around the closure, leading to the next valid point
+on the original path. This enables the truck to avoid blocked segments and continue toward its destination with
+minimal disruption, preserving the overall route context.
+
+
 ## SemiTruckLayer
 
 The **`SemiTruckLayer`** class manages the semi-truck simulation environment, handling the initialization of the
-spatial graph, agent creation, and lifecycle management. It defines the CarDriving modality, ensuring semi-trucks
+spatial graph, agent creation, and lifecycle management. It defines the `CarDriving` modality, ensuring semi-trucks
 operate within the road network. The layer initializes the spatial environment either from a provided mapping or
 a specified file, creating a realistic traffic and routing landscape.
+
 During initialization, it spawns and registers `SemiTruckDriver` agents, linking them with the road network and
 tracking them in a dedicated dictionary. The layer ensures dynamic agent management, supporting route
 adjustments, blocked road handling, and efficient truck movement. Once the simulation completes, the layer unregisters
 the agents, maintaining a structured and scalable approach for large-scale freight and mobility simulations.
+
+In addition, the layer supports dynamic road closures based on a `road_closures.csv` file (located in resources), where each entry specifies
+an edge ID along with a start and end time for the closure. During simulation, these edges are temporarily removed
+from the environment and added to a list of `RemovedEdges`, which is considered during route planning and detour
+calculations. After the defined closure period ends, the edges are automatically restored, allowing for realistic
+modeling of temporary disruptions such as construction zones or accidents.
 
 ## SemiTruckSchedulerLayer
 
@@ -314,3 +376,56 @@ The finder integrates directly with the spatial graph environment, ensuring real
 avoid blocked roads, restricted areas, and inaccessible routes. By dynamically adjusting to road attributes and
 truck-specific constraints, the **`SemiTruckRouteFinder`** ensures efficient and regulation-compliant routing for
 freight transport simulations.
+
+> ℹ️ **Note:**  
+> In cases where the target location is not fully reachable due to road closures or constraint violations,  
+> the `SemiTruckRouteFinder` will still return a valid route to the **closest possible point** near the destination. 
+> This ensures that trucks do not fail silently and can reach at least a partial goal location. 
+> Although this does require that the truck can move on the road it starts on.
+
+## Docker & ☁ICC Cloud Deployment
+
+The simulation can also be executed in the **cloud environment of HAW Hamburg** using the **Infrastructure Cloud Computing (ICC)** platform. This is particularly useful for large-scale experiments or performance-intensive runs.
+
+### Docker Setup
+
+A `Dockerfile` is provided in the project directory. It defines the build environment for the simulation, installs required dependencies, and sets up the execution context for MARS-based simulations.
+
+You can find it under:
+`SOHLogisticBox/Dockerfile`
+This Docker image can be built locally or pushed to a GitLab container registry to be deployed on the ICC.
+
+---
+
+### ICC Deployment
+
+The ICC-specific deployment files are located in:
+`SOHLogisticBox/`
+These files include:
+
+- **`deployment.yaml`**  
+  Defines the job that runs the simulation inside the ICC cluster.
+
+- **`configmap.yaml`**  
+  Injects the simulation configuration (e.g., initial truck data, output setup).
+
+- **`icc-config.yaml`**  
+  Contains the connection configuration for the ICC cluster (Kubernetes context).
+
+- **`output-pvc.yaml`** & **`pvc-access-pod.yaml`**  
+  Setup and access the persistent volume claim (PVC) used to store simulation results.
+
+> **Note:**  
+> Running the simulation in the cloud **requires a valid ICC token and access to the Kubernetes cluster** of HAW Hamburg.  
+> The credentials and token must be configured in your `icc-config.yaml`. These are **user-specific** and not included in the repository.
+
+---
+
+### Workflow Overview
+
+1. Build or pull the container image (e.g., from GitLab registry).
+2. Deploy the simulation via `deployment.yaml` using `kubectl`.
+3. Configuration is injected via `configmap.yaml`, and results are stored in the defined PVC.
+4. Once completed, results can be accessed via the `pvc-access-pod.yaml` utility pod.
+
+This setup enables automated and scalable simulation runs in the cloud — ideal for batch processing, testing different traffic scenarios, or exploring dynamic routing behaviors in high-load conditions.
