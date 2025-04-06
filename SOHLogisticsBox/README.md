@@ -66,8 +66,6 @@ However, due to its large size, it is **not directly stored in the repository**.
 > **`autobahn_und_bundesstrassen_deutschland.rar`** in the repository.  
 > Please extract it **before running the simulation**.
 
-```
-
 ___
 
 ## ModelDescription
