@@ -23,7 +23,7 @@ namespace SOHTests.SOHLogisticsTests
             var projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
 
             // Construct the full path to the GeoJSON file
-            GeoJsonPath = Path.Combine(projectRoot, "SOHLogisticsBox", "resources", "autobahn_und_bundesstrassen_deutschland.geojson");
+            GeoJsonPath = Path.Combine(projectRoot, "SOHLogisticsBox", "resources", "autobahn_und_bundesstrassen_deutschland_elevation_08.geojson");
             Console.WriteLine($"Looking for GeoJSON file at: {Path.GetFullPath(GeoJsonPath)}");
             if (!File.Exists(GeoJsonPath))
             {
