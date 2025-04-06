@@ -19,9 +19,9 @@ internal static class Program
 {
     public static void Main(string[] args)
     {
+        var watch = Stopwatch.StartNew();
         Thread.CurrentThread.CurrentCulture = new CultureInfo("EN-US");
         LoggerFactory.SetLogLevel(LogLevel.Warning);
-
         var description = new ModelDescription();
 
         // Add only the necessary layers for car simulation
@@ -44,7 +44,8 @@ internal static class Program
         }
         else
         {
-            var file = File.ReadAllText("config.json");
+            var configPath = Environment.GetEnvironmentVariable("MARS_CONFIG_PATH") ?? "config.json";
+            var file = File.ReadAllText(configPath);
             var simConfig = SimulationConfig.Deserialize(file);
             // var simConfig = CreateDefaultConfig();
             application = SimulationStarter.BuildApplication(description, simConfig);
@@ -53,8 +54,7 @@ internal static class Program
 
 
         var simulation = application.Resolve<ISimulation>();
-
-        var watch = Stopwatch.StartNew();
+        
         var state = simulation.StartSimulation();
 
         watch.Stop();

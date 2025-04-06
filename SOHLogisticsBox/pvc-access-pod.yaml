@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pvc-access-pod
+  namespace: wwr434-default
+spec:
+  containers:
+    - name: pvc-access-container
+      image: ubuntu:latest
+      command: ["/bin/bash", "-c", "sleep 3600"]
+      volumeMounts:
+        - name: output-volume
+          mountPath: /data
+  volumes:
+    - name: output-volume
+      persistentVolumeClaim:
+        claimName: soh-output-pvc

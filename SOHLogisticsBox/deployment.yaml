@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: soh-logistics-job
+  namespace: wwr434-default
+spec:
+  template:
+    metadata:
+      labels:
+        job-name: soh-logistics-job
+    spec:
+      containers:
+        - name: soh-logistics
+          image: git.haw-hamburg.de:5000/infwwr434/soh_logistics/soh-logistics:v1
+          imagePullPolicy: Always
+          env:
+            - name: MARS_CONFIG_PATH
+              value: /config/config.json
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+            - name: output-volume
+              mountPath: /app/output
+          resources:
+            requests:
+              memory: "3Gi"
+            limits:
+              memory: "4Gi"
+      restartPolicy: Never
+      volumes:
+        - name: config-volume
+          configMap:
+            name: soh-logistics-config
+        - name: output-volume
+          persistentVolumeClaim:
+            claimName: soh-output-pvc
+      imagePullSecrets:
+        - name: gitlab-registry-secret
