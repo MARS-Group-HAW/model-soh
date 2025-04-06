@@ -20,7 +20,7 @@ public static class SemiTruckRouteFinder
     public static Route Find(ISpatialGraphEnvironment environment, int driveMode,
         double startLat, double startLon, double destLat, double destLon,
         ISpatialEdge startingEdge, string osmRoute, double truckHeight, double truckWeight, double truckWidth,
-        double truckLength, int truckMaxIncline)
+        double truckLength, int truckMaxIncline, List<ISpatialEdge> RemovedEdges)
     {
         Route route = null;
         ISpatialNode currentNode;
@@ -109,6 +109,10 @@ public static class SemiTruckRouteFinder
 
                 route = environment.FindShortestRoute(currentNode, goal, edge =>
                 {
+                    if (RemovedEdges.Contains(edge))
+                    {
+                        return false;
+                    }
                     bool isValid = CheckValidEdge(edge, truckHeight, truckWeight, truckWidth, truckLength,
                         truckMaxIncline);
                     if (isValid)

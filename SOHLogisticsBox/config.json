@@ -5,12 +5,12 @@
     "startPoint": "2021-10-11T06:00:00",
     "endPoint": "2021-10-11T18:00:00",
     "deltaTUnit": "seconds",
-    "console": true
+    "console": false
   },
   "agents": [
     {
       "name": "SemiTruckDriver",
-      "count": 100,
+      "count": 6500,
       "file": "resources/semi_truck_initializer.csv",
       "outputs": [
         {
@@ -39,7 +39,7 @@
       "name": "SemiTruckLayer",
       "inputs": [
         {
-          "file": "resources/autobahn_und_bundesstrassen_deutschland_attributes_03.geojson",
+          "file": "resources/autobahn_und_bundesstrassen_deutschland_elevation_08.geojson",
           "inputConfiguration": {
             "modalities": ["CarDriving"],
             "isBidirectedGraph": true
