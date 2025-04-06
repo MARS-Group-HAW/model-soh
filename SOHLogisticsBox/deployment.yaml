@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: soh-logistics-job
-  namespace: wwr434-default
+  namespace: Username-default
 spec:
   template:
     metadata:
