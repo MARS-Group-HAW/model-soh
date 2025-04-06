@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
         - name: soh-logistics
-          image: git.haw-hamburg.de:5000/infwwr434/soh_logistics/soh-logistics:v1
+          image: git.haw-hamburg.de:5000/inf<Username>/soh_logistics/soh-logistics:v1
           imagePullPolicy: Always
           env:
             - name: MARS_CONFIG_PATH
