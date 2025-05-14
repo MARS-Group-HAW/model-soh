@@ -36,10 +36,6 @@
   ],
   "layers": [
     {
-      "name": "SidewalkLayer",
-      "file": "resources/kellinghusenstrasse_medium_walk_graph.geojson"
-    },
-    {
       "name": "CyclePathLayer",
       "file": "resources/kellinghusenstrasse_small_walk_graph.geojson"
     },

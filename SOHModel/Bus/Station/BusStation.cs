@@ -99,11 +99,12 @@ public class BusStation : IVectorFeature
     /// <returns>The next bus that drives to that goal, null if none found</returns>
     public Model.Bus Find(Position goal)
     {
-        foreach (var train in Buses.Keys)
-            if (train.Driver is BusDriver trainDriver)
-                if (trainDriver.RemainingStations
+        
+        foreach (var bus in Buses.Keys)
+            if (bus.Driver is BusDriver busDriver)
+                if (busDriver.RemainingStations
                     .Any(entry => Distance.Haversine(entry.To.Position.PositionArray, goal.PositionArray) < 30))
-                    return train;
+                    return bus;
 
         return null;
     }

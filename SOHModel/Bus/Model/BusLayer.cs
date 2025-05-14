@@ -17,7 +17,8 @@ public class BusLayer : VectorLayer
         Driver = new Dictionary<Guid, BusDriver>();
     }
 
-    [PropertyDescription] public IBusRouteLayer BusRouteLayer { get; set; } = default!;
+    [PropertyDescription] 
+    public IBusRouteLayer BusRouteLayer { get; set; } = default!;
 
     public IDictionary<Guid, BusDriver> Driver { get; private set; }
 
@@ -47,6 +48,7 @@ public class BusLayer : VectorLayer
                 }
             ]
         });
+
 
         Driver = AgentManager.SpawnAgents<BusDriver>(
             layerInitData.AgentInitConfigs.First(mapping => mapping.ModelType.MetaType == typeof(BusDriver)),

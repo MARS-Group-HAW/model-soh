@@ -1,3 +1,4 @@
+using Mars.Common.Core;
 using Mars.Common.Core.Random;
 using Mars.Interfaces.Annotations;
 using Mars.Interfaces.Environments;
@@ -298,6 +299,11 @@ public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>,
                     if (trainStation == null) return false;
                     var train = trainStation.Find(route.Goal);
                     return TryEnterVehicleAsPassenger(train, this);
+                case ModalChoice.Bus:
+                    var busStation = BusStationLayer.Nearest(Position);
+                    if (busStation == null) return false;
+                    var bus = busStation.Find(BusStationLayer.Nearest(route.Goal).Position);
+                    return TryEnterVehicleAsPassenger(bus, this);
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -334,6 +340,7 @@ public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>,
             ModalChoice.CyclingOwnBike => TryParkOwnBicycle() && TryLeaveVehicle(this),
             ModalChoice.Ferry => TryLeaveVehicle(this),
             ModalChoice.Train => TryLeaveVehicle(this),
+            ModalChoice.Bus => TryLeaveVehicle(this),
             _ => throw new ArgumentOutOfRangeException()
         };
     }
@@ -507,7 +514,7 @@ public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>,
     
     [PropertyDescription] public ICarParkingLayer CarParkingLayer { get; set; }
 
-    [PropertyDescription] public IBusStationLayer BusStationLayer { get; }
+    [PropertyDescription] public IBusStationLayer BusStationLayer { get; set; }
 
     /// <summary>
     ///     The currently active modal type.

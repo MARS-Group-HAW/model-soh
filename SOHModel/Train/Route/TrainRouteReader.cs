@@ -11,7 +11,7 @@ namespace SOHModel.Train.Route;
 public static class TrainRouteReader
 {
     /// <summary>
-    ///     Reads the input csv and builds a TrainSchedule by line
+    ///     Reads the input csv and builds a TrainSchedule by line.
     /// </summary>
     /// <param name="file">Holds schedule and route information.</param>
     /// <param name="trainStationLayer">Provides access to the train stations that are referenced in the csv.</param>
@@ -20,35 +20,44 @@ public static class TrainRouteReader
     {
         var routes = new Dictionary<string, TrainRoute>();
 
+        if (string.IsNullOrEmpty(file)) return routes;
         var dataTable = CsvReader.MapData(file);
 
         if (dataTable.Rows.Count < 2) return routes;
 
-        TrainStation startStation = null;
+        ReadLines(trainStationLayer, dataTable, routes);
+
+        return routes;
+    }
+
+    private static void ReadLines(
+        TrainStationLayer trainStationLayer,
+        DataTable dataTable,
+        Dictionary<string, TrainRoute> routes)
+    {
+        TrainStation? startStation = null;
         foreach (DataRow row in dataTable.Rows)
         {
             if (row.ItemArray.Length <= 2) continue;
 
-            var line = row[0].Value<string>();
-            if (!routes.ContainsKey(line))
+            string? line = row[0].Value<string>();
+            if (!routes.TryGetValue(line, out var route))
             {
-                routes.Add(line, new TrainRoute());
+                route = new TrainRoute();
+                routes.Add(line, route);
                 startStation = null;
             }
 
-            var route = routes[line];
-            var stationId = row[1].Value<string>();
+            string? stationId = row[1].Value<string>();
             var station = trainStationLayer.Find(stationId);
             if (station == null) continue;
 
-            var minutes = row[2].Value<int>();
+            int minutes = row[2].Value<int>();
             station.Lines.Add(line.Value<string>());
 
             if (startStation != null) route.Entries.Add(new TrainRouteEntry(startStation, station, minutes));
 
             startStation = station;
         }
-
-        return routes;
     }
 }

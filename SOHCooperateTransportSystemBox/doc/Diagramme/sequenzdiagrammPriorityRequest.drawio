@@ -1,0 +1,51 @@
+<mxfile host="Electron" modified="2025-01-20T12:59:32.669Z" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.1.0 Chrome/120.0.6099.109 Electron/28.1.0 Safari/537.36" etag="bjkpALAKFVJfl8k_fso3" version="24.1.0" type="device">
+  <diagram name="Page-1" id="Z1LLFmb4cOcOEPxlOWJa">
+    <mxGraphModel dx="989" dy="566" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="ZogX-l2GDBpBgE9V4qFE-15" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;" edge="1" parent="1" source="ZogX-l2GDBpBgE9V4qFE-2">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="705" y="370" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZogX-l2GDBpBgE9V4qFE-1" value="sd TSP" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="360" y="40" width="510" height="350" as="geometry" />
+        </mxCell>
+        <mxCell id="ZogX-l2GDBpBgE9V4qFE-2" value="y:TrafficLightController" style="html=1;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="640" y="80" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ZogX-l2GDBpBgE9V4qFE-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;" edge="1" parent="1" source="ZogX-l2GDBpBgE9V4qFE-3">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="485" y="370" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZogX-l2GDBpBgE9V4qFE-3" value="x:VehicleSteeringHandle" style="html=1;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="410" y="80" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ZogX-l2GDBpBgE9V4qFE-4" value="" style="html=1;points=[[0,0,0,0,5],[0,1,0,0,-5],[1,0,0,0,5],[1,1,0,0,-5]];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;newEdgeStyle={&quot;curved&quot;:0,&quot;rounded&quot;:0};" vertex="1" parent="1">
+          <mxGeometry x="700" y="180" width="10" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="ZogX-l2GDBpBgE9V4qFE-5" value="priorityRequest()" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;entryX=0;entryY=0;entryDx=0;entryDy=5;" edge="1" target="ZogX-l2GDBpBgE9V4qFE-4" parent="1" source="ZogX-l2GDBpBgE9V4qFE-7">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="620" y="195" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZogX-l2GDBpBgE9V4qFE-6" value="return" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;curved=0;rounded=0;exitX=0;exitY=1;exitDx=0;exitDy=-5;entryX=1;entryY=0;entryDx=0;entryDy=5;entryPerimeter=0;" edge="1" source="ZogX-l2GDBpBgE9V4qFE-4" parent="1" target="ZogX-l2GDBpBgE9V4qFE-9">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="620" y="265" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZogX-l2GDBpBgE9V4qFE-7" value="" style="html=1;points=[[0,0,0,0,5],[0,1,0,0,-5],[1,0,0,0,5],[1,1,0,0,-5]];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;newEdgeStyle={&quot;curved&quot;:0,&quot;rounded&quot;:0};" vertex="1" parent="1">
+          <mxGeometry x="480" y="160" width="10" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ZogX-l2GDBpBgE9V4qFE-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="ZogX-l2GDBpBgE9V4qFE-3" target="ZogX-l2GDBpBgE9V4qFE-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZogX-l2GDBpBgE9V4qFE-9" value="" style="html=1;points=[[0,0,0,0,5],[0,1,0,0,-5],[1,0,0,0,5],[1,1,0,0,-5]];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;newEdgeStyle={&quot;curved&quot;:0,&quot;rounded&quot;:0};" vertex="1" parent="1">
+          <mxGeometry x="480" y="280" width="10" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

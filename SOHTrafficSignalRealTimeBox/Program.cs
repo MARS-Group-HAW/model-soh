@@ -1,20 +1,7 @@
-﻿using System;
-using System.Diagnostics;
-using System.Globalization;
-using System.IO;
-using System.Threading;
+﻿using System.Globalization;
 using Mars.Common.Core.Logging;
-using Mars.Components.Starter;
-using Mars.Core.Simulation;
-using Mars.Interfaces;
-using Mars.Interfaces.Model;
-using SOHModel.Bicycle.Rental;
-using SOHModel.Domain.Graph;
-using SOHModel.Multimodal.Layers.TrafficLight;
-using SOHModel.Multimodal.Model;
-using SOHModel.Multimodal.Routing;
 
-namespace SOHBicycleRealTime;
+namespace SOHTrafficSignalRealTimeBox;
 
 /// <summary>
 ///     This pre-defined starter program runs the the Green4Bike scenario with outside passed arguments or
@@ -26,7 +13,12 @@ internal static class Program
     {
         Thread.CurrentThread.CurrentCulture = new CultureInfo("EN-US");
         LoggerFactory.SetLogLevel(LogLevel.Off);
+        
+        SensorThingsImporter.LoadData();
+        
+        /*
         var description = new ModelDescription();
+         
 
         description.AddLayer<SpatialGraphMediatorLayer>(new[] { typeof(ISpatialGraphLayer) });
         description.AddLayer<GatewayLayer>();
@@ -78,5 +70,6 @@ internal static class Program
 
         Console.WriteLine($"Executed iterations {state.Iterations} lasted {watch.Elapsed}");
         application.Dispose();
+        */
     }
 }

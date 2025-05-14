@@ -1,0 +1,2 @@
+type,maxAcceleration,maxDeceleration,maxSpeed,length,height,width,trafficCode,passengerCapacity,velocity,mass
+Golf,0.73,1.67,13.89,4.5,2,2,german,4,0,500

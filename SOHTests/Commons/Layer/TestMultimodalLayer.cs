@@ -3,6 +3,7 @@ using Mars.Interfaces;
 using Mars.Interfaces.Annotations;
 using Mars.Interfaces.Environments;
 using SOHModel.Bicycle.Rental;
+using SOHModel.Bus.Station;
 using SOHModel.Car.Rental;
 using SOHModel.Domain.Graph;
 using SOHModel.Domain.Model;
@@ -32,6 +33,7 @@ public class TestMultimodalLayer : AbstractMultimodalLayer, IMultimodalLayer
         CarRentalLayer = modalTypeToLayer.OfType<CarRentalLayer>().FirstOrDefault();
         FerryStationLayer = modalTypeToLayer.OfType<FerryStationLayer>().FirstOrDefault();
         TrainStationLayer = modalTypeToLayer.OfType<TrainStationLayer>().FirstOrDefault();
+        BusStationLayer = modalTypeToLayer.OfType<BusStationLayer>().FirstOrDefault();
     }
 
     [PropertyDescription] public GatewayLayer GatewayLayer { get; set; }

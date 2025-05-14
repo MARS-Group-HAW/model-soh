@@ -10,30 +10,25 @@ using SOHModel.Ferry.Route;
 
 namespace SOHModel.Ferry.Model;
 
-public class FerryLayer : VectorLayer
+public class FerryLayer(FerryRouteLayer layer) : VectorLayer
 {
-    public FerryLayer(FerryRouteLayer layer)
-    {
-        FerryRouteLayer = layer;
-        Driver = new Dictionary<Guid, FerryDriver>();
-    }
+    public FerryRouteLayer FerryRouteLayer { get; } = layer;
 
-    public FerryRouteLayer FerryRouteLayer { get; }
-
-    public IDictionary<Guid, FerryDriver> Driver { get; private set; }
+    public IDictionary<Guid, FerryDriver> Driver { get; private set; } = new Dictionary<Guid, FerryDriver>();
 
     public ISpatialGraphEnvironment GraphEnvironment { get; set; }
 
-    public override bool InitLayer(LayerInitData layerInitData, RegisterAgent registerAgentHandle = null,
-        UnregisterAgent unregisterAgent = null)
+    public override bool InitLayer(LayerInitData layerInitData, 
+        RegisterAgent? registerAgentHandle = null,
+        UnregisterAgent? unregisterAgent = null)
     {
         base.InitLayer(layerInitData, registerAgentHandle, unregisterAgent);
 
         GraphEnvironment = new SpatialGraphEnvironment(new SpatialGraphOptions
         {
-            GraphImports = new List<Input>
-            {
-                new()
+            GraphImports =
+            [
+                new Input
                 {
                     File = layerInitData.LayerInitConfig.File,
                     InputConfiguration = new InputConfiguration
@@ -41,13 +36,12 @@ public class FerryLayer : VectorLayer
                         IsBiDirectedImport = true
                     }
                 }
-            }
+            ]
         });
 
         Driver = AgentManager.SpawnAgents<FerryDriver>(
             layerInitData.AgentInitConfigs.First(mapping => mapping.ModelType.MetaType == typeof(FerryDriver)),
             registerAgentHandle, unregisterAgent, new List<ILayer> { this });
-
         return true;
     }
 }
