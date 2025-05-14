@@ -24,12 +24,11 @@ internal static class Program
         LoggerFactory.SetLogLevel(LogLevel.Warning);
         var description = new ModelDescription();
 
-        // Add only the necessary layers for car simulation
-        // description.AddLayer<SpatialGraphMediatorLayer>(new[] { typeof(ISpatialGraphLayer) });
+        
         description.AddLayer<SemiTruckLayer>();
         description.AddLayer<SemiTruckSchedulerLayer>();
         description.AddAgent<SemiTruckDriver, SemiTruckLayer>();
-        // Add car-related entities
+        // Add semi-truck-related entities
         description.AddEntity<SemiTruck>();
 
 
