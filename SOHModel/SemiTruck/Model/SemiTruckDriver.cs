@@ -60,11 +60,10 @@ namespace SOHModel.SemiTruck.Model
             if (route == null || route.Count == 0)
             {
                 Console.WriteLine($"No valid route found for truck {ID}. Removing from simulation.");
-                _unregister.Invoke(_layer, this); // Remove agent from simulation
+                _layer.UnregisterAgent?.Invoke(_layer, this); // Remove agent from simulation
                 return;
             }
-
-
+            
             // Insert the SemiTruck into the environment at the starting node
             var node = route.First().Edge.From;
             _environment.Insert(SemiTruck, node);
@@ -190,7 +189,8 @@ namespace SOHModel.SemiTruck.Model
         public Guid ID { get; set; }
 
         // Indicates whether the SemiTruck has reached its goal
-        public bool GoalReached => _steeringHandle.GoalReached;
+        public bool GoalReached => _steeringHandle?.GoalReached ?? false;
+
 
 
         // Current position of the SemiTruckDriver
@@ -206,11 +206,11 @@ namespace SOHModel.SemiTruck.Model
         [PropertyDescription] public double DestLon { get; set; }
         [PropertyDescription] public int DriveMode { get; set; }
         [PropertyDescription] public string TruckType { get; set; }
-        public double Latitude => Position.Latitude;
+        public double Latitude => Position?.Latitude ?? 0.0;
 
-        public double Longitude => Position.Longitude;
+        public double Longitude => Position?.Longitude ?? 0.0;
 
-        public double PositionOnEdge => SemiTruck.PositionOnCurrentEdge;
+        public double PositionOnEdge => SemiTruck?.PositionOnCurrentEdge ?? 0.0;
 
         /// <summary>
         /// Notifies the driver with a message (not implemented yet).
@@ -226,18 +226,20 @@ namespace SOHModel.SemiTruck.Model
 
         // Indicates whether braking is activated
         public bool BrakingActivated { get; set; }
+        
 
-        public Route Route => _steeringHandle.Route;
+        public Route Route => _steeringHandle?.Route;
 
         /// <summary>
         ///     Indicates the current light phase (red,green,yellow) of the next traffic light if available.
         /// </summary>
-        public string NextTrafficLightPhase => _steeringHandle.NextTrafficLightPhase.ToString();
+        public string NextTrafficLightPhase => _steeringHandle?.NextTrafficLightPhase.ToString() ?? "unknown";
+
 
         [PropertyDescription(Name = "velocity")]
         public double Velocity
         {
-            get => SemiTruck.Velocity;
+            get => SemiTruck?.Velocity ?? 0.0;
             set => SemiTruck.Velocity = value;
         }
 
@@ -247,30 +249,32 @@ namespace SOHModel.SemiTruck.Model
         [PropertyDescription(Name = "maxSpeed")]
         public double MaxSpeed
         {
-            get => SemiTruck.MaxSpeed;
+            get => SemiTruck?.MaxSpeed ?? 0.0;
             set => SemiTruck.MaxSpeed = value;
         }
 
         [PropertyDescription(Name = "speedLimit")]
-        public double SpeedLimit => _steeringHandle.SpeedLimit;
+        public double SpeedLimit => _steeringHandle?.SpeedLimit ?? 0.0;
 
-        public double RemainingDistanceOnEdge => _steeringHandle.RemainingDistanceOnEdge;
+        public double RemainingDistanceOnEdge => _steeringHandle?.RemainingDistanceOnEdge ?? 0.0;
 
         [PropertyDescription(Name = "stableId")]
         public string StableId { get; set; }
 
         public bool CurrentlyCarDriving => true;
 
-        public double RemainingRouteDistanceToGoal => _steeringHandle.Route.RemainingRouteDistanceToGoal;
+        public double RemainingRouteDistanceToGoal => _steeringHandle?.Route?.RemainingRouteDistanceToGoal ?? 0.0;
+
 
         public string CurrentEdgeId
         {
             get
             {
-                if (SemiTruck.CurrentEdge == null || !SemiTruck.CurrentEdge.Attributes.ContainsKey("osmid"))
+                var edge = SemiTruck?.CurrentEdge;
+                if (edge == null || !edge.Attributes.ContainsKey("osmid"))
                     return "-1";
-                var osmId = SemiTruck.CurrentEdge.Attributes["osmid"].ToString();
-                return osmId[0] == '[' ? "-1" : osmId;
+                var osmId =edge.Attributes["osmid"].ToString();
+                return osmId?.StartsWith("[") == true ? "-1" : osmId ?? "-1";
             }
         }
 

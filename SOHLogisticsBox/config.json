@@ -1,11 +1,18 @@
 {
   "id": "autobahn_simulation",
   "globals": {
-    "deltaT": 1,
+    "deltaT": 10,
     "startPoint": "2021-10-11T06:00:00",
     "endPoint": "2021-10-11T18:00:00",
     "deltaTUnit": "seconds",
-    "console": false
+    "console": true,
+    "npgSqlOptions": {
+      "port": "5432",
+      "host": "127.0.0.1",
+      "user": "postgres",
+      "password": "Your-Password",
+      "overrideByConflict": true
+    }
   },
   "agents": [
     {
@@ -14,16 +21,7 @@
       "file": "resources/semi_truck_initializer.csv",
       "outputs": [
         {
-          "kind": "trips",
-          "outputConfiguration": {
-            "tripsFields": [
-              "StableId",
-              "StartPosition",
-              "EndPosition",
-              "DistanceTraveled",
-              "Duration"
-            ]
-          }
+          "kind": "postgres"
         }
       ],
       "individual": [
