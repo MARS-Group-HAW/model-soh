@@ -1,23 +1,24 @@
 {
   "id": "autobahn_simulation",
   "globals": {
-    "deltaT": 10,
+    "deltaT": 30,
     "startPoint": "2021-10-11T06:00:00",
     "endPoint": "2021-10-11T18:00:00",
     "deltaTUnit": "seconds",
     "console": true,
     "npgSqlOptions": {
       "port": "5432",
-      "host": "127.0.0.1",
-      "user": "postgres",
+      "host": "postgres-service",
+      "user": "mars_user",
       "password": "Your-Password",
+      "databaseName": "mars_user",
       "overrideByConflict": true
     }
   },
   "agents": [
     {
       "name": "SemiTruckDriver",
-      "count": 6500,
+      "count": 650000,
       "file": "resources/semi_truck_initializer.csv",
       "outputs": [
         {
