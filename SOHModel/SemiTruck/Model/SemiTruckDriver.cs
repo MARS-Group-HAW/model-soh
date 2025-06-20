@@ -49,7 +49,8 @@ namespace SOHModel.SemiTruck.Model
             var route = SemiTruckRouteFinder.Find(_environment, DriveMode, StartLat, StartLon, DestLat, DestLon,
                 startingEdge, "", SemiTruck.Height, SemiTruck.Mass, SemiTruck.Width, SemiTruck.Length,
                 SemiTruck.MaxIncline, _layer.RemovedEdges);
-            
+
+
             //Possible Output two see progress of Routing calculation, currently prints every 100 created Routes
             // truckCounter++;
             // if (truckCounter % 100 == 0)
@@ -63,16 +64,18 @@ namespace SOHModel.SemiTruck.Model
                 _layer.UnregisterAgent?.Invoke(_layer, this); // Remove agent from simulation
                 return;
             }
-            
+
             // Insert the SemiTruck into the environment at the starting node
             var node = route.First().Edge.From;
             _environment.Insert(SemiTruck, node);
             SemiTruck.TryEnterDriver(this, out _steeringHandle);
             _steeringHandle.Route = route;
-
+            if (_layer.notifyTrucks) _layer.RegisterTruckForRoute(this, _steeringHandle.Route);
             // Register the agent
             layer.RegisterAgent.Invoke(layer, this);
         }
+
+        private int _lastCheckedRemovedEdgesVersion = -1;
 
         /// <summary>
         /// Called during each simulation tick to update the SemiTruck's state.
@@ -81,36 +84,52 @@ namespace SOHModel.SemiTruck.Model
         {
             if (_steeringHandle == null)
             {
-                Console.WriteLine($"Error: _steeringHandle is null for truck {ID}. Cannot check route.");
                 return;
             }
-            // Check if the next edge in the route is still available
-            if (_steeringHandle.Route.Count > 0)
-            {
-                double distanceAhead = 0;
-                for (int i = 0; i < _steeringHandle.Route.Count; i++)
-                {
-                    var edge = _steeringHandle.Route[i].Edge;
-                    distanceAhead += edge.Length;
 
-                    // If we find a removed edge within 5km, trigger recalculation
-                    if (_layer.RemovedEdges.Contains(edge))
+            if (!_layer.notifyTrucks)
+            {
+                // Check if the next edge in the route is still available
+                if (_steeringHandle.Route.Count > 0)
+                {
+                    double distanceAhead = 0;
+                    for (int i = 0; i < _steeringHandle.Route.Count; i++)
                     {
-                        
-                        if (!CreateBypass(edge)) return; // If no alternative found, stop execution
-                        break;
+                        var edge = _steeringHandle.Route[i].Edge;
+                        distanceAhead += edge.Length;
+                        // If we find a removed edge within 5km, trigger recalculation
+                        if (_layer.RemovedEdges.Contains(edge))
+                        {
+                            if (!CreateBypass(edge)) return; // If no alternative found, stop execution
+                            break;
+                        }
+
+                        // Stop checking after 5km
+                        if (distanceAhead >= 5000)
+                            break;
                     }
-                    // Stop checking after 5km
-                    if (distanceAhead >= 5000) 
-                        break;
                 }
             }
+
 
             _steeringHandle.Move();
             if (GoalReached)
             {
+                if (_layer.notifyTrucks) _layer.UnregisterTruckFromRoute(this, _steeringHandle.Route);
                 _environment.Remove(SemiTruck);
                 _unregister.Invoke(_layer, this);
+            }
+        }
+
+        /// <summary>
+        /// Called if a known edge in the truck's route becomes blocked.
+        /// Triggers rerouting if affected.
+        /// </summary>
+        public void NotifyEdgeBlocked(ISpatialEdge blockedEdge)
+        {
+            if (_steeringHandle.Route.Any(r => r.Edge == blockedEdge))
+            {
+                CreateBypass(blockedEdge);
             }
         }
 
@@ -124,10 +143,10 @@ namespace SOHModel.SemiTruck.Model
         /// <returns>True if a bypass was successfully created and applied; otherwise, false.</returns>
         private bool CreateBypass(ISpatialEdge removedEdge)
         {
-        
+            if (_layer.notifyTrucks) _layer.UnregisterTruckFromRoute(this, _steeringHandle.Route);
             // Find first valid EdgeStop AFTER the removed section
             var nextValidEdgeStop = _steeringHandle.Route.Stops
-                .Skip(_steeringHandle.Route.PassedStops)  // Start from current position
+                .Skip(_steeringHandle.Route.PassedStops) // Start from current position
                 .SkipWhile(stop => stop.Edge != removedEdge)
                 .SkipWhile(stop => _layer.RemovedEdges.Contains(stop.Edge)) // Skip all removed edges
                 .FirstOrDefault(stop => !_layer.RemovedEdges.Contains(stop.Edge)); // Find the first valid edge
@@ -155,10 +174,11 @@ namespace SOHModel.SemiTruck.Model
                 _unregister.Invoke(_layer, this); // Remove truck from simulation
                 return false;
             }
-            
+
             // While the current EdgeStop is invalid, keep removing
             int removeIndex = _steeringHandle.Route.PassedStops;
-            while (_steeringHandle.Route.Stops.Count > 0 && !_steeringHandle.Route.Stops[removeIndex].Equals(nextValidEdgeStop))
+            while (_steeringHandle.Route.Stops.Count > 0 &&
+                   !_steeringHandle.Route.Stops[removeIndex].Equals(nextValidEdgeStop))
             {
                 _steeringHandle.Route.Stops.RemoveAt(removeIndex);
             }
@@ -168,9 +188,9 @@ namespace SOHModel.SemiTruck.Model
                 bypassRoute.Add(edgeStop.Edge);
             }
 
-            
-            _steeringHandle.Route = bypassRoute;
 
+            _steeringHandle.Route = bypassRoute;
+            if (_layer.notifyTrucks) _layer.RegisterTruckForRoute(this, _steeringHandle.Route);
 
             return true;
         }
@@ -190,7 +210,6 @@ namespace SOHModel.SemiTruck.Model
 
         // Indicates whether the SemiTruck has reached its goal
         public bool GoalReached => _steeringHandle?.GoalReached ?? false;
-
 
 
         // Current position of the SemiTruckDriver
@@ -226,7 +245,7 @@ namespace SOHModel.SemiTruck.Model
 
         // Indicates whether braking is activated
         public bool BrakingActivated { get; set; }
-        
+
 
         public Route Route => _steeringHandle?.Route;
 
@@ -273,7 +292,7 @@ namespace SOHModel.SemiTruck.Model
                 var edge = SemiTruck?.CurrentEdge;
                 if (edge == null || !edge.Attributes.ContainsKey("osmid"))
                     return "-1";
-                var osmId =edge.Attributes["osmid"].ToString();
+                var osmId = edge.Attributes["osmid"].ToString();
                 return osmId?.StartsWith("[") == true ? "-1" : osmId ?? "-1";
             }
         }
