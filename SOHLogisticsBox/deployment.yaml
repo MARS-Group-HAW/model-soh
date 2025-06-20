@@ -11,28 +11,26 @@ spec:
     spec:
       containers:
         - name: soh-logistics
-          image: git.haw-hamburg.de:5000/inf<Username>/soh_logistics/soh-logistics:v1
+          image: git.haw-hamburg.de:5000/infwwr434/soh_logistics/soh-logistics:databank
           imagePullPolicy: Always
           env:
             - name: MARS_CONFIG_PATH
               value: /config/config.json
           volumeMounts:
             - name: config-volume
-              mountPath: /config
-            - name: output-volume
-              mountPath: /app/output
+              mountPath: /config/config.json
+              subPath: config.json 
           resources:
             requests:
-              memory: "3Gi"
+              memory: "30Gi"
+              cpu: "7"
             limits:
-              memory: "4Gi"
+              memory: "30Gi"
+              cpu: "7"
       restartPolicy: Never
       volumes:
         - name: config-volume
           configMap:
-            name: soh-logistics-config
-        - name: output-volume
-          persistentVolumeClaim:
-            claimName: soh-output-pvc
+            name: soh-config
       imagePullSecrets:
         - name: gitlab-registry-secret

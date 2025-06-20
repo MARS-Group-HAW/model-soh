@@ -2,13 +2,22 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: soh-config
+  namespace: wwr434-default
 data:
   config.json: |
     {
       "simulation": {
         "iterations": 43200,
-        "randomSeed": 42
-      },
+        "randomSeed": 42,
+        "npgSqlOptions": {
+          "port": "5432",
+          "host": "postgres-service",
+          "user": "mars_user",
+          "password": "Password123+",
+          "databaseName": "mars_user",
+          "overrideByConflict": true
+        }
+      },    
       "initialization": {
         "initializers": [
           {
@@ -20,16 +29,8 @@ data:
       },
       "outputs": [
         {
-          "kind": "trips",
-          "outputConfiguration": {
-            "tripsFields": [
-              "StableId",
-              "StartPosition",
-              "EndPosition",
-              "DistanceTraveled",
-              "Duration"
-            ]
-          }
+          "kind": "postgres"
         }
       ]
     }
+    
