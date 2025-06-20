@@ -6,12 +6,17 @@ using System.IO;
 using System.Threading;
 using Mars.Common.Core.Logging;
 using Mars.Components.Starter;
+using Mars.Core.Data.Wrapper.Relational;
 using Mars.Core.Simulation;
 using Mars.Interfaces;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Model;
+using Mars.Interfaces.Model.Options;
 using SOHModel.SemiTruck.Model;
+using SOHModel.SemiTruck.RealTimeData;
 using SOHModel.SemiTruck.Scheduling;
+
+
 
 namespace SOHRoutingOptimization;
 
@@ -27,10 +32,11 @@ internal static class Program
         
         description.AddLayer<SemiTruckLayer>();
         description.AddLayer<SemiTruckSchedulerLayer>();
+        description.AddLayer<SemiTruckRealTimeLayer>();
         description.AddAgent<SemiTruckDriver, SemiTruckLayer>();
         // Add semi-truck-related entities
         description.AddEntity<SemiTruck>();
-
+        
 
 
 
@@ -46,8 +52,12 @@ internal static class Program
             var configPath = Environment.GetEnvironmentVariable("MARS_CONFIG_PATH") ?? "config.json";
             var file = File.ReadAllText(configPath);
             var simConfig = SimulationConfig.Deserialize(file);
+            
+            
             // var simConfig = CreateDefaultConfig();
             application = SimulationStarter.BuildApplication(description, simConfig);
+            
+            
         }
 
 
