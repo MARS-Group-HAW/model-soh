@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: soh-config
-  namespace: wwr434-default
+  namespace: Username-default
 data:
   config.json: |
     {
@@ -13,7 +13,7 @@ data:
           "port": "5432",
           "host": "postgres-service",
           "user": "mars_user",
-          "password": "Password123+",
+          "password": "Your-Password",
           "databaseName": "mars_user",
           "overrideByConflict": true
         }
