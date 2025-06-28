@@ -49,7 +49,7 @@ internal static class Program
         }
         else
         {
-            var configPath = Environment.GetEnvironmentVariable("MARS_CONFIG_PATH") ?? "config.json";
+            var configPath = Environment.GetEnvironmentVariable("MARS_CONFIG_PATH") ?? "config_GeoJSON.json";
             var file = File.ReadAllText(configPath);
             var simConfig = SimulationConfig.Deserialize(file);
             

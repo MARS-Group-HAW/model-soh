@@ -17,21 +17,36 @@ using Newtonsoft.Json;
 using ServiceStack;
 using SOHModel.Domain.Graph;
 using SOHModel.SemiTruck.Model;
-
+/// <summary>
+/// A simulation layer that precomputes shortest routes between all pairs of entry and exit points.
+/// These routes are exported to a file for later use (e.g. by agents detecting they are on a predefined route).
+/// </summary>
 public class PreComputeRoutesLayer : AbstractLayer, ISemiTruckLayer, ISpatialGraphLayer, ISteppedActiveLayer
 {
+    /// <summary>
+    /// The default modal choice for this layer is CarDriving.
+    /// </summary>
     public ModalChoice ModalChoice { get; }
 
+    /// <summary>
+    /// The spatial graph environment in which the routing takes place.
+    /// </summary>
     public ISpatialGraphEnvironment Environment { get; set; }
-
+    
+    /// <summary>
+    /// A list of coordinates that represent detected motorway entry and exit points.
+    /// </summary>
     public List<Coordinate> EntryExitCoordinates { get; private set; } = new();
 
+    /// <summary>
+    /// Initializes the layer, sets up the environment, loads entry/exit points, computes shortest paths, and stores them.
+    /// </summary>
     public override bool InitLayer(LayerInitData layerInitData, RegisterAgent registerAgentHandle,
         UnregisterAgent? unregisterAgent = null)
     {
         base.InitLayer(layerInitData, registerAgentHandle, unregisterAgent);
 
-        // Straßennetz laden
+        // Load the road network environment
         if (Mapping.Value is ISpatialGraphEnvironment input)
         {
             Environment = input;
@@ -50,13 +65,14 @@ public class PreComputeRoutesLayer : AbstractLayer, ISemiTruckLayer, ISpatialGra
 
         if (Environment == null) return false;
 
-        // Entry/Exit laden
+        // Load entry/exit nodes from configuration
         var success = LoadEntryExitNodesFromConfig(layerInitData);
         if (!success || EntryExitCoordinates.Count < 2) return false;
 
         var routesList = new List<object>();
         int routeCounter = 0;
 
+        // Compute shortest routes between each pair of entry/exit nodes (limited to first 100 for testing)
         for (int i = 0; i < Math.Min(100, EntryExitCoordinates.Count); i++)
         {
             for (int j = 0; j < Math.Min(100, EntryExitCoordinates.Count); j++)
@@ -92,7 +108,7 @@ public class PreComputeRoutesLayer : AbstractLayer, ISemiTruckLayer, ISpatialGra
             }
         }
 
-        // Zielordner sicherstellen
+        // Save the generated routes to a file
         var outputDir = Path.Combine(AppContext.BaseDirectory, "resources", "precomputed_routes");
         Directory.CreateDirectory(outputDir);
 
@@ -101,28 +117,16 @@ public class PreComputeRoutesLayer : AbstractLayer, ISemiTruckLayer, ISpatialGra
         File.WriteAllText(outputPath, json);
 
         Console.WriteLine($"[✓] {routeCounter} Routen erfolgreich gespeichert nach: {outputPath}");
-        // // Rekonstruktion als Test
-        // var rebuiltEdges = edgeIds
-        //     .Select(idStr =>
-        //     {
-        //         if (int.TryParse(idStr, out var id) && Environment.Edges.TryGetValue(id, out var edge))
-        //             return edge;
-        //         return null;
-        //     })
-        //     .Where(edge => edge != null)
-        //     .ToList();
-        //
-        //
-        // var rebuiltStops = rebuiltEdges
-        //     .Select(edge => new EdgeStop(edge))
-        //     .ToList();
-        //
-        // var rebuiltRoute = new Route(false);
-        // rebuiltRoute.Stops.AddRange(rebuiltStops);
 
         return true;
     }
 
+    /// <summary>
+    /// Loads the list of entry and exit node coordinates from a JSON configuration file.
+    /// The file must be listed as an input in the LayerInitConfig and named "entry_exit_nodes.json".
+    /// </summary>
+    /// <param name="layerInitData">Layer configuration passed during initialization</param>
+    /// <returns>True if the coordinates were successfully loaded; otherwise false</returns>
     private bool LoadEntryExitNodesFromConfig(LayerInitData layerInitData)
     {
         try
@@ -154,7 +158,16 @@ public class PreComputeRoutesLayer : AbstractLayer, ISemiTruckLayer, ISpatialGra
         }
     }
 
+    /// <summary>
+    /// Not used for precomputation; included to fulfill interface requirements.
+    /// </summary>
     public void Tick() { }
+    /// <summary>
+    /// Not used for precomputation; included to fulfill interface requirements.
+    /// </summary>
     public void PreTick() { }
+    /// <summary>
+    /// Not used for precomputation; included to fulfill interface requirements.
+    /// </summary>
     public void PostTick() { }
 }
