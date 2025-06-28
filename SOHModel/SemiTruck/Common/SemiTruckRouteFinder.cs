@@ -1,4 +1,5 @@
 using Mars.Common.Core;
+using Mars.Common.Core.Collections;
 using Mars.Components.Environments;
 using NetTopologySuite.Planargraph;
 using ServiceStack;
@@ -13,6 +14,13 @@ using Mars.Interfaces.Environments;
 public static class SemiTruckRouteFinder
 {
     private static readonly Random Random = new();
+
+    private static readonly SemiTruckRouteCacheManager routeCache;
+
+    static SemiTruckRouteFinder()
+    {
+        routeCache = new SemiTruckRouteCacheManager("route_cache.db");
+    }
 
     /// <summary>
     ///     Finds a route based on the specified driveMode and parameters.
@@ -101,23 +109,83 @@ public static class SemiTruckRouteFinder
 
             case 3:
             {
-                // Finds the shortest route between start and goal nodes
+                // Identify start and goal nodes based on geographic coordinates
                 currentNode = environment.NearestNode(Position.CreateGeoPosition(startLon, startLat));
                 var goal = environment.NearestNode(Position.CreateGeoPosition(destLon, destLat));
-                
-                Route validRoute = new Route(); // Stores the longest reachable route
+                // Retrieve the start and goal edge IDs to be used as keys for route caching
+                string? startEdgeId = currentNode.OutgoingEdges.Values.FirstOrDefault()?.GetId()?.ToString();
+                string? goalEdgeId = goal.IncomingEdges.Values.FirstOrDefault()?.GetId()?.ToString();
 
+                List<string> cachedEdgeIds;
+                bool wasSuboptimal;
+
+                //Try to use a cached route if available and valid
+                if (startEdgeId != null && goalEdgeId != null)
+                {
+                    bool cacheHit = routeCache.TryGetRoute(
+                        startEdgeId,
+                        goalEdgeId,
+                        truckWeight,
+                        truckHeight,
+                        truckWidth,
+                        truckLength,
+                        truckMaxIncline,
+                        out cachedEdgeIds,
+                        out wasSuboptimal,
+                        out bool exactConstraintMatch
+                    );
+
+                    if (cacheHit)
+                    {
+                        // Convert cached edge IDs back into a usable route object
+                        var candidateRoute = ConvertEdgeIdsToRoute(cachedEdgeIds, environment, RemovedEdges);
+
+                        bool hasRemovedEdge = false;
+
+                        if (candidateRoute == null)
+                        {
+                            hasRemovedEdge = true;
+                            Console.WriteLine("Cached route is invalid – missing edges in route.");
+                        }
+
+
+                        // If the cached route is valid and either exact or acceptable, use it
+                        if ((!wasSuboptimal || exactConstraintMatch) && !hasRemovedEdge)
+                        {
+                            // Console.WriteLine("Route from cache used.");
+                            route = candidateRoute;
+                            break;
+                        }
+
+                        if (hasRemovedEdge)
+                        {
+                            Console.WriteLine("Cached route contains removed edges – skipping cache.");
+                        }
+                    }
+                }
+
+                // Compute a new route considering all physical and logical constraints
+                Route validRoute = new Route(); // Collects the longest valid sub-route if a complete route fails
+                bool routeWasLimitedByConstraints = false;
+                bool isPartial = false;
+
+                // Find a constraint-aware shortest route, edge by edge
                 route = environment.FindShortestRoute(currentNode, goal, edge =>
                 {
                     if (RemovedEdges.Contains(edge))
                     {
-                        return false;
+                        return false; // This edge is currently closed
                     }
+
                     bool isValid = CheckValidEdge(edge, truckHeight, truckWeight, truckWidth, truckLength,
                         truckMaxIncline);
                     if (isValid)
                     {
-                        validRoute.Add(edge);
+                        validRoute.Add(edge); // Track as part of the partial route
+                    }
+                    else
+                    {
+                        routeWasLimitedByConstraints = true;
                     }
 
                     return isValid;
@@ -125,12 +193,14 @@ public static class SemiTruckRouteFinder
                 }) ?? new Route();
 
 
-                // Compute Partial Route if possible
+                // If a full route could not be computed, try to extract a partial route to the last valid point
                 if ((route == null || route.Count == 0) && validRoute.Count > 0)
                 {
-                    Console.WriteLine("No complete route found, but a partial route is available.");
+                    // Console.WriteLine("No complete route found, but a partial route is available.");
                     //Console.WriteLine($"Last reachable position: {validRoute.Goal}");
                     var validGoal = validRoute.Last().Edge.To;
+
+                    //Attempt to compute a shorter route from the start to the last reachable node
                     route = environment.FindShortestRoute(currentNode, validGoal, edge =>
                     {
                         bool isValid = CheckValidEdge(edge, truckHeight, truckWeight, truckWidth, truckLength,
@@ -140,8 +210,29 @@ public static class SemiTruckRouteFinder
                 }
                 else if (validRoute.Count == 0)
                 {
+                    // No route found that satisfies constraints; fallback to empty result
                     Console.WriteLine("No valid route found. Constraints may be too strict or data incomplete.");
                     route = new Route(); // Return an empty route
+                }
+
+                // Store the new valid route in the cache (only if it's usable and based on constraint filtering)
+                if (route.Count > 0 && !route.Any(e => RemovedEdges.Contains(e.Edge)) && startEdgeId != null &&
+                    goalEdgeId != null)
+                {
+                    List<string> edgeIds = route.Select(e => e.Edge.GetId().ToString()).ToList();
+
+
+                    routeCache.StoreRoute(
+                        startEdgeId,
+                        goalEdgeId,
+                        edgeIds,
+                        truckWeight,
+                        truckHeight,
+                        truckWidth,
+                        truckLength,
+                        truckMaxIncline,
+                        wasSuboptimal: routeWasLimitedByConstraints
+                    );
                 }
 
                 break;
@@ -288,5 +379,45 @@ public static class SemiTruckRouteFinder
         }
 
         return maxIncline <= truckMaxIncline;
+    }
+
+    /// <summary>
+    /// Attempts to reconstruct a Route object from a list of edge ID strings.
+    /// The method checks whether any of the referenced edges are currently removed (e.g., due to road closures).
+    /// If any edge is no longer part of the environment, or is marked as removed, the method returns null.
+    /// </summary>
+    /// <param name="edgeIds">List of edge IDs (as strings) representing the route path.</param>
+    /// <param name="environment">The spatial graph environment containing current valid edges.</param>
+    /// <param name="RemovedEdges">List of currently removed or blocked edges.</param>
+    /// <returns>A rebuilt Route object if all edges are valid and available; otherwise null.</returns>
+    private static Route? ConvertEdgeIdsToRoute(List<string> edgeIds, ISpatialGraphEnvironment environment,
+        List<ISpatialEdge> RemovedEdges)
+    {
+        // Reject route if it includes any edge currently marked as removed
+        if (edgeIds.Any(id => RemovedEdges.Any(e => e.GetId().ToString() == id)))
+        {
+            Console.WriteLine("Cached route contains a removed edge – discarding.");
+            return null;
+        }
+
+        // Attempt to resolve all edge IDs into actual edge objects from the environment
+        var rebuiltEdges = edgeIds
+            .Select(idStr =>
+            {
+                if (int.TryParse(idStr, out var id) && environment.Edges.TryGetValue(id, out var edge))
+                    return edge;
+                return null;
+            })
+            .Where(edge => edge != null)
+            .ToList();
+
+        // Rebuild route from resolved edges
+        var rebuiltRoute = new Route();
+        foreach (var edge in rebuiltEdges)
+        {
+            rebuiltRoute.Add(edge);
+        }
+
+        return rebuiltRoute;
     }
 }

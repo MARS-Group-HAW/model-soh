@@ -284,17 +284,11 @@ namespace SOHModel.SemiTruck.Model
             {
                 var start = closureByCoordinates.Coordinates.First();
                 var end = closureByCoordinates.Coordinates.Last();
+                var currentNode = Environment.NearestNode(Position.CreateGeoPosition(start.X, start.Y));
+                var goal = Environment.NearestNode(Position.CreateGeoPosition(end.X, end.Y));
 
-                var route = SemiTruckRouteFinder.Find(
-                    Environment,
-                    3,
-                    start.Y, start.X,
-                    end.Y, end.X,
-                    null, "",
-                    1.0, 1.0, 1.0, 1.0,
-                    100,
-                    RemovedEdges
-                );
+                var route = Environment.FindShortestRoute(currentNode, goal);
+                
 
                 if (route != null && route.Stops != null)
                 {
