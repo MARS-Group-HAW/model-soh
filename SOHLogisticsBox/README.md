@@ -99,6 +99,8 @@ There are **three configuration files**, each serving a specific purpose:
 
 Make sure to select the appropriate configuration file depending on the simulation goal.
 
+___
+
 ### ModelDescription
 
 In the `main` of `Program.cs`, the `ModelDescription` object is defined with a `SemiTruckLayer` where `SemiTrucks` are
@@ -138,6 +140,8 @@ brief description of the main attributes. This is used in the `config_geoJSON.js
 * `endPoint`: the time at which the simulation ends (type: `DateTime`)
 * `deltaTUnit`: the duration of a time step in the simulation (type: `seconds`)
 * `console`: defines if progress bar is displayed in console during simulation run (type: `boolean`)
+
+___
 
 ### Globals PostgreSQL(`config.json`)
 
@@ -286,6 +290,9 @@ The **`SemiTrucks`** are initialized in **`semi_truck_initializer.csv`** like th
 | ExtraCapacityTruck | 50.82306       | 10.02379        | 50.49248             | 9.98912               | 3          |
 | OverloadTruck      | 50.82306       | 10.02379        | 50.49248             | 9.98912               | 3          |
 
+
+___
+
 ### AgentMappings PostgreSQL(`config.json`)
 
 The AgentMappings are slightly different for PostgreSQL as the Output `kind` is changed to `postgres`. The rest however
@@ -312,6 +319,7 @@ was used as we have much more capacity on PostgreSQL and the ICC.
     }
 ]
 ```
+___
 
 ### EntityMappings (Identical for PostgreSQL and GeoJSON)
 
@@ -334,6 +342,8 @@ configured:
     * `file`: the file path to the CSV file containing the attributes and properties of semi-trucks used in the
       simulation (type: `string`)
 
+___
+
 ## SemiTruck Initialization
 
 The **`semi_truck.csv`** defines different types of **`SemiTrucks`** like the following:
@@ -350,6 +360,8 @@ The **`semi_truck.csv`** defines different types of **`SemiTrucks`** like the fo
 | MaximumLoadTruck   | 0.5              | 1.2              | 30.83           | 16         | 2.5        | 2.5       | German       | 2                  | 0        | 40.0        | 8               |
 | OverloadTruck      | 0.5              | 1.2              | 30.83           | 16         | 2.5        | 2.5       | German       | 2                  | 0        | 50.0        | 6               |
 | UnlimitedTruck     | 0.5              | 1.2              | 30.83           | 1          | 1.0        | 1.0       | German       | 2                  | 0        | 2.0         | 25              |
+
+___
 
 ## Realistic SemiTruck Data based on German Federal Statistics
 
@@ -404,6 +416,8 @@ spatial graph environment for precise routing, pathfinding, and decision-making.
 It is designed for large-scale logistics and freight transport simulations, it accounts for real-world constraints such
 as road restrictions or blocked roads.
 
+___
+
 ## SemiTruckDriver
 
 The **`SemiTruckDriver`** class models a semi-truck driver agent in the MARS simulation, handling route
@@ -421,6 +435,8 @@ triggers a rerouting process. A new bypass route is calculated around the closur
 on the original path. This enables the truck to avoid blocked segments and continue toward its destination with
 minimal disruption, preserving the overall route context.
 
+___
+
 ## SemiTruckLayer
 
 The **`SemiTruckLayer`** class manages the semi-truck simulation environment, handling the initialization of the
@@ -433,7 +449,7 @@ tracking them in a dedicated dictionary. The layer ensures dynamic agent managem
 adjustments, blocked road handling, and efficient truck movement. Once the simulation completes, the layer unregisters
 the agents, maintaining a structured and scalable approach for large-scale freight and mobility simulations.
 
-In addition, the layer supports dynamic road closures based on two CSV files (located in `resources`), where
+In addition to realtime data later introduced in the **`SemiTruckRealTimeLayer`**, the **`SemiTruckLayer`** supports dynamic road closures based on two CSV files (located in `resources`), where
 each entry specifies an edge ID or coordinates along with a start and end time for the closure. During simulation, these
 edges are
 temporarily removed from the environment and added to a list of `RemovedEdges`, which is considered during route
@@ -443,9 +459,22 @@ realistic modeling of temporary disruptions such as construction zones or accide
 
 Two alternative input formats are supported:
 
-- `road_closures.csv`: Format for specifying closures by edge ID, including start and end times.
+- `road_closures_by_ID.csv`: Format for specifying closures by edge ID, including start and end times.
 - `road_closures_by_Coordinates.csv`: Allows defining closures using geographic coordinates instead of edge IDs.
   This is useful for integrating external data sources such as official traffic APIs.
+
+The file `road_closures_by_ID.csv` is defined like the following:
+
+| Edge ID | Start Time          | End Time            |
+| ------- | ------------------- | ------------------- |
+| 120885  | 2025-05-19 05:00:00 | 2025-05-19 18:00:00 |
+
+In contrary the file `road_closures_by_Coordinates.csv` is defined like this:
+
+| Start Latitude | Start Longitude | Destination Latitude | Destination Longitude | Start Time          | End Time            |
+| -------------- | --------------- | -------------------- | --------------------- | ------------------- |---------------------|
+| 53.88813195    | 10.30041253     | 53.76204007          | 10.31980488           | 2025-05-20 07:00:00 | 2025-05-20 17:00:00 |
+
 
 During simulation, the affected edges are temporarily removed from the environment and added to an internal RemovedEdges
 list. These are respected by the route planning logic, preventing agents from using closed roads. Once the closure
@@ -453,6 +482,9 @@ period ends, the edges are automatically restored.
 
 This mechanism provides flexible and realistic modeling of temporary road inaccessibility and supports integration of
 real-time or scheduled closure data.
+
+___
+
 
 ## SemiTruckSchedulerLayer
 
@@ -476,6 +508,8 @@ following:
 | 09:00      | 15:00    | 1000                 | 1            | 10.1355085      | 53.5667347     | 11.4522277            | 53.4306468           | StandardTruck | 2          |
 | 10:00      | 16:00    | 1000                 | 1            | 10.1355085      | 53.5667347     | 11.4522277            | 53.4306468           | StandardTruck | 2          |
 
+___
+
 ## SemiTruckRouteFinder
 
 The **`SemiTruckRouteFinder`** is a route-planning utility for semi-truck navigation within the MARS
@@ -493,6 +527,8 @@ freight transport simulations.
 > the `SemiTruckRouteFinder` will still return a valid route to the **closest possible point** near the destination.
 > This ensures that trucks do not fail silently and can reach at least a partial goal location.
 > Although this does require that the truck can move on the road it starts on.
+
+___
 
 ## PreComputeRoutesLayer
 
@@ -514,12 +550,11 @@ coordinate pairs (lon, lat).
 
 In order to use the `PreComputeRoutesLayer` the `config_PreComputeRoutes.json` configuration (used for manually
 precomputing routes) must be used.
-the `ModelDescription` is different and includes only a `PreComputeRoutesLayer` and `SemiTruckLayer` and no Agent and
+the `ModelDescription` is different and includes only a `PreComputeRoutesLayer` and no Agent and
 Entity logic:
 
 ```c#
 var description = new ModelDescription();
-description.AddLayer<SemiTruckLayer>();
 description.AddLayer<PreComputeRoutesLayer>();
 
 ```
@@ -580,6 +615,8 @@ That way in the routing process an agent can compare the current edge to the one
 enters a highway use a precomputed Route. All files are currently stored as JSON. For larger datasets, switching to
 SQLite (as used in the `SemiTruckRouteCacheManager`) is recommended for performance and scalability.
 
+___
+
 ## SemiTruckCacheManager
 
 The `SemiTruckRouteCacheManager` is a route caching component that stores and retrieves precomputed semi-truck routes
@@ -599,6 +636,8 @@ constraint-aware routing tailored for large-scale freight transport simulations.
 
 The cache is saved as `route_cache.db`.
 
+___
+
 ## SemiTruckRealTimeLayer
 
 The `SemiTruckRealTimeLayer` is a real-time data integration layer that fetches and processes official road closure data
@@ -617,6 +656,8 @@ infrastructure disruptions.
 
 Closures are cached internally to prevent duplicate processing and ensure simulation performance remains stable, even
 with large datasets or frequent updates.
+
+___
 
 ## Docker & ICC Cloud Deployment
 
@@ -658,7 +699,6 @@ These files include:
 > The credentials and token must be configured in your `icc-config.yaml`. These are **user-specific** and not included
 > in the repository.
 
----
 
 ### Workflow Overview
 
@@ -669,6 +709,8 @@ These files include:
 
 This setup enables automated and scalable simulation runs in the cloud — ideal for batch processing, testing different
 traffic scenarios, or exploring dynamic routing behaviors in high-load conditions.
+
+___
 
 ### ICC Deployment for Postgres
 
@@ -740,7 +782,7 @@ COPY (
 
 After saving it we can copy it to the local device with this command:
 
-`kubectl cp wwr434-default/postgres-55777c6cf6-f2879:/tmp/truck_lines.jsonl "./truck_lines.jsonl" --kubeconfig=SOHLogisticsBox/icc-config.yaml`
+`kubectl cp <Your-namespace>/postgres-55777c6cf6-f2879:/tmp/truck_lines.jsonl "./truck_lines.jsonl" --kubeconfig=SOHLogisticsBox/icc-config.yaml`
 
 This export was made in JSONL as the ICC timed out even with immense resources already available.
 To convert the file to GeoJSON we can use the script `convert_JSONL_To_GEOJSON.py` located
