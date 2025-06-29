@@ -10,7 +10,8 @@ ___
 
 ## Map Export & Preprocessing
 
-The base map for this project consists of **all highways and federal roads in Germany**. The initial export was done using [**OSMnx**](https://github.com/gboeing/osmnx), including key tags like:
+The base map for this project consists of **all highways and federal roads in Germany**. The initial export was done
+using [**OSMnx**](https://github.com/gboeing/osmnx), including key tags like:
 
 - `maxheight`
 - `maxlength`
@@ -41,7 +42,7 @@ The full export and preprocessing pipeline is implemented in Python and can be f
 
 - **`compress_geojson.py`** *(optional)*  
   Removes unnecessary whitespace from the `.geojson` file to reduce its size by ~50%.
-  
+
 - **`calculateEdgeCapacity.py`**  
   Calculates the capacity of each edge in the network based on its **length** and **number of lanes**,  
   using a standardized unit called **Fahrzeugeinheiten (FE)**. Each vehicle type occupies a specific number of FE,  
@@ -59,7 +60,8 @@ The current final output is a file named:
 
 `autobahn_und_bundesstrassen_deutschland_attributes_08.geojson`
 
-However, due to its large size, it is **not directly stored in the repository**. Instead, it is **compressed as a `.rar` file**:
+However, due to its large size, it is **not directly stored in the repository**. Instead, it is **compressed as a `.rar`
+file**:
 
 > ⚠️ **Important**  
 > The file `autobahn_und_bundesstrassen_deutschland_attributes_08.geojson` is stored as  
@@ -68,7 +70,36 @@ However, due to its large size, it is **not directly stored in the repository**.
 
 ___
 
-## ModelDescription
+## Configuration
+
+There are **three configuration files**, each serving a specific purpose:
+
+- **`config.json`**  
+  Standard configuration for running the simulation with a connection to a **PostgreSQL** database (currently configured
+  to
+  PostgreSQL on the ICC, running PostgreSQL locally requires different parameters).  
+  This setup is used to write or retrieve simulation data directly from the database.
+
+- **`config_geoJSON.json`**  
+  Configuration used to generate **GeoJSON** output.  
+  This mode is intended for exporting trips and route data in a geographic format, which can be used for visualization
+  or GIS-based processing.  
+  ⚠️ **Note:** This configuration is **not scalable** for large simulations. The memory usage increases linearly with
+  the number of agents, which can lead to an **Out of Memory (OOM) error** if more than approximately **10,000 agents**
+  with 16GB RAM are simulated, depending on your system's available RAM.
+
+- **`config_PreComputeRoutes.json`**  
+  This configuration is **not used during the actual simulation**.  
+  It is specifically designed for **precomputing routes** between predefined nodes — for example, all highway entries
+  and exits.  
+  These routes can be cached and later reused during the simulation to improve performance and ensure consistent routing
+  behavior.  
+  Although precomputed routes are now automatically cached during regular simulation runs, this configuration still
+  allows for **manual precomputation of arbitrary routes** in advance if desired.
+
+Make sure to select the appropriate configuration file depending on the simulation goal.
+
+### ModelDescription
 
 In the `main` of `Program.cs`, the `ModelDescription` object is defined with a `SemiTruckLayer` where `SemiTrucks` are
 controlled by `SemiTruckDrivers`. Also, there is a `SemiTruckSchedulerLayer` to schedule the spawning of `SemiTrucks` in
@@ -85,22 +116,22 @@ description.AddEntity<SemiTruck>();
 
 ___
 
-## Globals
+### Globals GeoJSON(`config_geoJSON.json`)
 
 This section contains the attributes that allow for general configuration of the model. Below is a
-brief description of the main attributes.
+brief description of the main attributes. This is used in the `config_geoJSON.json`.
 
 ```json
 "globals": {
-"deltaT": 1,
-"startPoint": "2021-10-11T06:00:00",
-"endPoint": "2021-10-11T18:00:00",
-"deltaTUnit": "seconds",
-"console": true
+    "deltaT": 1,
+    "startPoint": "2021-10-11T06:00:00",
+    "endPoint": "2021-10-11T18:00:00",
+    "deltaTUnit": "seconds",
+    "console": true
 },
 ```
 
-### Attribute Description
+#### Attribute Description
 
 * `deltaT`: the amount of time increment per simulation step (type: `integer`)
 * `startPoint`: the time at which the simulation begins (type: `DateTime`)
@@ -108,36 +139,69 @@ brief description of the main attributes.
 * `deltaTUnit`: the duration of a time step in the simulation (type: `seconds`)
 * `console`: defines if progress bar is displayed in console during simulation run (type: `boolean`)
 
+### Globals PostgreSQL(`config.json`)
+
+```json
+"globals": {
+    "deltaT": 30,
+    "startPoint": "2021-10-11T06:00:00",
+    "endPoint": "2021-10-11T18:00:00",
+    "deltaTUnit": "seconds",
+    "console": true,
+    "npgSqlOptions": {
+        "port": "5432",
+        "host": "postgres-service",
+        "user": "mars_user",
+        "password": "Your-Password",
+        "databaseName": "mars_user",
+        "overrideByConflict": true
+    }
+}
+```
+
+#### Attribute Description
+
+Additionaly we have our PostgreSQL config under `npgSqlOptions`
+
+* `port`: The port used by the PostgreSQL server (type: `string`)
+* `host`:  Hostname or service name where the PostgreSQL server is running (type: `string`)
+* `user`: Username for authentication (type: `string`)
+* `password`: Password for the database user (type: `string`)
+* `databaseName`: The name of the PostgreSQL database to connect to (type: `string`)
+*
+    * `overrideByConflict`:  If set to `true` , conflicting entries in the database will be overwritten by the
+      simulation (type: `boolean`)
+
 ___
 
-## Layer Mappings
+### Layer Mappings (Identical for PostgreSQL and GeoJSON)
 
 In this section, the layer types are defined in the model logic (and that were added to `description` above) are
 configured and populated the .geojson file.
 
 ```json
 "layers": [
-{
-"name": "SemiTruckLayer",
-"inputs": [
-{
-"file": "resources/autobahn_und_bundesstrassen_deutschland_attributes_03.geojson",
-"inputConfiguration": {
-"modalities": ["CarDriving"],
-"isBidirectedGraph": true
-}
-}
-]
-},
-{
-"name": "SemiTruckSchedulerLayer",
-"file": "resources/semi_truck_scheduler.csv"
-}
+    {
+    "name": "SemiTruckLayer",
+    "inputs": [
+        {
+        "file": "resources/autobahn_und_bundesstrassen_deutschland_attributes_03.geojson",
+        "inputConfiguration": {
+            "modalities": ["CarDriving"],
+            "isBidirectedGraph": true
+        }
+        }
+    ]
+    },
+    {
+    "name": "SemiTruckSchedulerLayer",
+    "file": "resources/semi_truck_scheduler.csv"
+    }
 ]
 
 ```
 
-### Attribute Description
+#### Attribute Description
 
 * `SemiTruckLayer`:
     * `name`:  the name of the layer used for modeling the road network for semi-trucks (type: `string`)
@@ -155,43 +219,43 @@ configured and populated the .geojson file.
 
 ___
 
-## AgentMappings
+### AgentMappings GeoJSON(`config_geoJSON.json`)
 
 In this section, the agent types that are defined in the model logic (and that were added to `desciption` above) are
 configured:
 
 ```json
 "agents": [
-{
-"name": "SemiTruckDriver",
-"count": 100,
-"file": "resources/semi_truck_initializer.csv",
-"outputs": [
-{
-"kind": "trips",
-"outputConfiguration": {
-"tripsFields": [
-"StableId",
-"StartPosition",
-"EndPosition",
-"DistanceTraveled",
-"Duration"
-]
-}
-}
-],
-"individual": [
-{
-"name": "ResultTrajectoryEnabled",
-"value": true
-}
-]
-}
+    {
+    "name": "SemiTruckDriver",
+    "count": 100,
+    "file": "resources/semi_truck_initializer.csv",
+    "outputs": [
+        {
+        "kind": "trips",
+        "outputConfiguration": {
+        "tripsFields": [
+            "StableId",
+            "StartPosition",
+            "EndPosition",
+            "DistanceTraveled",
+            "Duration"
+        ]
+        }
+        }
+    ],
+    "individual": [
+        {
+        "name": "ResultTrajectoryEnabled",
+        "value": true
+        }
+    ]
+    }
 ]
 
 ```
 
-### Attribute Description
+#### Attribute Description
 
 * `SemiTruckDriver`:
     * `name`: the name of the agent type, representing a truck driver in the simulation (type: `string`)
@@ -214,29 +278,56 @@ configured:
 
 The **`SemiTrucks`** are initialized in **`semi_truck_initializer.csv`** like the following:
 
-| Truck Type          | Start Latitude | Start Longitude | Destination Latitude | Destination Longitude | Drive Mode |
-|---------------------|----------------|-----------------|----------------------|-----------------------|------------|
-| SmallTruck          | 51.3030184     | 7.2630005       | 52.5476332           | 8.1139535             | 3          |
-| MediumLoadTruck     | 51.3030184     | 7.2630005       | 52.5476332           | 8.1139535             | 2          |
-| HeavyLoadTruck      | 53.5577323     | 10.2174148      | 52.8067652           | 12.7941436            | 2          |
-| ExtraCapacityTruck  | 50.82306       | 10.02379        | 50.49248             | 9.98912               | 3          |
-| OverloadTruck       | 50.82306       | 10.02379        | 50.49248             | 9.98912               | 3          |
+| Truck Type         | Start Latitude | Start Longitude | Destination Latitude | Destination Longitude | Drive Mode |
+|--------------------|----------------|-----------------|----------------------|-----------------------|------------|
+| SmallTruck         | 51.3030184     | 7.2630005       | 52.5476332           | 8.1139535             | 3          |
+| MediumLoadTruck    | 51.3030184     | 7.2630005       | 52.5476332           | 8.1139535             | 2          |
+| HeavyLoadTruck     | 53.5577323     | 10.2174148      | 52.8067652           | 12.7941436            | 2          |
+| ExtraCapacityTruck | 50.82306       | 10.02379        | 50.49248             | 9.98912               | 3          |
+| OverloadTruck      | 50.82306       | 10.02379        | 50.49248             | 9.98912               | 3          |
 
-## EntityMappings
+### AgentMappings PostgreSQL(`config.json`)
+
+The AgentMappings are slightly different for PostgreSQL as the Output `kind` is changed to `postgres`. The rest however
+stays the same. In this case the amount of Agents was set to 650000 and the file `semi_truck_initializer_real_data.csv`
+was used as we have much more capacity on PostgreSQL and the ICC.
+
+```json
+"agents": [
+    {
+    "name": "SemiTruckDriver",
+    "count": 650000,
+    "file": "resources/semi_truck_initializer_real_data.csv",
+    "outputs": [
+        {
+        "kind": "postgres"
+        }
+    ],
+    "individual": [
+        {
+        "name": "ResultTrajectoryEnabled",
+        "value": true
+        }
+    ]
+    }
+]
+```
+
+### EntityMappings (Identical for PostgreSQL and GeoJSON)
 
 In this section, the entity types that are defined in the model logic (and that were added to `desciption` above) are
 configured:
 
 ```json
 "entities": [
-{
-"name": "SemiTruck",
-"file": "resources/semi_truck.csv"
-}
+    {
+    "name": "SemiTruck",
+    "file": "resources/semi_truck.csv"
+    }
 ]
 ```
 
-### Attribute Description
+#### Attribute Description
 
 * `entities`: a list of entity definitions that represent physical or abstract objects in the simulation
     * `name`: the name of the entity type, representing a semi-truck in the simulation (type: `string`)
@@ -247,30 +338,34 @@ configured:
 
 The **`semi_truck.csv`** defines different types of **`SemiTrucks`** like the following:
 
-| Type                | Max Acceleration | Max Deceleration | Max Speed (m/s) | Length (m) | Height (m) | Width (m) | Traffic Code | Passenger Capacity | Velocity | Mass (tons) | Max Incline (%) |
-|---------------------|------------------|------------------|-----------------|------------|------------|-----------|--------------|--------------------|----------|-------------|-----------------|
-| SmallTruck          | 0.5              | 1.2              | 30.83           | 6          | 2.5        | 2.5       | German       | 2                  | 0        | 5.0         | 25              |
-| MediumLoadTruck     | 0.5              | 1.2              | 30.83           | 8          | 2.5        | 2.5       | German       | 2                  | 0        | 10.0        | 22              |
-| HeavyLoadTruck      | 0.5              | 1.2              | 30.83           | 10         | 2.5        | 2.5       | German       | 2                  | 0        | 15.0        | 18              |
-| ExtendedLoadTruck   | 0.5              | 1.2              | 30.83           | 12         | 2.5        | 2.5       | German       | 2                  | 0        | 20.0        | 15              |
-| LargeCapacityTruck  | 0.5              | 1.2              | 30.83           | 12         | 2.5        | 2.5       | German       | 2                  | 0        | 25.0        | 13              |
-| ExtraCapacityTruck  | 0.5              | 1.2              | 30.83           | 14         | 2.5        | 2.5       | German       | 2                  | 0        | 30.0        | 12              |
-| HighVolumeTruck     | 0.5              | 1.2              | 30.83           | 14         | 2.5        | 2.5       | German       | 2                  | 0        | 35.0        | 10              |
-| MaximumLoadTruck    | 0.5              | 1.2              | 30.83           | 16         | 2.5        | 2.5       | German       | 2                  | 0        | 40.0        | 8               |
-| OverloadTruck       | 0.5              | 1.2              | 30.83           | 16         | 2.5        | 2.5       | German       | 2                  | 0        | 50.0        | 6               |
-| UnlimitedTruck      | 0.5              | 1.2              | 30.83           | 1          | 1.0        | 1.0       | German       | 2                  | 0        | 2.0         | 25              |
+| Type               | Max Acceleration | Max Deceleration | Max Speed (m/s) | Length (m) | Height (m) | Width (m) | Traffic Code | Passenger Capacity | Velocity | Mass (tons) | Max Incline (%) |
+|--------------------|------------------|------------------|-----------------|------------|------------|-----------|--------------|--------------------|----------|-------------|-----------------|
+| SmallTruck         | 0.5              | 1.2              | 30.83           | 6          | 2.5        | 2.5       | German       | 2                  | 0        | 5.0         | 25              |
+| MediumLoadTruck    | 0.5              | 1.2              | 30.83           | 8          | 2.5        | 2.5       | German       | 2                  | 0        | 10.0        | 22              |
+| HeavyLoadTruck     | 0.5              | 1.2              | 30.83           | 10         | 2.5        | 2.5       | German       | 2                  | 0        | 15.0        | 18              |
+| ExtendedLoadTruck  | 0.5              | 1.2              | 30.83           | 12         | 2.5        | 2.5       | German       | 2                  | 0        | 20.0        | 15              |
+| LargeCapacityTruck | 0.5              | 1.2              | 30.83           | 12         | 2.5        | 2.5       | German       | 2                  | 0        | 25.0        | 13              |
+| ExtraCapacityTruck | 0.5              | 1.2              | 30.83           | 14         | 2.5        | 2.5       | German       | 2                  | 0        | 30.0        | 12              |
+| HighVolumeTruck    | 0.5              | 1.2              | 30.83           | 14         | 2.5        | 2.5       | German       | 2                  | 0        | 35.0        | 10              |
+| MaximumLoadTruck   | 0.5              | 1.2              | 30.83           | 16         | 2.5        | 2.5       | German       | 2                  | 0        | 40.0        | 8               |
+| OverloadTruck      | 0.5              | 1.2              | 30.83           | 16         | 2.5        | 2.5       | German       | 2                  | 0        | 50.0        | 6               |
+| UnlimitedTruck     | 0.5              | 1.2              | 30.83           | 1          | 1.0        | 1.0       | German       | 2                  | 0        | 2.0         | 25              |
 
 ## Realistic SemiTruck Data based on German Federal Statistics
 
-A second file named **`semi_truck_real_data.csv`** is based on official data from the **Kraftfahrt-Bundesamt Deutschland** (German Federal Motor Transport Authority). To create this file, multiple datasets were merged to extract:
+A second file named **`semi_truck_real_data.csv`** is based on official data from the `Kraftfahrt-Bundesamt Deutschland`
+(German Federal Motor Transport Authority). To create this file, multiple datasets were merged to extract:
 
 - Origin and destination districts
 - Truck weight classifications
 - Estimated route distances
 
-Due to mismatches and inconsistencies between the source files, proportional methods (e.g. matching via weight categories) were used to align the data. The resulting file represents the **average daily freight truck traffic** in Germany.
+Due to mismatches and inconsistencies between the source files, proportional methods (e.g. matching via weight
+categories) were used to align the data. The resulting file represents the **average daily freight truck traffic** in
+Germany.
 
-In future development, the simulation could be extended by integrating weekday-specific distributions to reflect fluctuations over the course of a week.
+In future development, the simulation could be extended by integrating weekday-specific distributions to reflect
+fluctuations over the course of a week.
 
 ---
 
@@ -281,7 +376,7 @@ All related resources and documentation used to generate the simulation data can
 
 This folder includes:
 
-- Official statistics from the **Kraftfahrt-Bundesamt**
+- Official statistics from the **`Kraftfahrt-Bundesamt`**
 - Reference handbooks
 - A full **NUTS** directory (Nomenclature of Territorial Units for Statistics)
 
@@ -290,12 +385,15 @@ This folder includes:
 Two Python scripts were used to transform the raw data into a format suitable for simulation:
 
 - **`merge_TruckData.py`**  
-  Creates the intermediate file `trucks_per_area.csv`, listing route requirements per district with estimated distances and weights.
+  Creates the intermediate file `trucks_per_area.csv`, listing route requirements per district with estimated distances
+  and weights.
 
 - **`truck_Initializer.py`**  
-  Converts district-level route data into **coordinate-based truck routes** for the simulation, producing the final `semi_truck_real_data.csv`.
+  Converts district-level route data into **coordinate-based truck routes** for the simulation, producing the
+  final `semi_truck_real_data.csv`.
 
 ---
+
 ## SemiTruck
 
 The **`SemiTruck`** class models semi-truck behavior within the MARS simulation, integrating steering,
@@ -316,12 +414,12 @@ optimizing truck-specific routes while considering constraints like weight, heig
 restricted roads. Once the destination is reached, the driver exits the simulation, ensuring efficient lifecycle
 management within large-scale logistics and mobility simulations.
 
-During each simulation tick, the driver continuously checks the upcoming edges of the route (currently defined as 5km lookahead) of its planned route. If a blocked
+During each simulation tick, the driver continuously checks the upcoming edges of the route (currently defined as 5km
+lookahead) of its planned route. If a blocked
 road segment is detected within this distance—based on the list of currently closed edges—the driver immediately
 triggers a rerouting process. A new bypass route is calculated around the closure, leading to the next valid point
 on the original path. This enables the truck to avoid blocked segments and continue toward its destination with
 minimal disruption, preserving the overall route context.
-
 
 ## SemiTruckLayer
 
@@ -335,11 +433,26 @@ tracking them in a dedicated dictionary. The layer ensures dynamic agent managem
 adjustments, blocked road handling, and efficient truck movement. Once the simulation completes, the layer unregisters
 the agents, maintaining a structured and scalable approach for large-scale freight and mobility simulations.
 
-In addition, the layer supports dynamic road closures based on a `road_closures.csv` file (located in resources), where each entry specifies
-an edge ID along with a start and end time for the closure. During simulation, these edges are temporarily removed
-from the environment and added to a list of `RemovedEdges`, which is considered during route planning and detour
-calculations. After the defined closure period ends, the edges are automatically restored, allowing for realistic
-modeling of temporary disruptions such as construction zones or accidents.
+In addition, the layer supports dynamic road closures based on two CSV files (located in `resources`), where
+each entry specifies an edge ID or coordinates along with a start and end time for the closure. During simulation, these
+edges are
+temporarily removed from the environment and added to a list of `RemovedEdges`, which is considered during route
+planning
+and detour calculations. After the defined closure period ends, the edges are automatically restored, allowing for
+realistic modeling of temporary disruptions such as construction zones or accidents.
+
+Two alternative input formats are supported:
+
+- `road_closures.csv`: Format for specifying closures by edge ID, including start and end times.
+- `road_closures_by_Coordinates.csv`: Allows defining closures using geographic coordinates instead of edge IDs.
+  This is useful for integrating external data sources such as official traffic APIs.
+
+During simulation, the affected edges are temporarily removed from the environment and added to an internal RemovedEdges
+list. These are respected by the route planning logic, preventing agents from using closed roads. Once the closure
+period ends, the edges are automatically restored.
+
+This mechanism provides flexible and realistic modeling of temporary road inaccessibility and supports integration of
+real-time or scheduled closure data.
 
 ## SemiTruckSchedulerLayer
 
@@ -377,17 +490,143 @@ freight transport simulations.
 
 > ℹ️ **Note:**  
 > In cases where the target location is not fully reachable due to road closures or constraint violations,  
-> the `SemiTruckRouteFinder` will still return a valid route to the **closest possible point** near the destination. 
-> This ensures that trucks do not fail silently and can reach at least a partial goal location. 
+> the `SemiTruckRouteFinder` will still return a valid route to the **closest possible point** near the destination.
+> This ensures that trucks do not fail silently and can reach at least a partial goal location.
 > Although this does require that the truck can move on the road it starts on.
+
+## PreComputeRoutesLayer
+
+The `PreComputeRoutesLayer` enables precomputing optimized motorway routes between a preselected amount of nodes,
+forming a
+lookup system for agents. The process involves two preprocessing Python scripts and one simulation layer in C#.
+
+### Extract Motoray Entry/Exit Nodes (Python)
+
+The script `extract_Nodes_For_Lookuptable.py` processes a GeoJSON file (e.g., OSM-based) and identifies motorway
+transition points using `motorway_link` segments. Where a `motorway_link` intersects with an edge that is
+neither `motorway_link`, nor `motorway` we know that this can be used as an entry/exit to a motorway. This way for the
+entire German Highway Network we end up with about 5000x5000 Nodes = 25 million Routes which is much more feasable than
+all
+German Highway Nodes which results in about 350 billion routes. The output file is filled with Nodes that are stored as
+coordinate pairs (lon, lat).
+
+### Model Description
+
+In order to use the `PreComputeRoutesLayer` the `config_PreComputeRoutes.json` configuration (used for manually
+precomputing routes) must be used.
+the `ModelDescription` is different and includes only a `PreComputeRoutesLayer` and `SemiTruckLayer` and no Agent and
+Entity logic:
+
+```c#
+var description = new ModelDescription();
+description.AddLayer<SemiTruckLayer>();
+description.AddLayer<PreComputeRoutesLayer>();
+
+```
+
+### Configuration
+
+The configuration for the `PreComputeRoutesLayer` is defined in `config_PreComputeRoutes.json`.
+The file is build the following:
+
+```json
+{
+  "id": "autobahn_simulation",
+  "globals": {
+    "deltaT": 10,
+    "startPoint": "2025-05-19T06:00:00",
+    "endPoint": "2025-05-19T18:00:00",
+    "deltaTUnit": "seconds",
+    "console": false
+  },
+  "layers": [
+    {
+      "name": "PreComputeRoutesLayer",
+      "inputs": [
+        {
+          "file": "resources/autobahn_und_bundesstrassen_deutschland_elevation_08.geojson",
+          "inputConfiguration": {
+            "modalities": [
+              "CarDriving"
+            ],
+            "isBidirectedGraph": true
+          }
+        },
+        {
+          "file": "resources/entry_exit_nodes.json"
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Attribute Description
+
+* `layers`:
+    * `name`: the name of the layer, in this case, "PreComputeRoutesLayer" (type: `string`)
+    * `inputs`: a list of input files and configuration used by the layer (type: `array`)
+        * `First input`: Similar configuration as previously
+        * `Second input`: path to a JSON file containing nodes (as coordinates) between which routes should be
+          precomputed, in this case entry and exit nodes of the German highway to be used for route
+          precomputation (type: `string`)
+
+### PreComputeRoutesLayer Result
+
+The `PreComputeRoutesLayer` results in an output `all_routes.json` that contains all the precomputed routes. In order to
+know when an agent has the option to use a precomputed route another python
+script `calculate_Start_IDs_For_Lookuptable.py` was used to extract all beginning edgeIDs of the precomputed Routes.
+That way in the routing process an agent can compare the current edge to the ones we precomputed and when an agent
+enters a highway use a precomputed Route. All files are currently stored as JSON. For larger datasets, switching to
+SQLite (as used in the `SemiTruckRouteCacheManager`) is recommended for performance and scalability.
+
+## SemiTruckCacheManager
+
+The `SemiTruckRouteCacheManager` is a route caching component that stores and retrieves precomputed semi-truck routes
+using a local SQLite database. It enables fast access to previously computed routes by indexing them via start and end
+edge IDs alongside truck-specific constraints like weight, height, width, length, and maximum incline.
+
+This manager significantly improves simulation performance by avoiding repeated route calculations, especially for
+costly or frequently used paths. It ranks available routes based on optimality and constraint fit, ensuring the best
+available
+match is returned. This guarantees that if a truck has less constraints than an already precomputed route and that
+route is not optimal already (eg. there were no constraint conflicts anyway) there will be a new route computed and
+added to the cache.
+
+The cache supports storing suboptimal fallback routes and verifies whether a route exactly fits the requested vehicle
+profile. With full integration into the routing pipeline, the `SemiTruckRouteCacheManager` provides persistent,
+constraint-aware routing tailored for large-scale freight transport simulations.
+
+The cache is saved as `route_cache.db`.
+
+## SemiTruckRealTimeLayer
+
+The `SemiTruckRealTimeLayer` is a real-time data integration layer that fetches and processes official road closure data
+from the German Autobahn API (https://autobahn.api.bund.dev/). It periodically queries all major Autobahn routes for
+scheduled
+closures and injects them into the simulation during runtime.
+
+This layer parses closure intervals and geospatial coordinates, then adds them as structured road block events into the
+`SemiTruckLayer`. The closures are dynamically recognized based on location and time, ensuring agents adapt their routes
+accordingly to avoid closed roads.
+
+By automatically pulling updates every defined interval of minutes, the `SemiTruckRealTimeLayer` enables near-live
+scenario
+modeling, essential for testing time-sensitive logistics operations, rerouting strategies, and the impact of
+infrastructure disruptions.
+
+Closures are cached internally to prevent duplicate processing and ensure simulation performance remains stable, even
+with large datasets or frequent updates.
 
 ## Docker & ICC Cloud Deployment
 
-The simulation can also be executed in the **cloud environment of HAW Hamburg** using the **Infrastructure Cloud Computing (ICC)** platform. This is particularly useful for large-scale experiments or performance-intensive runs.
+The simulation can also be executed in the **cloud environment of HAW Hamburg** using the **Infrastructure Cloud
+Computing (ICC)** platform. This is particularly useful for large-scale experiments or performance-intensive runs.
 
 ### Docker Setup
 
-A `Dockerfile` is provided in the project directory. It defines the build environment for the simulation, installs required dependencies, and sets up the execution context for MARS-based simulations.
+A `Dockerfile` is provided in the project directory. It defines the build environment for the simulation, installs
+required dependencies, and sets up the execution context for MARS-based simulations.
 
 You can find it under:
 `SOHLogisticBox/Dockerfile`
@@ -395,7 +634,7 @@ This Docker image can be built locally or pushed to a GitLab container registry 
 
 ---
 
-### ICC Deployment
+### ICC Deployment for GeoJSON Output
 
 The ICC-specific deployment files are located in:
 `SOHLogisticBox/`
@@ -414,8 +653,10 @@ These files include:
   Setup and access the persistent volume claim (PVC) used to store simulation results.
 
 > **Note:**  
-> Running the simulation in the cloud **requires a valid ICC token and access to the Kubernetes cluster** of HAW Hamburg.  
-> The credentials and token must be configured in your `icc-config.yaml`. These are **user-specific** and not included in the repository.
+> Running the simulation in the cloud **requires a valid ICC token and access to the Kubernetes cluster** of HAW
+> Hamburg.  
+> The credentials and token must be configured in your `icc-config.yaml`. These are **user-specific** and not included
+> in the repository.
 
 ---
 
@@ -426,4 +667,86 @@ These files include:
 3. Configuration is injected via `configmap.yaml`, and results are stored in the defined PVC.
 4. Once completed, results can be accessed via the `pvc-access-pod.yaml` utility pod.
 
-This setup enables automated and scalable simulation runs in the cloud — ideal for batch processing, testing different traffic scenarios, or exploring dynamic routing behaviors in high-load conditions.
+This setup enables automated and scalable simulation runs in the cloud — ideal for batch processing, testing different
+traffic scenarios, or exploring dynamic routing behaviors in high-load conditions.
+
+### ICC Deployment for Postgres
+
+If the Output should be saved in a Database like PostgreSQL (alternatively SQLite or MongoDB) there are a few key
+differences:
+To use a PostgreSQL database as an output, multiple new resources are required. All files are located in:
+
+The ICC-specific deployment files are located in:
+`SOHLogisticBox/`
+These files include:
+
+- **`mars-db-secret.yaml`**  
+  Creates a Kubernetes `Secret` containing sensitive PostgreSQL credentials (e.g., username and password).
+  This is referenced by other deployment files to inject credentials securely without exposing them in plaintext.
+
+- **`output-pvc-postgres.yaml`**  
+  Defines a persistent volume claim (PVC) for PostgreSQL data storage.
+  This volume ensures that the database retains data across restarts or pod rescheduling.
+
+- **`postgres-service.yaml`**  
+  Exposes the PostgreSQL instance inside the ICC cluster via a Kubernetes `Service`.
+  It assigns a stable hostname (`postgres`) and port (`5432` by default) that simulation pods can connect to.
+
+- **`postgres-deployment.yaml`**
+  Deploys a PostgreSQL container with mounted storage and environment variables sourced from the `mars-db-secret`.
+  This file ensures that the database is ready and accessible before running simulations.
+
+> **Note:**  
+> Make sure to deploy the database infrastructure before launching simulation jobs.
+> The Secret must be created first, followed by the PVC, then the deployment and service.
+> The two files **`output-pvc.yaml`** & **`pvc-access-pod.yaml`** are no longer required.
+
+### Workflow Overview
+
+1. Build or pull the container image (e.g., from GitLab registry).
+2. Deploy the postgreSQL first via `mars-db-secret.yaml`, `output-pvc-postgres.yaml`, `postgres-service.yaml`
+   and `postgres-deployment.yaml` using `kubectl`.
+3. After PostgreSQL was started, deploy the simulation via `deployment.yaml` using `kubectl`.
+4. Configuration is injected via `configmap.yaml`, and results are stored in the defined PVC.
+5. Once completed, results are saved in PostgreSQL database
+
+### Export of GeoJSON out of PostgreSQL
+
+We can export certain coordinates and turn them into a GeoJSON file for visualization using this SQL query:
+
+```sql
+psql
+-U mars_user -d mars_user -c "
+COPY (
+    SELECT jsonb_build_object(
+        'type', 'Feature',
+        'geometry', jsonb_build_object(
+            'type', 'LineString',
+            'coordinates', jsonb_agg(
+                jsonb_build_array(x, y, 0, EXTRACT(EPOCH FROM datetime)::int)
+                ORDER BY tick
+            )
+        ),
+        'properties', jsonb_build_object(
+        'id', id
+        )
+    )
+    FROM autobahn_simulation.semitruckdriver
+    WHERE x BETWEEN 9 AND 10
+        AND y BETWEEN 48 AND 49
+) TO '/tmp/truck_lines.jsonl';
+"
+```
+
+After saving it we can copy it to the local device with this command:
+
+`kubectl cp wwr434-default/postgres-55777c6cf6-f2879:/tmp/truck_lines.jsonl "./truck_lines.jsonl" --kubeconfig=SOHLogisticsBox/icc-config.yaml`
+
+This export was made in JSONL as the ICC timed out even with immense resources already available.
+To convert the file to GeoJSON we can use the script `convert_JSONL_To_GEOJSON.py` located
+under `resources/Scripts/GeoJSON`
+
+This setup enables automated and scalable simulation runs in the cloud — ideal for batch processing, testing different
+traffic scenarios, or exploring dynamic routing behaviors in high-load conditions.
+
+
