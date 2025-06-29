@@ -37,13 +37,13 @@ namespace SOHModel.SemiTruck.Scheduling
             {
                 // Extract parameters from the scheduler entry
                 const string typeKey = "TruckType";
-                var semiTruckType = dataRow.Data.TryGetValue(typeKey, out var type) ? type.Value<string>() : "StandardTruck";
+                var semiTruckType = dataRow.Data.TryGetValue(typeKey, out var type) ? type.Value<string>() : "SmallTruck";
 
                 var startLat = dataRow.Data["sourceY"].Value<double>();
                 var startLon = dataRow.Data["sourceX"].Value<double>();
                 var destLat = dataRow.Data["destinationY"].Value<double>();
                 var destLon = dataRow.Data["destinationX"].Value<double>();
-                var driveMode = dataRow.Data.TryGetValue("DriveMode", out var driveModeValue) ? driveModeValue.Value<int>() : 1;
+                var driveMode = dataRow.Data.TryGetValue("DriveMode", out var driveModeValue) ? driveModeValue.Value<int>() : 3;
                 
                 var agentManager = SemiTruckLayer.Container.Resolve<IAgentManager>();
                 var agents = agentManager.Spawn<SemiTruckDriver, SemiTruckLayer>(
