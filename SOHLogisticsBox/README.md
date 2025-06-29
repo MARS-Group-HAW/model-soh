@@ -172,9 +172,8 @@ Additionaly we have our PostgreSQL config under `npgSqlOptions`
 * `user`: Username for authentication (type: `string`)
 * `password`: Password for the database user (type: `string`)
 * `databaseName`: The name of the PostgreSQL database to connect to (type: `string`)
-*
-    * `overrideByConflict`:  If set to `true` , conflicting entries in the database will be overwritten by the
-      simulation (type: `boolean`)
+* `overrideByConflict`:  If set to `true` , conflicting entries in the database will be overwritten by the
+  simulation (type: `boolean`)
 
 ___
 
@@ -634,6 +633,9 @@ The cache supports storing suboptimal fallback routes and verifies whether a rou
 profile. With full integration into the routing pipeline, the `SemiTruckRouteCacheManager` provides persistent,
 constraint-aware routing tailored for large-scale freight transport simulations.
 
+This way we are guaranteed to follow constraints as well as still finding the best possible route for a specific vehicle.
+Each route taken from the cache is also checked for any possible removed edges and calculated new in case an edge was removed.
+
 The cache is saved as `route_cache.db`.
 
 ___
@@ -749,7 +751,7 @@ These files include:
 2. Deploy the postgreSQL first via `mars-db-secret.yaml`, `output-pvc-postgres.yaml`, `postgres-service.yaml`
    and `postgres-deployment.yaml` using `kubectl`.
 3. After PostgreSQL was started, deploy the simulation via `deployment.yaml` using `kubectl`.
-4. Configuration is injected via `configmap.yaml`, and results are stored in the defined PVC.
+4. Configuration is injected via `configmap.yaml`.
 5. Once completed, results are saved in PostgreSQL database
 
 ### Export of GeoJSON out of PostgreSQL
