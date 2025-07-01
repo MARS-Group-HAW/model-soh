@@ -427,10 +427,12 @@ optimizing truck-specific routes while considering constraints like weight, heig
 restricted roads. Once the destination is reached, the driver exits the simulation, ensuring efficient lifecycle
 management within large-scale logistics and mobility simulations.
 
-During each simulation tick, the driver continuously checks the upcoming edges of the route (currently defined as 5km
+During each simulation tick, the driver has two options. Either he continuously checks the upcoming edges of the route (currently defined as 5km
 lookahead) of its planned route. If a blocked
 road segment is detected within this distance—based on the list of currently closed edges—the driver immediately
-triggers a rerouting process. A new bypass route is calculated around the closure, leading to the next valid point
+triggers a rerouting process. Or when creating a route the truckID is registered to a Dictionary so each edge knows
+which semiTrucks are using it. So when that edge is removed the trucks are notified.
+In either way a new bypass route is calculated around the closure, leading to the next valid point
 on the original path. This enables the truck to avoid blocked segments and continue toward its destination with
 minimal disruption, preserving the overall route context.
 
