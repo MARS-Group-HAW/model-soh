@@ -8,6 +8,6 @@ ExtraCapacityTruck,0.5,1.2,30.83,14,2.5,2.5,german,2,0,30.0,12,504,400
 HighVolumeTruck,0.5,1.2,30.83,14,2.5,2.5,german,2,0,35.0,10,504,450
 MaximumLoadTruck,0.5,1.2,30.83,16,2.5,2.5,german,2,0,40.0,8,504,500
 OverloadTruck,0.5,1.2,30.83,16,2.5,2.5,german,2,0,50.0,6,504,600
-UnlimitedTruck,0.5,1.2,30.83,1,1.0,1.0,german,2,0,2.0,25,1
+UnlimitedTruck,0.5,1.2,30.83,1,1.0,1.0,german,2,0,2.0,25,1,1000
 
 

@@ -128,15 +128,28 @@ namespace SOHModel.SemiTruck.Model
             double accidentChancePerTick = scaledAccidentsPerYear / ticksPerYear;
             if (_random.NextDouble() < accidentChancePerTick)
             {
-                //Average Response Time By ADAC / Tow Truck is 41 Minutes in Germany
+                // Default: Average Response Time By ADAC / Tow Truck is 41min
                 TimeSpan accidentDuration = TimeSpan.FromMinutes(41);
+                // Check if there is a shoulder
+                if (_steeringHandle.Route.Count > 0)
+                {
+                    var currentEdge = _steeringHandle.Route[0].Edge;
+                    if (currentEdge.Attributes.TryGetValue("shoulder", out var shoulderValue))
+                    {
+                        var shoulderStr = shoulderValue?.ToString()?.ToLower();
+                        if (shoulderStr == "yes" || shoulderStr == "both" || shoulderStr == "left" || shoulderStr == "right")
+                        {
+                            accidentDuration = TimeSpan.FromMinutes(2); // Accident short and vehicle moves to shoulder
+                        }
+                    }
+                }
                 _hasAccident = true;
                 _accidentTicksRemaining = (int)(accidentDuration.TotalSeconds / _layer._tickDuration.TotalSeconds);
                 _steeringHandle.Stop();
-                Console.WriteLine($"Truck {SemiTruck.GetId()} had an accident.");
+
+                Console.WriteLine($"Truck {SemiTruck.GetId()} had an accident. Time till Road was unblocked: {accidentDuration.TotalMinutes} minutes.");
                 return;
             }
-            
             if (!_layer.notifyTrucks)
             {
                 // Check if the next edge in the route is still available
