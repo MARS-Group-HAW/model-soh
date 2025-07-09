@@ -94,6 +94,20 @@ public abstract class RoadUser : ISpatialGraphEntity
     public virtual int MaxIncline { get; set; }
     
     /// <summary>
+    /// Statistical probability of a truck accident per kilometer (or per tick, depending on usage).
+    /// </summary>
+    [PropertyDescription(Name = "accidentsPerYear", Ignore = true)]
+    public double AccidentsPerYear { get; set; }
+    
+    
+    /// <summary>
+    /// Amount of Power that a truck has in KW
+    /// </summary>
+    [PropertyDescription(Name = "power", Ignore = true)]
+    public double Power { get; set; }
+
+    
+    /// <summary>
     ///     Gets or sets the position of this entity with (lon/x, lat/y) coordinate.
     /// </summary>
     public virtual Position Position { get; set; }

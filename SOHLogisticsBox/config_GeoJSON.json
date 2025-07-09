@@ -10,7 +10,7 @@
   "agents": [
     {
       "name": "SemiTruckDriver",
-      "count": 3000,
+      "count": 650000,
       "file": "resources/semi_truck_initializer.csv",
       "outputs": [
         {
@@ -39,10 +39,10 @@
       "name": "SemiTruckLayer",
       "inputs": [
         {
-          "file": "resources/autobahn_und_bundesstrassen_deutschland_elevation_08.geojson",
+          "file": "resources/autobahn_und_bundesstrassen_deutschland_elevation_10.geojson",
           "inputConfiguration": {
             "modalities": ["CarDriving"],
-            "isBidirectedGraph": true
+            "isBidirectedGraph": false
           }
         }
       ]

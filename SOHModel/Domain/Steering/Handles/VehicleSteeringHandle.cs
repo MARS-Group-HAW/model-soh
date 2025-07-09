@@ -73,6 +73,12 @@ public class VehicleSteeringHandle
         var drivingDistance = CalculateDrivingDistance(deceleration);
         PerformMoveAction(drivingDistance);
     }
+    
+    public void Stop()
+    {
+        Vehicle.Velocity = 0;
+        Vehicle.Acceleration = 0;
+    }
 
     private double HandleBraking(double deceleration)
     {

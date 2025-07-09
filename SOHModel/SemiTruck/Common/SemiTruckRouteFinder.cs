@@ -110,8 +110,8 @@ public static class SemiTruckRouteFinder
             case 3:
             {
                 // Identify start and goal nodes based on geographic coordinates
-                currentNode = environment.NearestNode(Position.CreateGeoPosition(startLon, startLat));
-                var goal = environment.NearestNode(Position.CreateGeoPosition(destLon, destLat));
+                currentNode = environment.NearestNode(Position.CreateGeoPosition(startLon, startLat), outgoingModality: SpatialModalityType.CarDriving);
+                var goal = environment.NearestNode(Position.CreateGeoPosition(destLon, destLat), incomingModality: SpatialModalityType.CarDriving);
                 // Retrieve the start and goal edge IDs to be used as keys for route caching
                 string? startEdgeId = currentNode.OutgoingEdges.Values.FirstOrDefault()?.GetId()?.ToString();
                 string? goalEdgeId = goal.IncomingEdges.Values.FirstOrDefault()?.GetId()?.ToString();
@@ -181,7 +181,10 @@ public static class SemiTruckRouteFinder
                         truckMaxIncline);
                     if (isValid)
                     {
-                        validRoute.Add(edge); // Track as part of the partial route
+                        List<ISpatialLane> lanes = edge.Lanes?.ToList();
+                        var desiredLane = lanes?.FirstOrDefault();
+                        int desiredLaneIndex = desiredLane != null ? lanes.IndexOf(desiredLane) : -1;
+                        validRoute.Add(edge, desiredLaneIndex); // Track as part of the partial route
                     }
                     else
                     {
@@ -196,7 +199,7 @@ public static class SemiTruckRouteFinder
                 // If a full route could not be computed, try to extract a partial route to the last valid point
                 if ((route == null || route.Count == 0) && validRoute.Count > 0)
                 {
-                    // Console.WriteLine("No complete route found, but a partial route is available.");
+                    //Console.WriteLine("No complete route found, but a partial route is available.");
                     //Console.WriteLine($"Last reachable position: {validRoute.Goal}");
                     var validGoal = validRoute.Last().Edge.To;
 
@@ -415,7 +418,11 @@ public static class SemiTruckRouteFinder
         var rebuiltRoute = new Route();
         foreach (var edge in rebuiltEdges)
         {
-            rebuiltRoute.Add(edge);
+            List<ISpatialLane> lanes = edge.Lanes?.ToList();
+            var desiredLane = lanes?.FirstOrDefault();
+            int desiredLaneIndex = desiredLane != null ? lanes.IndexOf(desiredLane) : -1;
+
+            rebuiltRoute.Add(edge, desiredLaneIndex);
         }
 
         return rebuiltRoute;

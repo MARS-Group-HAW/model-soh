@@ -19,12 +19,15 @@ namespace SOHModel.SemiTruck.Model
     /// </summary>
     public class SemiTruckDriver : IAgent<SemiTruckLayer>, ISemiTruckSteeringCapable
     {
+        
         // Private fields for managing the SemiTruck's steering and its environment
         private SemiTruckSteeringHandle _steeringHandle;
         private UnregisterAgent _unregister;
         private ISpatialGraphEnvironment _environment;
         private SemiTruckLayer _layer;
         private static int truckCounter = 0; // Shared counter across all instances
+        private readonly Random _random = new Random();
+        private bool _hasAccident = false;
 
         // Public property for the associated SemiTruck
         public SemiTruck SemiTruck { get; set; }
@@ -43,12 +46,20 @@ namespace SOHModel.SemiTruck.Model
             SemiTruck = CreateSemiTruck();
             SemiTruck.Environment = _environment;
 
+
             //Define SpatialEdge for driveMode 5 as First Outgoing Edge
             ISpatialEdge startingEdge = null;
 
             var route = SemiTruckRouteFinder.Find(_environment, DriveMode, StartLat, StartLon, DestLat, DestLon,
                 startingEdge, "", SemiTruck.Height, SemiTruck.Mass, SemiTruck.Width, SemiTruck.Length,
                 SemiTruck.MaxIncline, _layer.RemovedEdges);
+            foreach (var stop in route.Stops)
+            {
+                List<ISpatialLane> lanes = stop.Edge.Lanes?.ToList();
+                var desiredLane = lanes?.FirstOrDefault();
+                int desiredLaneIndex = desiredLane != null ? lanes.IndexOf(desiredLane) : -1;
+                stop.DesiredLane = desiredLaneIndex;
+            }
 
 
             //Possible Output two see progress of Routing calculation, currently prints every 100 created Routes
@@ -76,6 +87,8 @@ namespace SOHModel.SemiTruck.Model
         }
 
         private int _lastCheckedRemovedEdgesVersion = -1;
+        private int _accidentTicksRemaining = 0;
+        private double _originalMaxSpeed = -1;
 
         /// <summary>
         /// Called during each simulation tick to update the SemiTruck's state.
@@ -86,7 +99,44 @@ namespace SOHModel.SemiTruck.Model
             {
                 return;
             }
-
+            
+            if (_hasAccident)
+            {
+                // Warten bis Zeit abgelaufen ist
+                if (_accidentTicksRemaining > 0)
+                {
+                    _accidentTicksRemaining--;
+                    return; 
+                }
+            
+                // Jetzt entfernen
+                if (_layer.notifyTrucks) _layer.UnregisterTruckFromRoute(this, _steeringHandle.Route);
+                _environment.Remove(SemiTruck);
+                _unregister.Invoke(_layer, this);
+                return;
+            }
+            
+            // Chance for an accident
+            // Since Accident Numbers per Year are for 650k trucks (average amount of trucks per day)
+            // we need to scale it down to the amount of simulated trucks.
+            double scaledAccidentsPerYear = SemiTruck.AccidentsPerYear * (_layer.amountOfTrucks / 650000);
+            //Days_Per_Year * Hours_Per_Day * Minutes_Per_Hour * Seconds_Per_Minute
+            double secondsPerYear = 365.0 * 24 * 60 * 60; 
+            // With the tickDuration we can calculate ticksPerYear
+            double ticksPerYear = secondsPerYear / _layer._tickDuration.TotalSeconds;
+            //Which results in accidentChancePerTick
+            double accidentChancePerTick = scaledAccidentsPerYear / ticksPerYear;
+            if (_random.NextDouble() < accidentChancePerTick)
+            {
+                //Average Response Time By ADAC / Tow Truck is 41 Minutes in Germany
+                TimeSpan accidentDuration = TimeSpan.FromMinutes(41);
+                _hasAccident = true;
+                _accidentTicksRemaining = (int)(accidentDuration.TotalSeconds / _layer._tickDuration.TotalSeconds);
+                _steeringHandle.Stop();
+                Console.WriteLine($"Truck {SemiTruck.GetId()} had an accident.");
+                return;
+            }
+            
             if (!_layer.notifyTrucks)
             {
                 // Check if the next edge in the route is still available
@@ -103,15 +153,53 @@ namespace SOHModel.SemiTruck.Model
                             if (!CreateBypass(edge)) return; // If no alternative found, stop execution
                             break;
                         }
-
+            
                         // Stop checking after 5km
                         if (distanceAhead >= 5000)
                             break;
                     }
                 }
             }
-
-
+            
+            //Activate and Deactivate Tick depending if it's allowed or illegal to overtake on the current segment
+            if (_steeringHandle.Route.Count > 0)
+            {
+                var currentEdge = _steeringHandle.Route[0].Edge;
+                if (currentEdge.Attributes.TryGetValue("overtaking", out var overtakingValue))
+                {
+                    OvertakingActivated = overtakingValue?.ToString().ToLower() == "yes";
+                }
+                if (currentEdge.Attributes.TryGetValue("incline", out var inclineValue))
+                {
+                    double incline = ParseIncline(inclineValue?.ToString());
+                    double adjustedSpeed = CalculateMaxSpeedOnIncline(incline);
+            
+                    // Backup original speed once
+                    if (_originalMaxSpeed < 0)
+                        _originalMaxSpeed = SemiTruck.MaxSpeed;
+            
+                    // Wenn Reduktion notwendig → begrenze
+                    if (adjustedSpeed < _originalMaxSpeed)
+                    {
+                        MaxSpeed = adjustedSpeed;
+                    }
+                    else
+                    {
+                        // Wiederherstellen, wenn keine starke Steigung mehr
+                        MaxSpeed = _originalMaxSpeed;
+                    }
+                }
+                else
+                {
+                    // Keine Steigung → zurücksetzen
+                    if (_originalMaxSpeed > 0)
+                    {
+                        MaxSpeed = _originalMaxSpeed;
+                    }
+                }
+            }
+            
+            
             _steeringHandle.Move();
             if (GoalReached)
             {
@@ -127,7 +215,9 @@ namespace SOHModel.SemiTruck.Model
         /// </summary>
         public void NotifyEdgeBlocked(ISpatialEdge blockedEdge)
         {
-            if (_steeringHandle.Route.Any(r => r.Edge == blockedEdge))
+            var upcomingRoute = _steeringHandle.Route.Skip(_steeringHandle.Route.PassedStops);
+
+            if (upcomingRoute.Any(r => r.Edge == blockedEdge))
             {
                 CreateBypass(blockedEdge);
             }
@@ -185,7 +275,10 @@ namespace SOHModel.SemiTruck.Model
 
             foreach (var edgeStop in _steeringHandle.Route)
             {
-                bypassRoute.Add(edgeStop.Edge);
+                List<ISpatialLane> lanes = edgeStop.Edge.Lanes?.ToList();
+                var desiredLane = lanes?.FirstOrDefault();
+                int desiredLaneIndex = desiredLane != null ? lanes.IndexOf(desiredLane) : -1;
+                bypassRoute.Add(edgeStop.Edge, desiredLaneIndex);
             }
 
 
@@ -193,6 +286,41 @@ namespace SOHModel.SemiTruck.Model
             if (_layer.notifyTrucks) _layer.RegisterTruckForRoute(this, _steeringHandle.Route);
 
             return true;
+        }
+        
+        double CalculateMaxSpeedOnIncline(double inclinePercent)
+        {
+            double powerWatt = SemiTruck.Power * 1000.0;
+            double massKg = SemiTruck.Mass * 1000.0;
+            double g = 9.81;
+            const double minSpeedMps = 10.0 / 3.6; // 10 km/h in m/s ≈ 2.78
+
+            if (inclinePercent <= 0.0)
+                return MaxSpeed; // no incline → full speed
+
+            double denominator = massKg * g * (inclinePercent / 100.0);
+            if (denominator == 0) return SemiTruck.MaxSpeed;
+
+            double vMps = powerWatt / denominator;
+
+            return Math.Max(minSpeedMps, Math.Min(vMps, MaxSpeed));
+        }
+        
+        private double ParseIncline(string inclineStr)
+        {
+            if (string.IsNullOrWhiteSpace(inclineStr))
+                return 0.0;
+
+            inclineStr = inclineStr.Trim().ToLower();
+
+            if (inclineStr.EndsWith("%") && double.TryParse(inclineStr.TrimEnd('%'), out double percent))
+                return Math.Abs(percent);
+
+            if (inclineStr == "up") return 5.0;
+            if (inclineStr == "down") return 0.0;
+            if (double.TryParse(inclineStr, out double value)) return Math.Abs(value);
+
+            return 0.0;
         }
 
 
@@ -240,11 +368,11 @@ namespace SOHModel.SemiTruck.Model
             throw new NotImplementedException();
         }
 
-        // Indicates whether overtaking is activated (not implemented yet)
-        public bool OvertakingActivated { get; }
+        // Indicates whether overtaking is activated 
+        public bool OvertakingActivated { get; set; } = false;
 
         // Indicates whether braking is activated
-        public bool BrakingActivated { get; set; }
+        public bool BrakingActivated { get; set; } = false;
 
 
         public Route Route => _steeringHandle?.Route;

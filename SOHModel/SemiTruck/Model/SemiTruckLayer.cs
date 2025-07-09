@@ -37,7 +37,7 @@ namespace SOHModel.SemiTruck.Model
         private DateTime _simulationTime = DateTime.MinValue;
 
         // Duration of each simulation tick
-        private TimeSpan _tickDuration = TimeSpan.MinValue; // Default
+        public TimeSpan _tickDuration = TimeSpan.MinValue; // Default
 
 
         /// <summary>
@@ -45,6 +45,11 @@ namespace SOHModel.SemiTruck.Model
         /// If this flag is false they instead rely on a lookahead distance (5km) to check if an upcoming edge is removed
         /// </summary>
         public readonly bool notifyTrucks = true;
+        
+        /// <summary>
+        /// This variable defines the amount of trucks
+        /// </summary>
+        public int amountOfTrucks { get; set; }
 
         /// <summary>
         /// The default modal choice for SemiTruckLayer is CarDriving.
@@ -111,13 +116,19 @@ namespace SOHModel.SemiTruck.Model
             _tickDuration = layerInitData.OneTickTimeSpan ?? TimeSpan.FromSeconds(1);
 
             // Create and register objects of type MyAgentType.
-            var agents = agentManager.Spawn<SemiTruckDriver, SemiTruckLayer>(
-                dependencies: new List<IModelObject> { this, Environment });
+            var agentList = agentManager
+                .Spawn<SemiTruckDriver, SemiTruckLayer>(dependencies: new List<IModelObject> { this, Environment })
+                .ToList(); 
+
+            IEnumerable<SemiTruckDriver> agents = agentList; 
+
+            amountOfTrucks = agentList.Count;
 
             // Otherwise only create them but do not registering 
             // to trigger their Tick() method. 
-            agentManager.Create<SemiTruckDriver>().ToList();
-
+            // agentManager.Create<SemiTruckDriver>().ToList();
+            
+            
             // Add the spawned agents to the Driver dictionary for tracking
             Driver.AddRange(
                 agents
@@ -284,8 +295,8 @@ namespace SOHModel.SemiTruck.Model
             {
                 var start = closureByCoordinates.Coordinates.First();
                 var end = closureByCoordinates.Coordinates.Last();
-                var currentNode = Environment.NearestNode(Position.CreateGeoPosition(start.X, start.Y));
-                var goal = Environment.NearestNode(Position.CreateGeoPosition(end.X, end.Y));
+                var currentNode = Environment.NearestNode(Position.CreateGeoPosition(start.X, start.Y), outgoingModality: SpatialModalityType.CarDriving);
+                var goal = Environment.NearestNode(Position.CreateGeoPosition(end.X, end.Y), incomingModality: SpatialModalityType.CarDriving);
 
                 var route = Environment.FindShortestRoute(currentNode, goal);
                 
