@@ -58,8 +58,13 @@ namespace SOHModel.SemiTruck.RealTimeData
         };
 
         private bool firstTickExecuted = false;
-        private DateTime lastUpdateTime = DateTime.MinValue;
-        private static readonly TimeSpan UpdateInterval = TimeSpan.FromMinutes(60);
+        private DateTime lastClosureUpdateTime = DateTime.MinValue;
+        private DateTime lastConstructionUpdateTime = DateTime.MinValue;
+
+        private static readonly TimeSpan ClosureUpdateInterval = TimeSpan.FromMinutes(60);
+        private static readonly TimeSpan ConstructionUpdateInterval = TimeSpan.FromHours(24);
+        private bool isClosure;
+        private bool isConstruction;
 
         // Avoid reprocessing known closures
         private readonly HashSet<string> knownClosures = new();
@@ -71,57 +76,85 @@ namespace SOHModel.SemiTruck.RealTimeData
         {
             var currentTime = SemiTruckLayer.Context.CurrentTimePoint ?? DateTime.MinValue;
 
-            if (!firstTickExecuted || currentTime - lastUpdateTime >= UpdateInterval)
+            if (!firstTickExecuted)
             {
                 firstTickExecuted = true;
-                lastUpdateTime = currentTime;
+                lastClosureUpdateTime = currentTime - ClosureUpdateInterval;
+                lastConstructionUpdateTime = currentTime - ConstructionUpdateInterval;
+            }
 
-                // Console.WriteLine($"[Info] Updating closures at {currentTime:T}");
+            bool updateClosures = currentTime - lastClosureUpdateTime >= ClosureUpdateInterval;
+            bool updateConstructions = currentTime - lastConstructionUpdateTime >= ConstructionUpdateInterval;
 
-                foreach (var autobahnId in AutobahnIds)
+            if (!updateClosures && !updateConstructions) return;
+
+            foreach (var autobahnId in AutobahnIds)
+            {
+                var closures = FetchAndParseRoadAsync(autobahnId).GetAwaiter().GetResult();
+
+                foreach (var closure in closures)
                 {
-                    var closures = FetchAndParseRoadAsync(autobahnId).GetAwaiter().GetResult();
+                    if (closure.Intervals == null || closure.Coordinates == null)
+                        continue;
 
-                    foreach (var closure in closures)
+                    foreach (var interval in closure.Intervals)
                     {
-                        if (closure.Intervals == null || closure.Coordinates == null)
-                            continue;
+                        if (interval.Begin == null || interval.End == null) continue;
 
-                        foreach (var interval in closure.Intervals)
+                        var startTime = DateTime.Parse(interval.Begin);
+                        var endTime = DateTime.Parse(interval.End);
+
+                        var coords = closure.Coordinates
+                            .Select(pair => new Coordinate(pair[0], pair[1]))
+                            .ToList();
+
+                        string coordsKey = string.Join(";", coords.Select(c => $"{c.X:F6},{c.Y:F6}"));
+                        string closureKey = $"{autobahnId}|{startTime:o}|{endTime:o}|{coordsKey}";
+
+                        if (knownClosures.Contains(closureKey)) continue;
+
+                        if (isClosure && updateClosures)
                         {
-                            if (interval.Begin == null || interval.End == null) continue;
+                            knownClosures.Add(closureKey);
 
-                            var startTime = DateTime.Parse(interval.Begin);
-                            var endTime = DateTime.Parse(interval.End);
-
-                            var coords = closure.Coordinates
-                                .Select(pair => new Coordinate(pair[0], pair[1]))
-                                .ToList();
-
-                            string coordsKey = string.Join(";", coords.Select(c => $"{c.X:F6},{c.Y:F6}"));
-                            string closureKey = $"{autobahnId}|{startTime:o}|{endTime:o}|{coordsKey}";
-
-                            if (knownClosures.Add(closureKey))
-                            {
-                                var block = new SemiTruckLayer.ScheduledRoadClosureByCoordinates(
-                                    id: Guid.NewGuid().ToString(),
-                                    startTime: startTime,
-                                    endTime: endTime,
-                                    coordinates: coords
-                                );
-
-                                SemiTruckLayer.ScheduledClosuresByCoordinates.Add(block);
-
-                                // Console.WriteLine($"[{autobahnId}] New Closure: {closure.Type} ({coords.Count} Points)");
-                            }
+                            var block = new SemiTruckLayer.ScheduledRoadClosureByCoordinates(
+                                id: Guid.NewGuid().ToString(),
+                                startTime: startTime,
+                                endTime: endTime,
+                                coordinates: coords
+                            );
+                            SemiTruckLayer.ScheduledClosuresByCoordinates.Add(block);
+                            // Console.WriteLine($"[SPERRUNG] Neu: {closure.Type} ({autobahnId})");
                         }
+                        // else if (isConstruction && updateConstructions)
+                        // {
+                        //     knownClosures.Add(closureKey);
+                        //
+                        //     var block = new SemiTruckLayer.ScheduledSpeedReductionByCoordinates(
+                        //         id: Guid.NewGuid().ToString(),
+                        //         startTime: startTime,
+                        //         endTime: endTime,
+                        //         coordinates: coords,
+                        //         reducedSpeedKmh: 60
+                        //     );
+                        //     SemiTruckLayer.ScheduledSpeedReductionsByCoordinates.Add(block);
+                        //     // Console.WriteLine($"[BAUSTELLE] Neu: {closure.Type} ({autobahnId})");
+                        // }
                     }
                 }
             }
+
+            if (updateClosures) lastClosureUpdateTime = currentTime;
+            if (updateConstructions) lastConstructionUpdateTime = currentTime;
         }
 
-        public void PreTick() { }
-        public void PostTick() { }
+        public void PreTick()
+        {
+        }
+
+        public void PostTick()
+        {
+        }
 
         /// <summary>
         /// Fetches closure data from the Autobahn API and parses it into a list of closures.
@@ -157,8 +190,17 @@ namespace SOHModel.SemiTruck.RealTimeData
                     if (lastBlock.Count == 0) continue;
 
                     string lastLine = lastBlock[^1];
-                    if (!lastLine.ToLower().Contains("sperr")) continue;
+                    var lower = lastLine.ToLower();
+                    isClosure = lower.Contains("sperr");
+                    isConstruction = lower.Contains("baustelle") ||
+                                     lower.Contains("sanierung") ||
+                                     lower.Contains("instandsetzung") ||
+                                     lower.Contains("bau") ||
+                                     lower.Contains("arbeit");
 
+
+                    // if (!isClosure && !isConstruction) continue;
+                    if (!isClosure) continue;
                     var intervals = ParseTimeLines(timeBlock);
 
                     var coords = new List<List<double>>();
