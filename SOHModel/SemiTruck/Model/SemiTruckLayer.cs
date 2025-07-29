@@ -1,3 +1,4 @@
+using System.Globalization;
 using Mars.Common.Core.Collections;
 using Mars.Components.Environments;
 using Mars.Components.Layers;
@@ -16,6 +17,7 @@ using NetTopologySuite.Geometries;
 using NetTopologySuite.GeometriesGraph;
 using ServiceStack;
 using SOHModel.SemiTruck.Common;
+using SOHModel.SemiTruck.RealTimeData;
 using Position = Mars.Interfaces.Environments.Position;
 
 namespace SOHModel.SemiTruck.Model
@@ -33,8 +35,11 @@ namespace SOHModel.SemiTruck.Model
         // Stores closures defined by coordinate paths
         public List<ScheduledRoadClosureByCoordinates> ScheduledClosuresByCoordinates = new();
 
+        public List<ScheduledSpeedReductionByCoordinates> ScheduledSpeedReductionsByCoordinates { get; private set; } =
+            new();
+
         // Simulation state: current simulation time
-        private DateTime _simulationTime = DateTime.MinValue;
+        public DateTime _simulationTime = DateTime.MinValue;
 
         // Duration of each simulation tick
         public TimeSpan _tickDuration = TimeSpan.MinValue; // Default
@@ -45,11 +50,11 @@ namespace SOHModel.SemiTruck.Model
         /// If this flag is false they instead rely on a lookahead distance (5km) to check if an upcoming edge is removed
         /// </summary>
         public readonly bool notifyTrucks = true;
-        
+
         /// <summary>
         /// This variable defines the amount of trucks
         /// </summary>
-        public int amountOfTrucks { get; set; }
+        public double amountOfTrucks { get; set; }
 
         /// <summary>
         /// The default modal choice for SemiTruckLayer is CarDriving.
@@ -69,6 +74,11 @@ namespace SOHModel.SemiTruck.Model
 
 
         private readonly Dictionary<ISpatialEdge, HashSet<SemiTruckDriver>> _edgeToTrucks = new();
+
+        public List<RestArea> AllRestAreas { get; private set; }
+
+        public List<GasStations> AllGasStations { get; private set; }
+
 
         /// <summary>
         /// Dictionary to hold all SemiTruck drivers, mapped by their unique identifiers.
@@ -93,6 +103,10 @@ namespace SOHModel.SemiTruck.Model
             string filePathCoordinates =
                 Path.Combine(AppContext.BaseDirectory, "resources", "road_closures_by_Coordinates.csv");
             LoadRoadClosuresByCoordinates(filePathCoordinates);
+            string fullPath_rest_areas = Path.Combine(AppContext.BaseDirectory, "resources", "rest_areas.csv");
+            string fullPath_gas_stations = Path.Combine(AppContext.BaseDirectory, "resources", "gas_stations.csv");
+            AllRestAreas = LoadRestAreas(fullPath_rest_areas);
+            AllGasStations = LoadGasStations(fullPath_gas_stations);
             // Attempt to initialize the environment from Mapping.Value or file
             if (Mapping.Value is ISpatialGraphEnvironment input)
             {
@@ -118,23 +132,22 @@ namespace SOHModel.SemiTruck.Model
             // Create and register objects of type MyAgentType.
             var agentList = agentManager
                 .Spawn<SemiTruckDriver, SemiTruckLayer>(dependencies: new List<IModelObject> { this, Environment })
-                .ToList(); 
+                .ToList();
 
-            IEnumerable<SemiTruckDriver> agents = agentList; 
+            IEnumerable<SemiTruckDriver> agents = agentList;
 
             amountOfTrucks = agentList.Count;
 
             // Otherwise only create them but do not registering 
             // to trigger their Tick() method. 
             // agentManager.Create<SemiTruckDriver>().ToList();
-            
-            
+
+
             // Add the spawned agents to the Driver dictionary for tracking
             Driver.AddRange(
                 agents
                     .ToDictionary(agent => agent.ID, agent => (IAgent)agent)
             );
-
 
             return true;
         }
@@ -239,6 +252,11 @@ namespace SOHModel.SemiTruck.Model
             {
                 HandleScheduledClosureByCoordinates(roadBlock);
             }
+
+            foreach (var speedReduction in ScheduledSpeedReductionsByCoordinates)
+            {
+                HandleScheduledSpeedReduction(speedReduction);
+            }
         }
 
         public void PostTick()
@@ -295,11 +313,13 @@ namespace SOHModel.SemiTruck.Model
             {
                 var start = closureByCoordinates.Coordinates.First();
                 var end = closureByCoordinates.Coordinates.Last();
-                var currentNode = Environment.NearestNode(Position.CreateGeoPosition(start.X, start.Y), outgoingModality: SpatialModalityType.CarDriving);
-                var goal = Environment.NearestNode(Position.CreateGeoPosition(end.X, end.Y), incomingModality: SpatialModalityType.CarDriving);
+                var currentNode = Environment.NearestNode(Position.CreateGeoPosition(start.X, start.Y),
+                    outgoingModality: SpatialModalityType.CarDriving);
+                var goal = Environment.NearestNode(Position.CreateGeoPosition(end.X, end.Y),
+                    incomingModality: SpatialModalityType.CarDriving);
 
                 var route = Environment.FindShortestRoute(currentNode, goal);
-                
+
 
                 if (route != null && route.Stops != null)
                 {
@@ -344,6 +364,77 @@ namespace SOHModel.SemiTruck.Model
             }
         }
 
+        private void HandleScheduledSpeedReduction(SemiTruckLayer.ScheduledSpeedReductionByCoordinates reduction)
+        {
+            if (!reduction.IsActive && _simulationTime >= reduction.StartTime && _simulationTime < reduction.EndTime)
+            {
+                var start = reduction.Coordinates.First();
+                var end = reduction.Coordinates.Last();
+
+                var fromNode = Environment.NearestNode(Position.CreateGeoPosition(start.X, start.Y),
+                    SpatialModalityType.CarDriving);
+                var toNode = Environment.NearestNode(Position.CreateGeoPosition(end.X, end.Y),
+                    SpatialModalityType.CarDriving);
+                var route = Environment.FindShortestRoute(fromNode, toNode);
+
+                if (route?.Stops != null)
+                {
+                    foreach (var stop in route.Stops)
+                    {
+                        var edge = stop.Edge;
+                        if (edge == null) continue;
+
+                        int edgeId = (int)edge.GetId();
+                        reduction.AffectedEdgeIds.Add(edgeId);
+
+                        // Nur sichern, wenn noch nicht gesichert
+                        if (!edge.Attributes.ContainsKey("original_maxspeed") &&
+                            edge.Attributes.ContainsKey("maxspeed"))
+                        {
+                            edge.Attributes["original_maxspeed"] = edge.Attributes["maxspeed"];
+                        }
+
+                        // Temporären Wert setzen
+                        // Nur reduzieren, wenn aktuelle maxspeed > reduzierte Geschwindigkeit
+                        if (edge.Attributes.TryGetValue("maxspeed", out var currentMaxObj) &&
+                            double.TryParse(currentMaxObj.ToString(), out double currentMax) &&
+                            currentMax > reduction.ReducedSpeedKmh)
+                        {
+                            // Nur sichern, wenn noch nicht gesichert
+                            if (!edge.Attributes.ContainsKey("original_maxspeed"))
+                            {
+                                edge.Attributes["original_maxspeed"] = currentMaxObj;
+                            }
+
+                            edge.Attributes["maxspeed"] = reduction.ReducedSpeedKmh.ToString();
+                            // Console.WriteLine($"[SpeedReduction-Aktiv] Edge {edgeId} temporär auf {reduction.ReducedSpeedKmh} km/h reduziert (war: {currentMax})");
+                        }
+
+                    }
+
+                    reduction.IsActive = true;
+                }
+            }
+            else if (reduction.IsActive && _simulationTime >= reduction.EndTime)
+            {
+                foreach (var edgeId in reduction.AffectedEdgeIds)
+                {
+                    if (Environment.Edges.TryGetValue(edgeId, out var edge))
+                    {
+                        // Wiederherstellen, falls ein Originalwert gespeichert wurde
+                        if (edge.Attributes.ContainsKey("original_maxspeed"))
+                        {
+                            edge.Attributes["maxspeed"] = edge.Attributes["original_maxspeed"];
+                            edge.Attributes.Remove("original_maxspeed");
+                        }
+                    }
+                }
+
+                reduction.IsActive = false;
+            }
+        }
+
+
         /// <summary>
         /// Registers a truck to track all edges along its route.
         /// </summary>
@@ -372,6 +463,36 @@ namespace SOHModel.SemiTruck.Model
                         _edgeToTrucks.Remove(stop.Edge); // optional für sauberen Speicher
                 }
             }
+        }
+
+        public List<RestArea> LoadRestAreas(string path)
+        {
+            var lines = File.ReadAllLines(path).Skip(1); // Skip header
+            return lines.Select(line =>
+            {
+                var parts = line.Split(',');
+                return new RestArea
+                {
+                    Id = int.Parse(parts[0]),
+                    Lat = double.Parse(parts[1], CultureInfo.InvariantCulture),
+                    Lon = double.Parse(parts[2], CultureInfo.InvariantCulture)
+                };
+            }).ToList();
+        }
+
+        public List<GasStations> LoadGasStations(string path)
+        {
+            var lines = File.ReadAllLines(path).Skip(1); // Skip header
+            return lines.Select(line =>
+            {
+                var parts = line.Split(',');
+                return new GasStations()
+                {
+                    Id = int.Parse(parts[0]),
+                    Lat = double.Parse(parts[1], CultureInfo.InvariantCulture),
+                    Lon = double.Parse(parts[2], CultureInfo.InvariantCulture)
+                };
+            }).ToList();
         }
 
 
@@ -407,6 +528,47 @@ namespace SOHModel.SemiTruck.Model
 
             public HashSet<int> AffectedEdgeIds { get; set; } = new();
             public bool IsActive { get; set; } = false;
+        }
+
+        public class ScheduledSpeedReductionByCoordinates
+        {
+            public string Id { get; set; }
+            public DateTime StartTime { get; set; }
+            public DateTime EndTime { get; set; }
+            public List<Coordinate> Coordinates { get; set; } = new();
+            public double ReducedSpeedKmh { get; set; }
+            public bool IsActive { get; set; } = false;
+
+            public ScheduledSpeedReductionByCoordinates(string id, DateTime startTime, DateTime endTime,
+                List<Coordinate> coordinates, double reducedSpeedKmh)
+            {
+                Id = id;
+                StartTime = startTime;
+                EndTime = endTime;
+                Coordinates = coordinates ?? new List<Coordinate>();
+                ReducedSpeedKmh = reducedSpeedKmh;
+            }
+
+            public HashSet<int> AffectedEdgeIds { get; set; } = new();
+        }
+
+
+        public class RestArea
+        {
+            public int Id { get; set; }
+            public double Lat { get; set; }
+            public double Lon { get; set; }
+
+            public Coordinate Position => new Coordinate(Lat, Lon);
+        }
+
+        public class GasStations
+        {
+            public int Id { get; set; }
+            public double Lat { get; set; }
+            public double Lon { get; set; }
+
+            public Coordinate Position => new Coordinate(Lat, Lon);
         }
     }
 }
