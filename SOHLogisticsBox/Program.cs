@@ -34,6 +34,7 @@ internal static class Program
         description.AddLayer<SemiTruckLayer>();
         description.AddLayer<SemiTruckSchedulerLayer>();
         description.AddLayer<SemiTruckRealTimeLayer>();
+        description.AddLayer<SemiTruckWeatherLayer>();
         description.AddAgent<SemiTruckDriver, SemiTruckLayer>();
         // Add semi-truck-related entities
         description.AddEntity<SemiTruck>();
