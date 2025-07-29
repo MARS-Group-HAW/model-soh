@@ -99,6 +99,19 @@ public abstract class RoadUser : ISpatialGraphEntity
     [PropertyDescription(Name = "accidentsPerYear", Ignore = true)]
     public double AccidentsPerYear { get; set; }
     
+    /// <summary>
+    /// The amount of Fuel a truck can fit
+    /// </summary>
+    [PropertyDescription(Name = "fuelSize", Ignore = true)]
+    public double FuelTankLevelLiters   { get; set; }
+    
+    /// <summary>
+    /// The average amount of fuel a truck uses during 100km
+    /// </summary>
+    [PropertyDescription(Name = "fuelConsumptionPer100km", Ignore = true)]
+    public double FuelConsumptionPer100Km  { get; set; }
+
+    
     
     /// <summary>
     /// Amount of Power that a truck has in KW
