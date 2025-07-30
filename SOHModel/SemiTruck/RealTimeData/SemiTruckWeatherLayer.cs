@@ -6,31 +6,67 @@ using NetTopologySuite.IO;
 using SOHModel.SemiTruck.Model;
 
 namespace SOHModel.SemiTruck.RealTimeData;
-
+/// <summary>
+/// Represents a weather-affected area with a polygon geometry and metadata.
+/// Influences the speed factor of vehicles driving through this zone.
+/// </summary>
 public class WeatherZone
 {
+    /// <summary>
+    /// The spatial area of the weather zone represented as a polygon (in WGS84 coordinates).
+    /// </summary>
     public Polygon Area { get; set; }
+    /// <summary>
+    /// Type of weather (e.g., "rain", "snow", "storm", etc.).
+    /// </summary>
     public string Type { get; set; } = "normal";
+    /// <summary>
+    /// The start time when the weather effect begins.
+    /// </summary>
     public DateTime StartTime { get; set; } = DateTime.MinValue;
+    /// <summary>
+    /// The end time when the weather effect ends.
+    /// </summary>
     public DateTime EndTime { get; set; } = DateTime.MaxValue;
+    /// <summary>
+    /// Speed factor applied to vehicles within this zone (1.0 = normal speed, <1.0 = reduced speed).
+    /// </summary>
     public double SpeedFactor { get; set; } = 1.0; // 1.0 = normal
 }
 
+/// <summary>
+/// A simulation layer that integrates real-time weather data into the SemiTruck model.
+/// Weather zones affect truck speed dynamically based on warnings from the DWD API (Warnwetter).
+/// </summary>
 public class SemiTruckWeatherLayer : AbstractLayer, ISteppedActiveLayer
 {
     private readonly GeometryFactory _geometryFactory = new GeometryFactory();
+    /// <summary>
+    /// HTTP client to fetch real-time weather data (handles compression).
+    /// </summary>
     private readonly HttpClient _httpClient = new HttpClient(new HttpClientHandler
     {
         AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
     });
 
+    /// <summary>
+    /// All predefined weather zones across the simulation map (8x8 km grid).
+    /// </summary>
     public List<WeatherZone> AllZones { get; set; } = new();
+    /// <summary>
+    /// Currently active weather zones (where speed factor is reduced).
+    /// </summary>
     public List<WeatherZone> ActiveZones { get; private set; } = new();
 
     private DateTime _lastUpdateTime = DateTime.MinValue;
+    /// <summary>
+    /// Interval after which weather data is refreshed (30 minutes).
+    /// </summary>
     private readonly TimeSpan _updateInterval = TimeSpan.FromMinutes(30);
     
-    
+    /// <summary>
+    /// Reference to the simulation's SemiTruck layer to access the simulation time.
+    /// </summary>
     public SemiTruckLayer SemiTruckLayer { get; set; }
 
     public SemiTruckWeatherLayer()
@@ -40,6 +76,10 @@ public class SemiTruckWeatherLayer : AbstractLayer, ISteppedActiveLayer
     
     
 
+    /// <summary>
+    /// Initializes a grid of 0.5° x 0.5° tiles (approx. 55km² each) covering Germany.
+    /// These zones are later used to attach weather data.
+    /// </summary>
     private void InitializeBaseZones()
     {
         for (double lat = 47.0; lat <= 55.0; lat += 0.5)
@@ -62,6 +102,10 @@ public class SemiTruckWeatherLayer : AbstractLayer, ISteppedActiveLayer
         }
     }
 
+    /// <summary>
+    /// Downloads and parses live weather warnings from the German Weather Service (DWD).
+    /// Updates the weather zones with speed impact factors based on event types.
+    /// </summary>
     public async Task UpdateWeatherAsync()
     {
 
@@ -83,12 +127,14 @@ public class SemiTruckWeatherLayer : AbstractLayer, ISteppedActiveLayer
             {
                 try
                 {
+                    // Extract core warning metadata
                     string eventName = warning.GetProperty("event").GetString()?.ToLower() ?? "";
                     long start = warning.GetProperty("start").GetInt64();
                     long end = warning.GetProperty("end").GetInt64();
                     var startTime = DateTimeOffset.FromUnixTimeMilliseconds(start).DateTime;
                     var endTime = DateTimeOffset.FromUnixTimeMilliseconds(end).DateTime;
 
+                    // Determine speed factor based on event type
                     double speedFactor = eventName switch
                     {
                         var e when e.Contains("regen") => 0.9,
@@ -99,6 +145,7 @@ public class SemiTruckWeatherLayer : AbstractLayer, ISteppedActiveLayer
                         _ => 1.0
                     };
 
+                    // Skip zones with no impact
                     if (speedFactor >= 1.0) continue;
                     if (!warning.TryGetProperty("regions", out var regions)) continue;
 
@@ -126,10 +173,11 @@ public class SemiTruckWeatherLayer : AbstractLayer, ISteppedActiveLayer
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[Wetter] Fehler beim Parsen: {ex.Message}");
+                    Console.WriteLine($"[Weather] Parsing error: {ex.Message}");
                 }
             }
 
+            // Reset all zones to normal state
             foreach (var zone in AllZones)
             {
                 zone.Type = "normal";
@@ -138,6 +186,7 @@ public class SemiTruckWeatherLayer : AbstractLayer, ISteppedActiveLayer
                 zone.EndTime = DateTime.MaxValue;
             }
 
+            // Apply new warnings to overlapping zones
             foreach (var warningZone in newWarnings)
             {
                 foreach (var baseZone in AllZones)
@@ -152,11 +201,12 @@ public class SemiTruckWeatherLayer : AbstractLayer, ISteppedActiveLayer
                 }
             }
 
+            // Update the list of active zones (speed < 100%)
             ActiveZones = AllZones.Where(z => z.SpeedFactor < 1.0).ToList();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Wetter] Fehler beim Abruf: {ex.Message}");
+            Console.WriteLine($"[Weather] API fetch failed: {ex.Message}");
         }
     }
 
@@ -178,6 +228,10 @@ public class SemiTruckWeatherLayer : AbstractLayer, ISteppedActiveLayer
     public long GetCurrentTick() => 0;
     public void SetCurrentTick(long currentStep) { }
 
+    /// <summary>
+    /// Prints the weather zone that contains a given location.
+    /// Helpful for debugging or real-time tracking.
+    /// </summary>
     public void PrintWeatherZonesForLocation(double lat, double lon)
     {
         var point = _geometryFactory.CreatePoint(new Coordinate(lon, lat));
@@ -185,14 +239,16 @@ public class SemiTruckWeatherLayer : AbstractLayer, ISteppedActiveLayer
         {
             if (zone.Area.Contains(point))
             {
-                Console.WriteLine($"[Wetter] In Zone: {zone.Type}, SpeedFactor: {zone.SpeedFactor}, gültig bis {zone.EndTime:t}");
+                Console.WriteLine($"[Weather] Zone: {zone.Type}, SpeedFactor: {zone.SpeedFactor}, valid until {zone.EndTime:t}");
                 return;
             }
         }
-
-        Console.WriteLine("[Wetter] Keine passende Zone gefunden.");
+        Console.WriteLine("[Weather] No matching zone found.");
     }
 
+    /// <summary>
+    /// Outputs all currently active (non-normal) weather zones with metadata and location.
+    /// </summary>
     public void PrintAllActiveWeatherZones()
     {
         Console.WriteLine("[Wetter] Aktive Wetterzonen (≠ normal):");

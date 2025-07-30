@@ -74,6 +74,10 @@ public class VehicleSteeringHandle
         PerformMoveAction(drivingDistance);
     }
     
+    /// <summary>
+    /// Immediately stops the vehicle by setting both its velocity and acceleration to zero.
+    /// Used to simulate a full halt in movement, e.g., during a pause, breakdown, or arrival.
+    /// </summary>
     public void Stop()
     {
         Vehicle.Velocity = 0;

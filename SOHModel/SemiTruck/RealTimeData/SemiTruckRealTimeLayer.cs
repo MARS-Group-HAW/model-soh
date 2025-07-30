@@ -76,6 +76,7 @@ namespace SOHModel.SemiTruck.RealTimeData
         {
             var currentTime = SemiTruckLayer.Context.CurrentTimePoint ?? DateTime.MinValue;
 
+            // Initialize timestamps on first run
             if (!firstTickExecuted)
             {
                 firstTickExecuted = true;
@@ -83,6 +84,7 @@ namespace SOHModel.SemiTruck.RealTimeData
                 lastConstructionUpdateTime = currentTime - ConstructionUpdateInterval;
             }
 
+            // Determine whether it is time to update closures/constructions
             bool updateClosures = currentTime - lastClosureUpdateTime >= ClosureUpdateInterval;
             bool updateConstructions = currentTime - lastConstructionUpdateTime >= ConstructionUpdateInterval;
 
@@ -90,6 +92,7 @@ namespace SOHModel.SemiTruck.RealTimeData
 
             foreach (var autobahnId in AutobahnIds)
             {
+                // Fetch and parse closure data for each Autobahn
                 var closures = FetchAndParseRoadAsync(autobahnId).GetAwaiter().GetResult();
 
                 foreach (var closure in closures)
@@ -104,10 +107,12 @@ namespace SOHModel.SemiTruck.RealTimeData
                         var startTime = DateTime.Parse(interval.Begin);
                         var endTime = DateTime.Parse(interval.End);
 
+                        // Convert to NTS Coordinates for spatial use
                         var coords = closure.Coordinates
                             .Select(pair => new Coordinate(pair[0], pair[1]))
                             .ToList();
 
+                        // Create a unique key for this closure to avoid reprocessing
                         string coordsKey = string.Join(";", coords.Select(c => $"{c.X:F6},{c.Y:F6}"));
                         string closureKey = $"{autobahnId}|{startTime:o}|{endTime:o}|{coordsKey}";
 
@@ -124,8 +129,8 @@ namespace SOHModel.SemiTruck.RealTimeData
                                 coordinates: coords
                             );
                             SemiTruckLayer.ScheduledClosuresByCoordinates.Add(block);
-                            // Console.WriteLine($"[SPERRUNG] Neu: {closure.Type} ({autobahnId})");
                         }
+                        // Uncomment to add speed reduction for construction sites
                         // else if (isConstruction && updateConstructions)
                         // {
                         //     knownClosures.Add(closureKey);
@@ -138,12 +143,12 @@ namespace SOHModel.SemiTruck.RealTimeData
                         //         reducedSpeedKmh: 60
                         //     );
                         //     SemiTruckLayer.ScheduledSpeedReductionsByCoordinates.Add(block);
-                        //     // Console.WriteLine($"[BAUSTELLE] Neu: {closure.Type} ({autobahnId})");
                         // }
                     }
                 }
             }
 
+            // Update last fetch timestamps
             if (updateClosures) lastClosureUpdateTime = currentTime;
             if (updateConstructions) lastConstructionUpdateTime = currentTime;
         }
@@ -191,6 +196,7 @@ namespace SOHModel.SemiTruck.RealTimeData
 
                     string lastLine = lastBlock[^1];
                     var lower = lastLine.ToLower();
+                    // Determine if it's a closure or construction based on description keywords
                     isClosure = lower.Contains("sperr");
                     isConstruction = lower.Contains("baustelle") ||
                                      lower.Contains("sanierung") ||
@@ -198,11 +204,12 @@ namespace SOHModel.SemiTruck.RealTimeData
                                      lower.Contains("bau") ||
                                      lower.Contains("arbeit");
 
-
+                    // Currently only process closures due to resources (construction handling can be enabled if needed)
                     // if (!isClosure && !isConstruction) continue;
                     if (!isClosure) continue;
                     var intervals = ParseTimeLines(timeBlock);
 
+                    // Parse geometry data if available
                     var coords = new List<List<double>>();
                     if (closure.TryGetProperty("geometry", out var geom) &&
                         geom.TryGetProperty("coordinates", out var coordinates))
@@ -286,6 +293,7 @@ namespace SOHModel.SemiTruck.RealTimeData
             {
                 var trimmed = line.Trim();
 
+                // Format: "Beginn: 01.01.24 um 14:00 Uhr"
                 var matchBegin = Regex.Match(trimmed, @"Beginn:\s*(\d{2}\.\d{2}\.\d{2})\s*um\s*(\d{2}:\d{2}) Uhr");
                 if (matchBegin.Success)
                 {
@@ -296,6 +304,7 @@ namespace SOHModel.SemiTruck.RealTimeData
                     continue;
                 }
 
+                // Format: "Ende: 02.01.24 um 06:00 Uhr"
                 var matchEnd = Regex.Match(trimmed, @"Ende:\s*(\d{2}\.\d{2}\.\d{2})\s*um\s*(\d{2}:\d{2}) Uhr");
                 if (matchEnd.Success && intervals.Count > 0 && intervals[^1].End == null)
                 {
@@ -306,6 +315,7 @@ namespace SOHModel.SemiTruck.RealTimeData
                     continue;
                 }
 
+                // Format: "01.01.24 von 14:00 bis 18:00"
                 var matchSimple = Regex.Match(trimmed, @"(\d{2}\.\d{2}\.\d{2}) von (\d{2}:\d{2}) bis (\d{2}:\d{2})");
                 if (matchSimple.Success)
                 {
@@ -319,6 +329,7 @@ namespace SOHModel.SemiTruck.RealTimeData
                     continue;
                 }
 
+                // Format: "01.01.24 14:00 bis zum 02.01.24 06:00"
                 var matchCross = Regex.Match(trimmed,
                     @"(\d{2}\.\d{2}\.\d{2}) (\d{2}:\d{2}) bis zum (\d{2}\.\d{2}\.\d{2}) (\d{2}:\d{2})");
                 if (matchCross.Success)

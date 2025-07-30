@@ -18,29 +18,52 @@ using Position = Mars.Interfaces.Environments.Position;
 namespace SOHModel.SemiTruck.Model
 {
     /// <summary>
-    /// Represents a driver for the SemiTruck, responsible for route planning and managing the truck's movement.
+    /// Represents an autonomous agent that simulates a semi-truck driver in a spatial simulation.
+    /// Responsible for steering, refueling, resting, accident handling, and dynamic route planning.
     /// </summary>
     public class SemiTruckDriver : IAgent<SemiTruckLayer>, ISemiTruckSteeringCapable
     {
         // Private fields for managing the SemiTruck's steering and its environment
-        private SemiTruckSteeringHandle _steeringHandle;
-        private UnregisterAgent _unregister;
-        private ISpatialGraphEnvironment _environment;
-        private SemiTruckLayer _layer;
-        private static int truckCounter = 0; // Shared counter across all instances
-        private readonly Random _random = new Random();
-        private bool _hasAccident = false;
-        private DateTime _lastBreakTime;
-        private bool _restAreaPlanned = false;
-        private DateTime _pausedUntilTime = DateTime.MinValue;
-        private DateTime _refuelUntilTime = DateTime.MinValue;
-        private Route _originalRoute; // optional, falls du das brauchst
-        private Route _postPauseReturnRoute;
-        private bool _goingToRestArea = false;
-        private bool _pauseCompleted = false;
-        private double _FuelTank;
+        private SemiTruckSteeringHandle _steeringHandle; // Controls the vehicle's path and motion
+        private UnregisterAgent _unregister; // Delegate to remove agent from simulation
+        private ISpatialGraphEnvironment _environment; // Spatial graph (e.g., roads) in which agent moves
+        private SemiTruckLayer _layer; // Reference to the current simulation layer
+
+        private static int truckCounter = 0; // Counter for diagnostic purposes
+        private readonly Random _random = new Random(); // For probabilistic events like accidents
+
+        private bool _hasAccident = false; // Whether an accident is currently active
+        private int _accidentTicksRemaining = 0; // Ticks remaining to resolve the accident
+
+        private DateTime _lastBreakTime; // Last time a rest pause was taken
+        private DateTime _pausedUntilTime = DateTime.MinValue; // End time of current rest
+        private DateTime _refuelUntilTime = DateTime.MinValue; // End time of current refueling
+
+        private bool _restAreaPlanned = false; // If a rest stop is currently scheduled
+        private bool _goingToRestArea = false; // Actively heading to rest area
+        private bool _pauseCompleted = false; // Rest pause has completed
+
+        private bool _refuelPlanned = false; // If a refuel stop is currently planned
+        private bool _goingToRefuel = false; // Heading to refueling location
+        private bool _isRefueling = false; // Truck is currently being refueled
+
+        private double _FuelTank; // Current fuel level
+        private double _lastRemainingDistanceToGoal = -1; // For tracking fuel usage
+        private bool _routeChanged = false; // Whether route was modified (due to detours, etc.)
+
+        private double _originalMaxSpeed = -1; // Stored value for resetting speed after incline/weather
+        private TimeSpan _maxDrivingTimeWithoutBreak = TimeSpan.FromHours(9); // Legal driving limit
+
+        private ISpatialNode _restNode; // Target rest location
+        private ISpatialNode _refuelNode = null; // Target refueling node
+
+        private int _lastCheckedRemovedEdgesVersion = -1; // For detecting if edge list changed
+        private Route _originalRoute; // Stores route before detour (e.g., for pause)
+        private Route _postPauseReturnRoute; // Return logic
+
+
         [PropertyDescription] public SemiTruckWeatherLayer WeatherLayer { get; set; }
-        
+
         public double DefaultAccidentsPerYear { get; set; }
 
 
@@ -62,9 +85,6 @@ namespace SOHModel.SemiTruck.Model
             SemiTruck.Environment = _environment;
             _FuelTank = SemiTruck.FuelTankLevelLiters;
             DefaultAccidentsPerYear = SemiTruck.AccidentsPerYear;
-            
-            
-
 
 
             //Define SpatialEdge for driveMode 5 as First Outgoing Edge
@@ -89,6 +109,7 @@ namespace SOHModel.SemiTruck.Model
             //     Console.WriteLine($"Created routes for {truckCounter} trucks...");
             // }
 
+            // Abort simulation if no route was found
             if (route == null || route.Count == 0)
             {
                 Console.WriteLine($"No valid route found for truck {ID}. Removing from simulation.");
@@ -107,19 +128,6 @@ namespace SOHModel.SemiTruck.Model
             _lastBreakTime = _layer._simulationTime;
         }
 
-        private int _lastCheckedRemovedEdgesVersion = -1;
-        private int _accidentTicksRemaining = 0;
-        private double _originalMaxSpeed = -1;
-        // TimeSpan _maxDrivingTimeWithoutBreak = TimeSpan.FromHours(9);
-        TimeSpan _maxDrivingTimeWithoutBreak = TimeSpan.FromHours(9);
-        private ISpatialNode _restNode;
-        private ISpatialNode _refuelNode = null;
-        private double _lastRemainingDistanceToGoal = -1;
-        private bool _routeChanged = false;
-        private bool _refuelPlanned = false;
-        private bool _goingToRefuel = false;
-        private bool _isRefueling = false;
-        
 
         /// <summary>
         /// Called during each simulation tick to update the SemiTruck's state.
@@ -129,32 +137,29 @@ namespace SOHModel.SemiTruck.Model
             if (_steeringHandle == null)
                 return;
 
-            // Truck befindet sich in Pause
-            if (HandleRestPause())
-                return;
-            
-            if (HandleRefuelPause())
-                return;
+            // Handle rest and refueling pauses (interrupts simulation tick)
+            if (HandleRestPause()) return;
+            if (HandleRefuelPause()) return;
 
-            // Unfallbehandlung (laufend)
+            // Handle ongoing accident – truck is stopped during this period
             if (HandleOngoingAccident())
                 return;
 
-            // Unfallchance prüfen
+            // Randomly determine whether an accident occurs
             if (HandleAccidentChance())
                 return;
 
             UpdateFuelConsumption();
             CheckIfRefuelIsRequired();
 
-            // Umleitungen prüfen (wenn Straßen blockiert sind)
+            // If truck is not being guided externally, check for detours
             if (!_layer.notifyTrucks)
             {
                 if (!LookaheadAndBypassIfNeeded())
                     return;
             }
 
-            // Regeln wie Überholverbot oder Steigung anwenden
+            // Apply rules for weather, overtaking, incline
             if (_steeringHandle.Route.Count > 0)
             {
                 var currentEdge = _steeringHandle.Route[0].Edge;
@@ -163,7 +168,7 @@ namespace SOHModel.SemiTruck.Model
                 AdjustSpeedBasedOnIncline(currentEdge);
             }
 
-            // Prüfen ob Pause notwendig ist
+            // Schedule a rest if needed
             if ((_layer._simulationTime - _lastBreakTime) > _maxDrivingTimeWithoutBreak &&
                 Route.RemainingRouteDistanceToGoal > 100_000)
             {
@@ -171,10 +176,10 @@ namespace SOHModel.SemiTruck.Model
                 _routeChanged = true;
             }
 
-            // Bewegung auf aktueller Route
+            // Move the truck along the route
             _steeringHandle.Move();
 
-            // Ziel erreicht
+            // If destination reached, remove agent from simulation
             if (GoalReached)
             {
                 if (_layer.notifyTrucks)
@@ -226,7 +231,7 @@ namespace SOHModel.SemiTruck.Model
                 return false;
             }
 
-            // Calculate bypass route
+            // Compute a new bypass route from current position to the next valid stop in the old route
             var bypassRoute = SemiTruckRouteFinder.Find(
                 _environment, DriveMode, _steeringHandle.Position.Latitude,
                 _steeringHandle.Position.Longitude,
@@ -250,27 +255,34 @@ namespace SOHModel.SemiTruck.Model
                 _steeringHandle.Route.Stops.RemoveAt(removeIndex);
             }
 
+            // Append the remaining part of the original route (after bypass) to the new route
             foreach (var edgeStop in _steeringHandle.Route)
             {
                 List<ISpatialLane> lanes = edgeStop.Edge.Lanes?.ToList();
                 var desiredLane = lanes?.FirstOrDefault();
                 int desiredLaneIndex = desiredLane != null ? lanes.IndexOf(desiredLane) : -1;
+                // Add each stop from the old route to the bypass route to complete it
                 bypassRoute.Add(edgeStop.Edge, desiredLaneIndex);
             }
 
-
+            // Assign the final composed route to the truck
             _steeringHandle.Route = bypassRoute;
             if (_layer.notifyTrucks) _layer.RegisterTruckForRoute(this, _steeringHandle.Route);
 
             return true;
         }
-
+        /// <summary>
+        /// Calculates the maximum feasible speed on a given incline, based on vehicle mass and engine power.
+        /// Prevents trucks from exceeding physical limits on steep ascents.
+        /// </summary>
+        /// <param name="inclinePercent">Incline of the edge in percent</param>
+        /// <returns>Adjusted speed in m/s</returns>
         double CalculateMaxSpeedOnIncline(double inclinePercent)
         {
-            double powerWatt = SemiTruck.Power * 1000.0;
-            double massKg = SemiTruck.Mass * 1000.0;
-            double g = 9.81;
-            const double minSpeedMps = 30.0 / 3.6; // 30 km/h in m/s ≈ 2.78
+            double powerWatt = SemiTruck.Power * 1000.0; // Convert kW to W
+            double massKg = SemiTruck.Mass * 1000.0; // Convert t to kg
+            double g = 9.81; // Gravity constant
+            const double minSpeedMps = 30.0 / 3.6; // Minimum speed: 30 km/h → m/s
 
             if (inclinePercent <= 0.0)
                 return MaxSpeed; // no incline → full speed
@@ -279,10 +291,16 @@ namespace SOHModel.SemiTruck.Model
             if (denominator == 0) return SemiTruck.MaxSpeed;
 
             double vMps = powerWatt / denominator;
-
+            
+            // Clamp result between minimum required speed and current truck max
             return Math.Max(minSpeedMps, Math.Min(vMps, MaxSpeed));
         }
 
+        /// <summary>
+        /// Parses an incline string attribute from OSM format (e.g., "5%", "up") into a numerical percentage.
+        /// </summary>
+        /// <param name="inclineStr">Incline value as string</param>
+        /// <returns>Positive incline percentage</returns>
         private double ParseIncline(string inclineStr)
         {
             if (string.IsNullOrWhiteSpace(inclineStr))
@@ -300,19 +318,26 @@ namespace SOHModel.SemiTruck.Model
             return 0.0;
         }
 
+        /// <summary>
+        /// Determines whether a random accident occurs based on accident rate and simulation tick duration.
+        /// If an accident happens, the truck is stopped and a recovery time is applied.
+        /// </summary>
+        /// <returns>True if an accident occurred this tick</returns>
         private bool HandleAccidentChance()
         {
-            // Unfallwahrscheinlichkeit berechnen
+            // Adjust accident rate based on total number of trucks in simulation
             double scaledAccidentsPerYear = SemiTruck.AccidentsPerYear * (_layer.amountOfTrucks / 650000.0);
             double secondsPerYear = 365.0 * 24 * 60 * 60;
             double ticksPerYear = secondsPerYear / _layer._tickDuration.TotalSeconds;
             double accidentChancePerTick = scaledAccidentsPerYear / ticksPerYear;
 
+            // Random draw for accident occurrence
             if (_random.NextDouble() < accidentChancePerTick)
             {
-                // Durchschnittliche Reaktionszeit: ADAC 41 Minuten
+                // Default roadside blocking time (average respomd time of ADAC)
                 TimeSpan accidentDuration = TimeSpan.FromMinutes(41);
 
+                // Reduce accident duration if shoulder is available
                 if (_steeringHandle.Route.Count > 0)
                 {
                     var currentEdge = _steeringHandle.Route[0].Edge;
@@ -322,7 +347,7 @@ namespace SOHModel.SemiTruck.Model
                         if (shoulderStr == "yes" || shoulderStr == "both" || shoulderStr == "left" ||
                             shoulderStr == "right")
                         {
-                            accidentDuration = TimeSpan.FromMinutes(2); // Fahrzeug fährt auf Standstreifen
+                            accidentDuration = TimeSpan.FromMinutes(2); // Pull over instead of blocking road
                         }
                     }
                 }
@@ -339,6 +364,11 @@ namespace SOHModel.SemiTruck.Model
             return false;
         }
 
+        /// <summary>
+        /// Modifies max speed of the truck depending on incline of current road segment.
+        /// This simulates reduced performance on steep hills.
+        /// </summary>
+        /// <param name="currentEdge">Current road edge</param>
         private void AdjustSpeedBasedOnIncline(ISpatialEdge currentEdge)
         {
             if (currentEdge.Attributes.TryGetValue("incline", out var inclineValue))
@@ -350,14 +380,14 @@ namespace SOHModel.SemiTruck.Model
                 if (_originalMaxSpeed < 0)
                     _originalMaxSpeed = SemiTruck.MaxSpeed;
 
-                // Begrenze, wenn Reduktion notwendig
+                // Reduce speed if necessary
                 if (adjustedSpeed < _originalMaxSpeed)
                 {
                     MaxSpeed = adjustedSpeed;
                 }
                 else
                 {
-                    // Wiederherstellen, wenn keine starke Steigung mehr
+                    // Reset speed if incline is not present
                     MaxSpeed = _originalMaxSpeed;
                 }
             }
@@ -371,6 +401,11 @@ namespace SOHModel.SemiTruck.Model
             }
         }
 
+        /// <summary>
+        /// Continues ticking down the accident time.
+        /// Once the accident ends, the truck is removed from the simulation.
+        /// </summary>
+        /// <returns>True if truck is still in accident</returns>
         private bool HandleOngoingAccident()
         {
             if (!_hasAccident)
@@ -379,23 +414,28 @@ namespace SOHModel.SemiTruck.Model
             if (_accidentTicksRemaining > 0)
             {
                 _accidentTicksRemaining--;
-                return true; // Ticking, aber nichts weiter tun
+                return true; // Still blocked → skip other logic
             }
 
-            // Unfallzeit ist abgelaufen → Truck entfernen
+            // End accident → remove truck
             if (_layer.notifyTrucks)
                 _layer.UnregisterTruckFromRoute(this, _steeringHandle.Route);
 
             _environment.Remove(SemiTruck);
             _unregister.Invoke(_layer, this);
 
-            return true; // Unfall abgeschlossen
+            return true;
         }
 
+        /// <summary>
+        /// Looks ahead a few kilometers (currently 5km) into the route and checks for removed (blocked) edges.
+        /// If a removed edge is found, a bypass is created.
+        /// </summary>
+        /// <returns>True if route is still valid or successfully updated, false if rerouting failed</returns>
         private bool LookaheadAndBypassIfNeeded()
         {
             if (_steeringHandle.Route.Count == 0)
-                return true; // Keine Route → kein Lookahead nötig
+                return true; 
 
             double distanceAhead = 0;
 
@@ -406,18 +446,21 @@ namespace SOHModel.SemiTruck.Model
 
                 if (_layer.RemovedEdges.Contains(edge))
                 {
-                    // Versuche Umleitung
                     _routeChanged = true;
-                    return CreateBypass(edge); // false → keine Alternative gefunden → Tick abbrechen
+                    return CreateBypass(edge); 
                 }
 
                 if (distanceAhead >= 5000)
                     break;
             }
 
-            return true; // Kein Problem → fortsetzen
+            return true; 
         }
 
+        /// <summary>
+        /// Checks the current road segment for overtaking permission and updates agent behavior accordingly.
+        /// </summary>
+        /// <param name="currentEdge">Current road segment</param>
         private void UpdateOvertakingPermission(ISpatialEdge currentEdge)
         {
             if (currentEdge.Attributes.TryGetValue("overtaking", out var overtakingValue))
@@ -426,25 +469,33 @@ namespace SOHModel.SemiTruck.Model
             }
         }
 
+        /// <summary>
+        /// Checks whether the truck must take a mandatory break (e.g., after 9 hours of driving).
+        /// If required, it tries to locate a nearby rest area (from OpenStreetMap or CSV fallback),
+        /// and re-routes the truck there temporarily.
+        /// </summary>
         private void CheckAndMoveToRestArea()
         {
+            // Skip if a rest area is already being approached or pause is scheduled
             if (_restAreaPlanned || _goingToRestArea || _pausedUntilTime > _layer._simulationTime)
                 return;
 
+            // Enforce rest only if max driving time exceeded and significant trip length remains
             if ((_layer._simulationTime - _lastBreakTime) > _maxDrivingTimeWithoutBreak &&
                 Route.RemainingRouteDistanceToGoal > 100_000)
             {
                 double accumulatedDistance = 0;
 
+                // Search next 100 km for a rest area directly along the route
                 foreach (var routeStep in _steeringHandle.Route)
                 {
                     var edge = routeStep.Edge;
                     accumulatedDistance += edge.Length;
                     if (accumulatedDistance > 100_000)
                         break;
-                
+
                     var nodesToCheck = new[] { edge.From, edge.To };
-                
+
                     foreach (ISpatialNode node in nodesToCheck)
                     {
                         foreach (var connectedEdge in node.OutgoingEdges.Values)
@@ -455,8 +506,9 @@ namespace SOHModel.SemiTruck.Model
                                 if (tagStr == "rest_area" || tagStr == "services")
                                 {
                                     Console.WriteLine(
-                                        $"Rest Area oder Services in Reichweite gefunden – Kante ID: {connectedEdge.GetId()}, Tag: {tagStr}");
-                
+                                        $"Rest area or service found nearby – edge ID: {connectedEdge.GetId()}, tag: {tagStr}");
+
+
                                     var restCoord = connectedEdge.To.Position;
                                     PlanRouteWithStop(restCoord.Latitude, restCoord.Longitude, node, StopType.Rest);
                                     return;
@@ -465,36 +517,40 @@ namespace SOHModel.SemiTruck.Model
                         }
                     }
                 }
-
-                Console.WriteLine("Keine Rest Area innerhalb der nächsten 100 km gefunden. Suche in CSV...");
+                // No nearby OSM rest area found → fallback to predefined list (e.g., from CSV)
+                Console.WriteLine("No rest area within next 100 km. Searching external list...");
                 FindNearestRestAreaFromList();
             }
         }
-
+        
+        /// <summary>
+        /// Handles the pause logic when the truck is resting (e.g., mandatory 4 hours).
+        /// Controls timing, transition states, and prevents movement during pause.
+        /// </summary>
+        /// <returns>True if truck is currently resting and simulation tick should be skipped</returns>
         private bool HandleRestPause()
         {
-            // Truck befindet sich in Pause
+            // Truck is still in rest pause
             if (_pausedUntilTime > _layer._simulationTime)
                 return true; // Tick soll abbrechen
 
-            // Pause ist abgeschlossen → zurück zur ursprünglichen Route
+            // Rest time is over → clean up state and continue driving
             if (_pauseCompleted && _pausedUntilTime <= _layer._simulationTime)
             {
-                Console.WriteLine("Rückkehr zur ursprünglichen Route");
+                Console.WriteLine("Rest pause completed. Resuming original route.");
                 _restAreaPlanned = false;
                 _pauseCompleted = false;
                 _restNode = null;
-                Console.WriteLine("Weiterfahrt auf ursprünglicher Route nach Pause.");
             }
 
-            // Truck erreicht gerade den Rest Node → Pause starten
+            // Truck just arrived at the rest area → begin pause
             if (_goingToRestArea &&
                 _steeringHandle.Position != null &&
                 _restNode != null &&
                 IsOnNode(_restNode))
             {
-                Console.WriteLine("Rest Area erreicht. Starte Pause.");
-                _pausedUntilTime = _layer._simulationTime + TimeSpan.FromHours(4);
+                Console.WriteLine("Arrived at rest area. Starting pause.");
+                _pausedUntilTime = _layer._simulationTime + TimeSpan.FromHours(4); // Legal pause duration
                 _lastBreakTime = _layer._simulationTime;
                 _goingToRestArea = false;
                 _pauseCompleted = true;
@@ -504,11 +560,19 @@ namespace SOHModel.SemiTruck.Model
             return false; // Weiter im Tick
         }
 
-
+        
+        /// <summary>
+        /// Injects a temporary stop (rest or refuel) into the current route.
+        /// This includes three steps: split route → go to stop → return and continue.
+        /// </summary>
+        /// <param name="targetLat">Latitude of the stop location</param>
+        /// <param name="targetLon">Longitude of the stop location</param>
+        /// <param name="insertFromNode">The node at which to divert the route</param>
+        /// <param name="stopType">Type of stop: Rest or Refuel</param>
         private void PlanRouteWithStop(double targetLat, double targetLon, ISpatialNode insertFromNode,
             StopType stopType)
         {
-            // Flags setzen
+            // Set flags based on stop type
             if (stopType == StopType.Rest)
             {
                 _restAreaPlanned = true;
@@ -520,15 +584,16 @@ namespace SOHModel.SemiTruck.Model
                 _goingToRefuel = true;
             }
 
+            // Unregister from current route tracking if applicable
             if (_layer.notifyTrucks)
                 _layer.UnregisterTruckFromRoute(this, _steeringHandle.Route);
 
-            // Aktuelle Route sichern
+            // Backup current route
             _originalRoute = new Route();
             foreach (var stop in _steeringHandle.Route)
                 _originalRoute.Add(stop.Edge, stop.DesiredLane);
 
-            // 1. Finde Split-Index
+            // Identify position to split the route
             var insertIndex = _steeringHandle.Route.Stops
                 .Skip(_steeringHandle.Route.PassedStops)
                 .ToList()
@@ -536,7 +601,7 @@ namespace SOHModel.SemiTruck.Model
 
             if (insertIndex == -1)
             {
-                Console.WriteLine("Kein passender Splitpunkt in der Route gefunden.");
+                Console.WriteLine("Could not find valid insertion point for detour.");
                 if (stopType == StopType.Rest)
                 {
                     _goingToRestArea = false;
@@ -554,7 +619,7 @@ namespace SOHModel.SemiTruck.Model
             var splitStop = _steeringHandle.Route.Stops[_steeringHandle.Route.PassedStops + insertIndex];
             var splitNode = (splitStop.Edge.From == insertFromNode) ? splitStop.Edge.From : splitStop.Edge.To;
 
-            // 2. Route zum Zwischenziel
+            // Build route to stop location
             var toStopRoute = SemiTruckRouteFinder.Find(
                 _environment, DriveMode,
                 splitNode.Position.Latitude, splitNode.Position.Longitude,
@@ -564,13 +629,14 @@ namespace SOHModel.SemiTruck.Model
                 _layer.RemovedEdges
             );
 
+            // Remember destination node
             if (stopType == StopType.Rest)
                 _restNode = toStopRoute.Stops[^1].Edge.To;
-            
+
             if (stopType == StopType.Refuel)
                 _refuelNode = toStopRoute.Stops[^1].Edge.To;
 
-            // 3. Route zurück
+            // Build return route from stop back to original path
             var backRoute = SemiTruckRouteFinder.Find(
                 _environment, DriveMode,
                 targetLat, targetLon,
@@ -582,7 +648,7 @@ namespace SOHModel.SemiTruck.Model
 
             if (toStopRoute == null || toStopRoute.Count == 0 || backRoute == null || backRoute.Count == 0)
             {
-                Console.WriteLine("Route zum Zwischenziel oder zurück konnte nicht berechnet werden.");
+                Console.WriteLine("Failed to compute detour or return route.");
                 if (stopType == StopType.Rest)
                 {
                     _goingToRestArea = false;
@@ -597,7 +663,7 @@ namespace SOHModel.SemiTruck.Model
                 return;
             }
 
-            // 4. Neue Route zusammensetzen
+            // Merge routes: pre-stop Route + detour (Gas Station / Rest Area) + return-detour + remaining Route
             var newRoute = new Route();
 
             for (int i = 0; i < _steeringHandle.Route.PassedStops + insertIndex; i++)
@@ -619,60 +685,74 @@ namespace SOHModel.SemiTruck.Model
             if (_layer.notifyTrucks)
                 _layer.RegisterTruckForRoute(this, _steeringHandle.Route);
 
-            Console.WriteLine(
-                $"Truck fährt zum Zwischenziel ({stopType}) bei ({targetLat}, {targetLon}) und kehrt zurück.");
+            Console.WriteLine($"Truck diverts to stop ({stopType}) at ({targetLat}, {targetLon}) and continues.");
         }
 
+        /// <summary>
+        /// Calculates and updates the fuel consumption of the truck based on the distance driven since the last tick.
+        /// If the fuel tank reaches zero, the truck will effectively stall until refueled.
+        /// </summary>
         private void UpdateFuelConsumption()
         {
             double currentRemainingDistance = _steeringHandle.Route.RemainingRouteDistanceToGoal;
             double distanceDrivenKm = 0.0;
 
+            // If the route changed, skip distance calculation to avoid negative values
             if (_routeChanged || _lastRemainingDistanceToGoal < 0)
             {
                 _routeChanged = false;
             }
             else
             {
+                // Calculate how far the truck moved (in km)
                 distanceDrivenKm = (_lastRemainingDistanceToGoal - currentRemainingDistance) / 1000.0;
                 if (distanceDrivenKm < 0) distanceDrivenKm = 0;
 
+                // Calculate fuel usage and reduce tank level
                 double fuelUsed = (SemiTruck.FuelConsumptionPer100Km / 100.0) * distanceDrivenKm;
                 _FuelTank -= fuelUsed;
 
                 if (_FuelTank <= 0)
                 {
                     _FuelTank = 0;
-                    // Console.WriteLine($"[Truck {SemiTruck.ID}] Tank leer!");
+                    // Truck has no fuel left; will stop moving until refueled
+                    //TODO What should happen when a truck runs out of gas?
                 }
             }
 
             _lastRemainingDistanceToGoal = currentRemainingDistance;
         }
 
+        /// <summary>
+        /// Checks whether the truck must refuel soon based on current tank level and remaining route length.
+        /// If needed, it searches for nearby gas stations along the route and plans a detour.
+        /// </summary>
         private void CheckIfRefuelIsRequired()
         {
+            // Skip if already on a refueling mission
             if (_goingToRefuel || _refuelPlanned) return;
 
+            // Estimate how far the truck can go with current fuel (in km)
             double availableRangeKm = (_FuelTank / SemiTruck.FuelConsumptionPer100Km) * 100;
 
+            // If range is too low, prepare refuel plan
             if (availableRangeKm < 100)
             {
-                
+                // Only search if there's still a long distance to go
                 if (Route.RemainingRouteDistanceToGoal > 100_000)
                 {
                     double accumulatedDistance = 0;
-                    Console.WriteLine(
-                        $"[Truck {SemiTruck.ID}] Tank reicht nur noch für {availableRangeKm:F1} km – Tankstelle wird gesucht...");
+                    Console.WriteLine($"[Truck {SemiTruck.ID}] Fuel low: {availableRangeKm:F1} km remaining – searching for gas station...");
+                    // Scan the next 100 km along the route for gas station tags
                     foreach (var routeStep in _steeringHandle.Route)
                     {
                         var edge = routeStep.Edge;
                         accumulatedDistance += edge.Length;
                         if (accumulatedDistance > 100_000)
                             break;
-                    
+
                         var nodesToCheck = new[] { edge.From, edge.To };
-                    
+
                         foreach (ISpatialNode node in nodesToCheck)
                         {
                             foreach (var connectedEdge in node.OutgoingEdges.Values)
@@ -684,7 +764,8 @@ namespace SOHModel.SemiTruck.Model
                                     {
                                         var serviceCoord = connectedEdge.To.Position;
                                         var insertFromNode = connectedEdge.From;
-                    
+
+                                        // Plan a detour to the gas station
                                         PlanRouteWithStop(serviceCoord.Latitude, serviceCoord.Longitude, insertFromNode,
                                             StopType.Refuel);
                                         _refuelPlanned = true;
@@ -694,33 +775,37 @@ namespace SOHModel.SemiTruck.Model
                             }
                         }
                     }
-                    Console.WriteLine(
-                        $"[Truck {SemiTruck.ID}] Keine Tankstelle auf aktueller Route gefunden – externe Suche.");
+
+                    // No station found on the way – fallback to external list
+                    Console.WriteLine($"[Truck {SemiTruck.ID}] No gas station found along route – fallback to CSV list.");
                     FindNearestGasStationsFromList();
                     _refuelPlanned = true;
                 }
             }
         }
-        
+
+        /// <summary>
+        /// Controls the behavior of the truck during the refueling process, including start and end of the pause.
+        /// Prevents driving while refueling.
+        /// </summary>
+        /// <returns>True if refueling is ongoing and tick should pause</returns>
         private bool HandleRefuelPause()
         {
-            
-            // Truck tankt gerade
+            // Truck is currently in refueling phase
             if (_isRefueling && _refuelUntilTime > _layer._simulationTime)
-                return true; // Tick abbrechen
+                return true; 
 
-            // Tankvorgang abgeschlossen
+            // Refueling just completed
             if (_isRefueling && _refuelUntilTime <= _layer._simulationTime)
             {
                 Console.WriteLine($"[Truck {SemiTruck.ID}] Tanken abgeschlossen – Weiterfahrt.");
-                _FuelTank = SemiTruck.FuelTankLevelLiters; // Tank auffüllen
+                _FuelTank = SemiTruck.FuelTankLevelLiters; // Reset to full
                 _isRefueling = false;
                 _refuelPlanned = false;
                 _refuelNode = null;
-                
             }
-            
-            // Truck erreicht Tankstelle
+
+            // Truck has arrived at the fueling point
             if (_goingToRefuel &&
                 _steeringHandle.Position != null &&
                 _refuelNode != null &&
@@ -735,44 +820,49 @@ namespace SOHModel.SemiTruck.Model
 
             return false;
         }
-        
+
+        /// <summary>
+        /// Adjusts the truck’s max speed and accident risk based on current weather zone.
+        /// Speed is reduced in snow, rain or fog, and accident probability may increase.
+        /// </summary>
         private void AdjustSpeedBasedOnWeather()
         {
             if (WeatherLayer == null || Position == null)
                 return;
 
             var point = new NetTopologySuite.Geometries.Point(Longitude, Latitude);
+            // Find weather zone that contains the truck's current position
             var affectedZone = WeatherLayer.AllZones
                 .FirstOrDefault(z => z.Area.Contains(point) && z.SpeedFactor < 1.0);
 
+            // Store original speed once for reset
             if (_originalMaxSpeed < 0)
                 _originalMaxSpeed = SemiTruck.MaxSpeed;
 
-            // Restore original accident rate if previously changed
+            // Reset accident rate (in case previously modified)
             SemiTruck.AccidentsPerYear = DefaultAccidentsPerYear;
 
             if (affectedZone != null)
             {
                 MaxSpeed = _originalMaxSpeed * affectedZone.SpeedFactor;
 
-                // Beispielprüfung für Schnee – je nach deinem Datenmodell anpassen!
+                // Adjust accident risk if conditions are snowy or severely slowed
                 if (affectedZone.Type?.ToLower().Contains("schnee") == true ||
-                    affectedZone.SpeedFactor <= 0.6) // fallback falls Type nicht verfügbar
+                    affectedZone.SpeedFactor <= 0.6) 
                 {
                     SemiTruck.AccidentsPerYear *= 2.06;
-                    // Console.WriteLine($"[Truck {SemiTruck.ID}] Schneezone erkannt – Unfallrate x2.06");
                 }
-
-                // Console.WriteLine($"[Truck {SemiTruck.ID}] Wetterzone aktiv ({affectedZone.Type}) – SpeedFactor: {affectedZone.SpeedFactor}, neue MaxSpeed: {MaxSpeed:F1} km/h");
             }
             else
             {
                 MaxSpeed = _originalMaxSpeed;
-                // Console.WriteLine($"[Truck {SemiTruck.ID}] Kein Wettereffekt – MaxSpeed ist: {MaxSpeed:F1} km/h");
             }
         }
 
-
+        /// <summary>
+        /// Searches for the nearest rest area from the external list (e.g., CSV) based on current position.
+        /// Used as fallback when no rest area was found on the active route.
+        /// </summary>
         private void FindNearestRestAreaFromList()
         {
             var currentLat = _steeringHandle.Position.Latitude;
@@ -781,17 +871,20 @@ namespace SOHModel.SemiTruck.Model
             var nearest = _layer.AllRestAreas.MinBy(r => GetSquaredDistance(currentLat, currentLon, r.Lat, r.Lon));
             if (nearest != null)
             {
-                Console.WriteLine(
-                    $"Verwende Rest Area aus CSV – ID: {nearest.Id}, Koordinaten: ({nearest.Lat}, {nearest.Lon})");
+                Console.WriteLine($"Using fallback rest area from CSV – ID: {nearest.Id} @ ({nearest.Lat}, {nearest.Lon})");
                 PlanRouteWithStop(nearest.Lat, nearest.Lon, Route.Stops[_steeringHandle.Route.PassedStops].Edge.To,
                     StopType.Rest);
             }
             else
             {
-                Console.WriteLine("Keine passende Rest Area in CSV gefunden.");
+                Console.WriteLine("No fallback rest area found in external list.");
             }
         }
-        
+
+        /// <summary>
+        /// Searches for the nearest gas station from the external list (e.g., CSV).
+        /// Used if no gas station was found along the currently planned route.
+        /// </summary>
         private void FindNearestGasStationsFromList()
         {
             var currentLat = _steeringHandle.Position.Latitude;
@@ -800,18 +893,20 @@ namespace SOHModel.SemiTruck.Model
             var nearest = _layer.AllGasStations.MinBy(r => GetSquaredDistance(currentLat, currentLon, r.Lat, r.Lon));
             if (nearest != null)
             {
-                Console.WriteLine(
-                    $"Verwende Gas Station aus CSV – ID: {nearest.Id}, Koordinaten: ({nearest.Lat}, {nearest.Lon})");
+                Console.WriteLine($"Using fallback gas station from CSV – ID: {nearest.Id} @ ({nearest.Lat}, {nearest.Lon})");
                 PlanRouteWithStop(nearest.Lat, nearest.Lon, Route.Stops[_steeringHandle.Route.PassedStops].Edge.To,
                     StopType.Refuel);
             }
             else
             {
-                Console.WriteLine("Keine passende Rest Area in CSV gefunden.");
+                Console.WriteLine("No fallback gas station found in external list.");
             }
         }
 
 
+        /// <summary>
+        /// Computes squared Euclidean distance between two coordinates (used for nearest neighbor logic).
+        /// </summary>
         private double GetSquaredDistance(double lat1, double lon1, double lat2, double lon2)
         {
             double dLat = lat1 - lat2;
@@ -819,6 +914,9 @@ namespace SOHModel.SemiTruck.Model
             return dLat * dLat + dLon * dLon;
         }
 
+        /// <summary>
+        /// Checks whether the truck's current position is on top of a given node (with 1m tolerance).
+        /// </summary>
         bool IsOnNode(ISpatialNode node)
         {
             var pos = _steeringHandle.Position;
@@ -826,9 +924,9 @@ namespace SOHModel.SemiTruck.Model
 
             double dx = pos.Latitude - nodePos.Latitude;
             double dy = pos.Longitude - nodePos.Longitude;
-            double distance = Math.Sqrt(dx * dx + dy * dy) * 111_000; // in Metern
+            double distance = Math.Sqrt(dx * dx + dy * dy) * 111_000; // degrees to meters
 
-            return distance < 1.0; // oder 0.5, je nach Genauigkeit
+            return distance < 1.0; // within 1 meter radius
         }
 
         private enum StopType

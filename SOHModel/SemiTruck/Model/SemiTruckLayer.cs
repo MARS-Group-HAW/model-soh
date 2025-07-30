@@ -364,19 +364,29 @@ namespace SOHModel.SemiTruck.Model
             }
         }
 
+        /// <summary>
+        /// Handles a time-bound, spatially-defined speed reduction for certain road segments (edges).
+        /// This function applies a temporary speed limit to all edges along a route defined by coordinates,
+        /// and restores original values after the time window ends.
+        /// </summary>
+        /// <param name="reduction">A scheduled speed reduction event with coordinate path and timing info</param>
         private void HandleScheduledSpeedReduction(SemiTruckLayer.ScheduledSpeedReductionByCoordinates reduction)
         {
             if (!reduction.IsActive && _simulationTime >= reduction.StartTime && _simulationTime < reduction.EndTime)
             {
+                // Get route defined by coordinates (start to end) as geographic positions
                 var start = reduction.Coordinates.First();
                 var end = reduction.Coordinates.Last();
 
+                // Find the nearest network nodes to the start and end positions
                 var fromNode = Environment.NearestNode(Position.CreateGeoPosition(start.X, start.Y),
                     SpatialModalityType.CarDriving);
                 var toNode = Environment.NearestNode(Position.CreateGeoPosition(end.X, end.Y),
                     SpatialModalityType.CarDriving);
+                // Compute shortest route along the spatial graph (network) between the two nodes
                 var route = Environment.FindShortestRoute(fromNode, toNode);
 
+                // If the route is valid, iterate over all segments (edges)
                 if (route?.Stops != null)
                 {
                     foreach (var stop in route.Stops)
@@ -387,41 +397,44 @@ namespace SOHModel.SemiTruck.Model
                         int edgeId = (int)edge.GetId();
                         reduction.AffectedEdgeIds.Add(edgeId);
 
-                        // Nur sichern, wenn noch nicht gesichert
+                        // If this edge still has its original speed and hasn't been backed up, store it
                         if (!edge.Attributes.ContainsKey("original_maxspeed") &&
                             edge.Attributes.ContainsKey("maxspeed"))
                         {
                             edge.Attributes["original_maxspeed"] = edge.Attributes["maxspeed"];
                         }
 
-                        // Temporären Wert setzen
-                        // Nur reduzieren, wenn aktuelle maxspeed > reduzierte Geschwindigkeit
+                        // Check if reduction makes sense (i.e., new speed < current max speed)
                         if (edge.Attributes.TryGetValue("maxspeed", out var currentMaxObj) &&
                             double.TryParse(currentMaxObj.ToString(), out double currentMax) &&
                             currentMax > reduction.ReducedSpeedKmh)
                         {
-                            // Nur sichern, wenn noch nicht gesichert
+                            // Store backup again (just in case), then apply reduced speed
                             if (!edge.Attributes.ContainsKey("original_maxspeed"))
                             {
                                 edge.Attributes["original_maxspeed"] = currentMaxObj;
                             }
 
                             edge.Attributes["maxspeed"] = reduction.ReducedSpeedKmh.ToString();
-                            // Console.WriteLine($"[SpeedReduction-Aktiv] Edge {edgeId} temporär auf {reduction.ReducedSpeedKmh} km/h reduziert (war: {currentMax})");
+                            // Console.WriteLine($"[SpeedReduction-Aktiv] Edge {edgeId} reduced to {reduction.ReducedSpeedKmh} km/h (was: {currentMax})");
                         }
 
                     }
 
+                    // Mark the reduction as active to avoid reapplying it each tick
                     reduction.IsActive = true;
                 }
             }
+            // If the reduction was active and the time window has passed
             else if (reduction.IsActive && _simulationTime >= reduction.EndTime)
             {
+                // Iterate over all previously affected edge IDs
                 foreach (var edgeId in reduction.AffectedEdgeIds)
                 {
+                    // If the edge still exists in the environment, try to restore its speed
                     if (Environment.Edges.TryGetValue(edgeId, out var edge))
                     {
-                        // Wiederherstellen, falls ein Originalwert gespeichert wurde
+                        // Restore original maxspeed if backup exists
                         if (edge.Attributes.ContainsKey("original_maxspeed"))
                         {
                             edge.Attributes["maxspeed"] = edge.Attributes["original_maxspeed"];
@@ -430,6 +443,7 @@ namespace SOHModel.SemiTruck.Model
                     }
                 }
 
+                // Mark reduction as inactive so it can be scheduled again in future
                 reduction.IsActive = false;
             }
         }
@@ -465,6 +479,13 @@ namespace SOHModel.SemiTruck.Model
             }
         }
 
+        /// <summary>
+        /// Loads a list of rest areas from a CSV file.
+        /// The CSV is expected to have at least three columns: ID, Latitude, Longitude (in this order).
+        /// The first line (header) will be skipped.
+        /// </summary>
+        /// <param name="path">The file path to the CSV containing the rest area data.</param>
+        /// <returns>A list of RestArea objects parsed from the file.</returns>
         public List<RestArea> LoadRestAreas(string path)
         {
             var lines = File.ReadAllLines(path).Skip(1); // Skip header
@@ -480,6 +501,13 @@ namespace SOHModel.SemiTruck.Model
             }).ToList();
         }
 
+        /// <summary>
+        /// Loads a list of gas stations from a CSV file.
+        /// The CSV is expected to have at least three columns: ID, Latitude, Longitude (in this order).
+        /// The first line (header) will be skipped.
+        /// </summary>
+        /// <param name="path">The file path to the CSV containing gas station data.</param>
+        /// <returns>A list of GasStations objects parsed from the file.</returns>
         public List<GasStations> LoadGasStations(string path)
         {
             var lines = File.ReadAllLines(path).Skip(1); // Skip header
@@ -530,6 +558,10 @@ namespace SOHModel.SemiTruck.Model
             public bool IsActive { get; set; } = false;
         }
 
+        /// <summary>
+        /// Represents a scheduled, temporary speed reduction for a specific road segment,
+        /// defined by a set of coordinates and a time window.
+        /// </summary>
         public class ScheduledSpeedReductionByCoordinates
         {
             public string Id { get; set; }
@@ -553,6 +585,9 @@ namespace SOHModel.SemiTruck.Model
         }
 
 
+        /// <summary>
+        /// Represents a rest area location where trucks can pause to comply with legal driving time regulations.
+        /// </summary>
         public class RestArea
         {
             public int Id { get; set; }
@@ -562,6 +597,9 @@ namespace SOHModel.SemiTruck.Model
             public Coordinate Position => new Coordinate(Lat, Lon);
         }
 
+        /// <summary>
+        /// Represents a gas station location used for refueling logic in the simulation.
+        /// </summary>
         public class GasStations
         {
             public int Id { get; set; }
