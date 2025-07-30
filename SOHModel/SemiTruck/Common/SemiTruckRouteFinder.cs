@@ -165,7 +165,8 @@ public static class SemiTruckRouteFinder
                 }
 
                 // Compute a new route considering all physical and logical constraints
-                Route validRoute = new Route(); // Collects the longest valid sub-route if a complete route fails
+                ISpatialNode? closestNode = null;// Collects the closest node that was reached to the goal for sub-route
+                double closestDistance = double.MaxValue;
                 bool routeWasLimitedByConstraints = false;
                 bool isPartial = false;
 
@@ -181,10 +182,14 @@ public static class SemiTruckRouteFinder
                         truckMaxIncline);
                     if (isValid)
                     {
-                        List<ISpatialLane> lanes = edge.Lanes?.ToList();
-                        var desiredLane = lanes?.FirstOrDefault();
-                        int desiredLaneIndex = desiredLane != null ? lanes.IndexOf(desiredLane) : -1;
-                        validRoute.Add(edge, desiredLaneIndex); // Track as part of the partial route
+                        var distance = Haversine(edge.To.Position.Latitude, edge.To.Position.Longitude,
+                            goal.Position.Latitude, goal.Position.Longitude);
+
+                        if (distance < closestDistance)
+                        {
+                            closestDistance = distance;
+                            closestNode = edge.To;
+                        }
                     }
                     else
                     {
@@ -197,21 +202,18 @@ public static class SemiTruckRouteFinder
 
 
                 // If a full route could not be computed, try to extract a partial route to the last valid point
-                if ((route == null || route.Count == 0) && validRoute.Count > 0)
+                if ((route == null || route.Count == 0) && closestNode != null)
                 {
-                    //Console.WriteLine("No complete route found, but a partial route is available.");
-                    //Console.WriteLine($"Last reachable position: {validRoute.Goal}");
-                    var validGoal = validRoute.Last().Edge.To;
+                    Console.WriteLine("No complete route found, but closest partial point is available.");
+                    Console.WriteLine($"Closest reachable node: {closestNode} (distance: {closestDistance:F1} km)");
 
                     //Attempt to compute a shorter route from the start to the last reachable node
-                    route = environment.FindShortestRoute(currentNode, validGoal, edge =>
+                    route = environment.FindShortestRoute(currentNode, closestNode, edge =>
                     {
-                        bool isValid = CheckValidEdge(edge, truckHeight, truckWeight, truckWidth, truckLength,
-                            truckMaxIncline);
-                        return isValid;
+                        return CheckValidEdge(edge, truckHeight, truckWeight, truckWidth, truckLength, truckMaxIncline);
                     }) ?? new Route();
                 }
-                else if (validRoute.Count == 0)
+                else if (closestNode == null)
                 {
                     // No route found that satisfies constraints; fallback to empty result
                     Console.WriteLine("No valid route found. Constraints may be too strict or data incomplete.");
@@ -426,5 +428,17 @@ public static class SemiTruckRouteFinder
         }
 
         return rebuiltRoute;
+    }
+    
+    private static double Haversine(double lat1, double lon1, double lat2, double lon2)
+    {
+        double R = 6371; // Radius of Earth in km
+        var dLat = Math.PI / 180 * (lat2 - lat1);
+        var dLon = Math.PI / 180 * (lon2 - lon1);
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                Math.Cos(Math.PI / 180 * lat1) * Math.Cos(Math.PI / 180 * lat2) *
+                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        return R * c;
     }
 }
