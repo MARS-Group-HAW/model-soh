@@ -29,19 +29,24 @@ The full export and preprocessing pipeline is implemented in Python and can be f
   Exports the raw highway and federal road network of Germany using OSMnx and adds useful attributes.  
   The `maxspeed` tag is **explicitly removed** during this step to avoid known runtime errors in MARS.
 
+
 - **`add_MaxSpeed.py`**  
   Adds the `maxspeed` tag back in after the initial export.  
   This was done **after** the `.geojson` structure had been successfully integrated into MARS.
 
+
 - **`add_Elevation.py`**  
   Adds elevation data for each coordinate using an external elevation API.
+
 
 - **`calculate_Incline_By_Elevation.py`**  
   Calculates missing `incline` values for edges where OpenStreetMap doesn't provide them.  
   It uses elevation data and **haversine distance** for a realistic slope approximation.
 
+
 - **`compress_geojson.py`** *(optional)*  
   Removes unnecessary whitespace from the `.geojson` file to reduce its size by ~50%.
+
 
 - **`calculateEdgeCapacity.py`**  
   Calculates the capacity of each edge in the network based on its **length** and **number of lanes**,  
@@ -52,6 +57,43 @@ The full export and preprocessing pipeline is implemented in Python and can be f
   The script adds a `max_capacity_fe` field to each edge in the GeoJSON, which can be used during simulation to track  
   real-time traffic load and perform congestion modeling.
 
+
+- **`export_Fuel_Rest_Area_From_OSM.py`**  
+  Extracts highway-related Points of Interest (POIs) from OpenStreetMap for all 16 German federal states using the Overpass API.
+  <br>This includes:
+  - `highway=services` (rest stops with gas stations (Raststätten))
+  - `highway=rest_area` (basic rest areas like parking spots)
+  - `amenity=fuel` (fuel stations)
+
+  The POIs are processed into a `GeoDataFrame` and tagged with a standardized `source_tag`
+    (e.g., `"fuel"`, `"services"`, `"rest_area"`) for consistent downstream processing.
+    The final result is exported as a `.geojson` file and can be used for traffic simulations,
+    accessibility analysis, or linking POIs to nearby road networks.
+
+
+- **`add_Fuel_Rest_To_GeoJSON.py`**
+  Connects service areas, rest stops, and fuel stations to the German highway network.
+  Each POI is snapped to the nearest road segment (≤500m) and integrated into the network through the following steps:
+  1. Find the nearest Coordinates in an Edge for the POI.
+  2. Split that road segment at these coordinates.
+  3. Create forward and reverse edges for each split segment.
+  4. Add a connector edge from the POI to the split location.
+  5. Insert two new node features at the POI and split point.
+  6. Finally, assign the correct `source_tag` to each new node to mark it as `service`, `fuel` or `rest_area`
+
+  The output is a new .geojson file containing:
+  - all original and new network segments
+  - bi-directional POI connectors
+  - POI node points
+  - and consistent metadata for simulation, analysis, or routing use cases
+
+- **`fuel_Rest_To_List.py`**  
+  Extracts geographic coordinates for rest areas and fuel stations from a preprocessed `.geojson` file
+  and exports them into two separate `.csv` files for further use in routing, visualization, or simulation.
+    
+    Output files:
+  - `rest_areas.csv`
+  - `gas_stations.csv`
 ---
 
 ### File Information
@@ -347,18 +389,19 @@ ___
 
 The **`semi_truck.csv`** defines different types of **`SemiTrucks`** like the following:
 
-| Type               | Max Acceleration | Max Deceleration | Max Speed (m/s) | Length (m) | Height (m) | Width (m) | Traffic Code | Passenger Capacity | Velocity | Mass (tons) | Max Incline (%) |
-|--------------------|------------------|------------------|-----------------|------------|------------|-----------|--------------|--------------------|----------|-------------|-----------------|
-| SmallTruck         | 0.5              | 1.2              | 30.83           | 6          | 2.5        | 2.5       | German       | 2                  | 0        | 5.0         | 25              |
-| MediumLoadTruck    | 0.5              | 1.2              | 30.83           | 8          | 2.5        | 2.5       | German       | 2                  | 0        | 10.0        | 22              |
-| HeavyLoadTruck     | 0.5              | 1.2              | 30.83           | 10         | 2.5        | 2.5       | German       | 2                  | 0        | 15.0        | 18              |
-| ExtendedLoadTruck  | 0.5              | 1.2              | 30.83           | 12         | 2.5        | 2.5       | German       | 2                  | 0        | 20.0        | 15              |
-| LargeCapacityTruck | 0.5              | 1.2              | 30.83           | 12         | 2.5        | 2.5       | German       | 2                  | 0        | 25.0        | 13              |
-| ExtraCapacityTruck | 0.5              | 1.2              | 30.83           | 14         | 2.5        | 2.5       | German       | 2                  | 0        | 30.0        | 12              |
-| HighVolumeTruck    | 0.5              | 1.2              | 30.83           | 14         | 2.5        | 2.5       | German       | 2                  | 0        | 35.0        | 10              |
-| MaximumLoadTruck   | 0.5              | 1.2              | 30.83           | 16         | 2.5        | 2.5       | German       | 2                  | 0        | 40.0        | 8               |
-| OverloadTruck      | 0.5              | 1.2              | 30.83           | 16         | 2.5        | 2.5       | German       | 2                  | 0        | 50.0        | 6               |
-| UnlimitedTruck     | 0.5              | 1.2              | 30.83           | 1          | 1.0        | 1.0       | German       | 2                  | 0        | 2.0         | 25              |
+
+| Type               | Max Acceleration | Max Deceleration | Max Speed (m/s) | Length (m) | Height (m) | Width (m) | Traffic Code | Passenger Capacity | Velocity | Mass (tons) | Max Incline (%) | Accidents/Year | Power (kW) | Fuel Size (L) | Fuel Consumption (L/100km) |
+| ------------------ | ---------------- | ---------------- | --------------- | ---------- | ---------- | --------- | ------------ | ------------------ | -------- | ----------- | --------------- | -------------- | ---------- | ------------- | -------------------------- |
+| SmallTruck         | 0.5              | 1.2              | 30.83           | 6          | 2.5        | 2.5       | German       | 2                  | 0        | 5.0         | 25              | 11169          | 141        | 100           | 15                         |
+| MediumLoadTruck    | 0.5              | 1.2              | 30.83           | 8          | 2.5        | 2.5       | German       | 2                  | 0        | 10.0        | 22              | 1464           | 141        | 100           | 18                         |
+| HeavyLoadTruck     | 0.5              | 1.2              | 30.83           | 10         | 2.5        | 2.5       | German       | 2                  | 0        | 15.0        | 18              | 685            | 240        | 160           | 20                         |
+| ExtendedLoadTruck  | 0.5              | 1.2              | 30.83           | 12         | 2.5        | 2.5       | German       | 2                  | 0        | 20.0        | 15              | 257            | 240        | 180           | 25                         |
+| LargeCapacityTruck | 0.5              | 1.2              | 30.83           | 12         | 2.5        | 2.5       | German       | 2                  | 0        | 25.0        | 13              | 504            | 317        | 200           | 30                         |
+| ExtraCapacityTruck | 0.5              | 1.2              | 30.83           | 14         | 2.5        | 2.5       | German       | 2                  | 0        | 30.0        | 12              | 504            | 336        | 250           | 33                         |
+| HighVolumeTruck    | 0.5              | 1.2              | 30.83           | 14         | 2.5        | 2.5       | German       | 2                  | 0        | 35.0        | 10              | 504            | 336        | 250           | 35                         |
+| MaximumLoadTruck   | 0.5              | 1.2              | 30.83           | 16         | 2.5        | 2.5       | German       | 2                  | 0        | 40.0        | 8               | 504            | 336        | 300           | 40                         |
+| OverloadTruck      | 0.5              | 1.2              | 30.83           | 16         | 2.5        | 2.5       | German       | 2                  | 0        | 50.0        | 6               | 504            | 400        | 300           | 40                         |
+| UnlimitedTruck     | 0.5              | 1.2              | 30.83           | 1          | 1.0        | 1.0       | German       | 2                  | 0        | 2.0         | 25              | 1              | 1000       | 10000         | 1                          |
 
 ___
 
@@ -427,6 +470,57 @@ optimizing truck-specific routes while considering constraints like weight, heig
 restricted roads. Once the destination is reached, the driver exits the simulation, ensuring efficient lifecycle
 management within large-scale logistics and mobility simulations.
 
+### Update Fuel Consumption & Check for Refueling
+In each tick, the driver estimates how far the truck has moved since the last step and calculates the corresponding fuel consumption. The tank level is reduced based on the truck's fuel efficiency.
+If the remaining range drops below a critical threshold (100 km), the driver scans the upcoming 100 km of the planned route for nearby fuel stations (tagged as `"fuel"` or `"services"`).
+If a suitable station is found, a refueling detour is planned automatically. If not, the driver falls back to an external station list (`"gas_stations.csv"`) to find the nearest refueling option
+while still considering the direction of the detour is as small as possible.
+
+### Check Driving Time and Schedule Rest
+The driver monitors the time since the last rest. If the maximum driving time without a break has been exceeded and the truck still has a long distance ahead (>100 km), a mandatory rest is triggered.
+The driver scans the next 100 km of the route for rest areas or service stations (`"rest_area"` or `"services"`). If one is found, a detour is planned using PlanRouteWithStop, guiding the truck to the rest area and then back onto its original route.
+If no rest area is found along the way, the driver falls back to an external list (`"rest_areas.csv"`) of rest areas to schedule the stop.
+
+### Handle Rest and Refueling Pauses
+
+Before performing any movement or logic, the driver checks whether the truck is currently in a resting or refueling state.
+- If the truck is at a rest area, it pauses for a legally required 4-hour break. Movement is blocked during this period. Once the pause ends, the truck resumes its original route.
+- If the truck has reached a fuel station, it initiates a short 5-minute refueling stop. After refueling, the tank is reset to full, and the truck continues its journey.
+
+In both cases, the tick is interrupted until the stop is completed, ensuring the truck will not move during this period.
+
+
+### Check for Accident Chance
+In each tick, the driver performs a random accident check based on the truck’s annual accident rate and the current number of trucks in the simulation.
+This accident rate is based on data from `Destatis` where accidents for freight vehicles were documented for multiple years
+and seperated into weight classes. With this information each `SemiTruck` class can have it's own realistic accidentRate.
+If an accident occurs, the truck is immediately stopped and marked as blocked for a defined accident duration 
+(default: 41 minutes which is the average respond time of ADAC).
+
+If the current road segment has a shoulder (`"shoulder" = "yes"`), the truck can pull over, reducing the impact to only 2 minutes of downtime.
+This mechanism realistically introduces stochastic disruptions into the simulation, reflecting real-world incident dynamics.
+
+### Handle Ongoing Accidents
+If a truck has previously had an accident, this step manages the remaining downtime.
+As long as the accident is active, the driver skips all other logic and remains stationary.
+Once the accident duration has elapsed, the truck is considered out of service and is removed from the simulation, including deregistration from the current route and environment.
+This ensures that accident aftermaths are realistically handled and that trucks do not resume driving after severe incidents.
+
+
+### Apply Road Rules (Weather, Overtaking, Incline)
+Before moving, the driver evaluates the current road segment and environmental conditions to adjust driving behavior:
+- Weather Conditions: If the truck is located in a weather zone (e.g. rain, fog, snow), its maximum speed is reduced accordingly. 
+In case of snow or severely impaired visibility, the accident probability is increased as well. 
+This is also based on data from `destatis`, for instance that the accidentRate increases by 2.06 times when there is snow.
+- Overtaking Permissions: The current road edge is checked for overtaking rules (`"overtaking" = "yes"`). 
+If overtaking is not allowed, the driver will adapt behavior accordingly (e.g., no lane changes).
+- Road Incline: If the road segment has a positive incline, the truck’s speed is physically limited based on its weight and engine power. 
+This is based on real physical performance loss for a truck with certain weight, power, speed at a certain incline.
+This simulates realistic uphill behavior and prevents the truck from exceeding feasible speeds on steep slopes.
+
+This step ensures the truck's movement stays within realistic physical and legal constraints at all times.
+
+### Roadblocks
 During each simulation tick, the driver has two options. Either he continuously checks the upcoming edges of the route (currently defined as 5km
 lookahead) of its planned route. If a blocked
 road segment is detected within this distance—based on the list of currently closed edges—the driver immediately
@@ -436,6 +530,11 @@ In either way a new bypass route is calculated around the closure, leading to th
 on the original path. This enables the truck to avoid blocked segments and continue toward its destination with
 minimal disruption, preserving the overall route context.
 
+### Move Truck Along Route & Check for Arrival
+At the end of each tick, the truck advances along its planned route using the `_steeringHandle.Move()` method, which handles position updates and lane progression.
+
+Once the destination is reached, the truck is removed from the simulation. This includes deregistration from the active route (if tracking is enabled) and removal from the simulation environment.
+This ensures clean lifecycle management and accurate agent turnover in large-scale logistics scenarios.
 ___
 
 ## SemiTruckLayer
@@ -645,22 +744,41 @@ ___
 ## SemiTruckRealTimeLayer
 
 The `SemiTruckRealTimeLayer` is a real-time data integration layer that fetches and processes official road closure data
-from the German Autobahn API (https://autobahn.api.bund.dev/). It periodically queries all major Autobahn routes for
-scheduled
-closures and injects them into the simulation during runtime.
+from the German Autobahn API (https://autobahn.api.bund.dev/).
+It periodically queries all major Autobahn routes for scheduled closures and construction zones, injecting them into the simulation during runtime.
 
-This layer parses closure intervals and geospatial coordinates, then adds them as structured road block events into the
-`SemiTruckLayer`. The closures are dynamically recognized based on location and time, ensuring agents adapt their routes
-accordingly to avoid closed roads.
 
-By automatically pulling updates every defined interval of minutes, the `SemiTruckRealTimeLayer` enables near-live
-scenario
-modeling, essential for testing time-sensitive logistics operations, rerouting strategies, and the impact of
-infrastructure disruptions.
+This layer parses closure intervals and geospatial coordinates, then adds them as structured events into the `SemiTruckLayer`. These include:
 
-Closures are cached internally to prevent duplicate processing and ensure simulation performance remains stable, even
-with large datasets or frequent updates.
+- Road closures, which are recognized by keywords such as "Sperrung" in the official data and result in a temporary removal of affected edges from the road network.
 
+- Construction zones, identified by terms like "Baustelle", "Sanierung", or "Instandsetzung", and marked as areas with reduced speed limits (e.g., 60 km/h) instead of full blockage.
+  
+Closures and construction sites are dynamically recognized based on time and location, ensuring that trucks adapt their routes accordingly to avoid disruptions or reduce speed in affected zones.
+
+To maintain performance, all detected events are cached using unique keys, preventing redundant processing. The system updates:
+- Closures every 60 minutes
+- Construction zones every 24 hours (due to an enormous amount of construction zones to be processed)
+
+This real-time integration enables near-live scenario modeling, making it suitable for evaluating time-critical logistics, rerouting strategies, and infrastructure-related delays in long-haul freight transport simulations.
+
+## SemiTruckWeatherLayer
+The SemiTruckWeatherLayer is a real-time weather integration layer that fetches and processes live warning data from the German Weather Service (DWD) via the Warnwetter API (https://dwd.api.bund.dev/). 
+It regularly updates a spatial grid across Germany and assigns dynamic weather effects to specific zones during simulation runtime.
+
+This layer parses weather events and applies them as speed-modifying weather zones to the simulation, depending on severity and location. These include:
+- Rain, fog, and storm, which moderately reduce truck speed within affected areas (e.g., 80–90% of normal speed).
+- Snow or ice, which cause significant slowdowns (e.g., 60–70% of normal speed) and increase the risk of accidents.
+
+All weather zones are spatially represented as polygons and checked for overlap with the simulation’s pre-defined grid (8x8km tiles). 
+If a warning region intersects a zone, the corresponding speed factor and weather type are applied for the warning duration.
+
+To ensure up-to-date accuracy and performance, the system:
+- Updates weather data every 30 minutes
+- Filters and applies only zones with real driving impact (i.e., speed reduction < 100%)
+
+This real-time weather integration enables high-fidelity modeling of hazardous conditions, route-specific slowdowns, 
+and the impact of regional weather events on long-haul freight traffic across the simulation area.
 ___
 
 ## Docker & ICC Cloud Deployment
