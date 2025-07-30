@@ -39,6 +39,11 @@ internal static class Program
         // Add semi-truck-related entities
         description.AddEntity<SemiTruck>();
         
+        //Print all current weather events in Germany
+        // var weatherLayer = new SemiTruckWeatherLayer();
+        // weatherLayer.UpdateWeatherAsync().Wait();
+        // weatherLayer.PrintAllActiveWeatherZones();
+        
 
 
 

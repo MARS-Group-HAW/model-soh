@@ -666,7 +666,8 @@ namespace SOHModel.SemiTruck.Model
             // Merge routes: pre-stop Route + detour (Gas Station / Rest Area) + return-detour + remaining Route
             var newRoute = new Route();
 
-            for (int i = 0; i < _steeringHandle.Route.PassedStops + insertIndex; i++)
+            
+            for (int i = _steeringHandle.Route.PassedStops; i < _steeringHandle.Route.PassedStops + insertIndex; i++)
                 newRoute.Add(_steeringHandle.Route.Stops[i].Edge, _steeringHandle.Route.Stops[i].DesiredLane);
 
             foreach (var stop in toStopRoute)
@@ -831,9 +832,14 @@ namespace SOHModel.SemiTruck.Model
                 return;
 
             var point = new NetTopologySuite.Geometries.Point(Longitude, Latitude);
+            var now = WeatherLayer.SemiTruckLayer.Context.CurrentTimePoint ?? DateTime.Now;
             // Find weather zone that contains the truck's current position
             var affectedZone = WeatherLayer.AllZones
-                .FirstOrDefault(z => z.Area.Contains(point) && z.SpeedFactor < 1.0);
+                .FirstOrDefault(z =>
+                    z.Area.Contains(point) &&
+                    z.SpeedFactor < 1.0 &&
+                    z.StartTime <= now &&
+                    z.EndTime >= now);
 
             // Store original speed once for reset
             if (_originalMaxSpeed < 0)
@@ -845,7 +851,7 @@ namespace SOHModel.SemiTruck.Model
             if (affectedZone != null)
             {
                 MaxSpeed = _originalMaxSpeed * affectedZone.SpeedFactor;
-
+                
                 // Adjust accident risk if conditions are snowy or severely slowed
                 if (affectedZone.Type?.ToLower().Contains("schnee") == true ||
                     affectedZone.SpeedFactor <= 0.6) 
