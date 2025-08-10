@@ -4,6 +4,7 @@ using Mars.Interfaces.Layers;
 using SOHModel.SemiTruck.Model;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Text.Json;
@@ -21,6 +22,17 @@ namespace SOHModel.SemiTruck.RealTimeData
         public List<TimeInterval> Intervals { get; set; }
         public string Type { get; set; }
         public List<List<double>> Coordinates { get; set; }
+    }
+
+    /// <summary>
+    /// Represents a warning (traffic jam) information object.
+    /// </summary>
+    public class WarningInfo
+    {
+        public List<TimeInterval> Intervals { get; set; }
+        public string Type { get; set; }
+        public List<List<double>> Coordinates { get; set; }
+        public double AverageSpeedKmh { get; set; }
     }
 
     /// <summary>
@@ -60,14 +72,18 @@ namespace SOHModel.SemiTruck.RealTimeData
         private bool firstTickExecuted = false;
         private DateTime lastClosureUpdateTime = DateTime.MinValue;
         private DateTime lastConstructionUpdateTime = DateTime.MinValue;
+        private DateTime lastWarningUpdateTime = DateTime.MinValue;
 
         private static readonly TimeSpan ClosureUpdateInterval = TimeSpan.FromMinutes(60);
         private static readonly TimeSpan ConstructionUpdateInterval = TimeSpan.FromHours(24);
+        private static readonly TimeSpan WarningUpdateInterval = TimeSpan.FromHours(1);
         private bool isClosure;
         private bool isConstruction;
 
         // Avoid reprocessing known closures
         private readonly HashSet<string> knownClosures = new();
+        private readonly HashSet<string> knownWarnings = new();
+
 
         /// <summary>
         /// Called by the simulation every tick. Periodically updates known closures.
@@ -82,68 +98,114 @@ namespace SOHModel.SemiTruck.RealTimeData
                 firstTickExecuted = true;
                 lastClosureUpdateTime = currentTime - ClosureUpdateInterval;
                 lastConstructionUpdateTime = currentTime - ConstructionUpdateInterval;
+                lastWarningUpdateTime = currentTime - WarningUpdateInterval;
             }
 
             // Determine whether it is time to update closures/constructions
             bool updateClosures = currentTime - lastClosureUpdateTime >= ClosureUpdateInterval;
             bool updateConstructions = currentTime - lastConstructionUpdateTime >= ConstructionUpdateInterval;
+            bool updateWarnings = currentTime - lastWarningUpdateTime >= WarningUpdateInterval;
 
-            if (!updateClosures && !updateConstructions) return;
+            if (!updateClosures && !updateConstructions && !updateWarnings) return;
 
             foreach (var autobahnId in AutobahnIds)
             {
-                // Fetch and parse closure data for each Autobahn
-                var closures = FetchAndParseRoadAsync(autobahnId).GetAwaiter().GetResult();
-
-                foreach (var closure in closures)
+                if (updateClosures || updateConstructions)
                 {
-                    if (closure.Intervals == null || closure.Coordinates == null)
-                        continue;
+                    // Fetch and parse closure data for each Autobahn
+                    var closures = FetchAndParseRoadAsync(autobahnId).GetAwaiter().GetResult();
 
-                    foreach (var interval in closure.Intervals)
+                    foreach (var closure in closures)
                     {
-                        if (interval.Begin == null || interval.End == null) continue;
+                        if (closure.Intervals == null || closure.Coordinates == null)
+                            continue;
 
-                        var startTime = DateTime.Parse(interval.Begin);
-                        var endTime = DateTime.Parse(interval.End);
-
-                        // Convert to NTS Coordinates for spatial use
-                        var coords = closure.Coordinates
-                            .Select(pair => new Coordinate(pair[0], pair[1]))
-                            .ToList();
-
-                        // Create a unique key for this closure to avoid reprocessing
-                        string coordsKey = string.Join(";", coords.Select(c => $"{c.X:F6},{c.Y:F6}"));
-                        string closureKey = $"{autobahnId}|{startTime:o}|{endTime:o}|{coordsKey}";
-
-                        if (knownClosures.Contains(closureKey)) continue;
-
-                        if (isClosure && updateClosures)
+                        foreach (var interval in closure.Intervals)
                         {
-                            knownClosures.Add(closureKey);
+                            if (interval.Begin == null || interval.End == null) continue;
 
-                            var block = new SemiTruckLayer.ScheduledRoadClosureByCoordinates(
+                            var startTime = DateTime.Parse(interval.Begin);
+                            var endTime = DateTime.Parse(interval.End);
+
+                            // Convert to NTS Coordinates for spatial use
+                            var coords = closure.Coordinates
+                                .Select(pair => new Coordinate(pair[0], pair[1]))
+                                .ToList();
+
+                            // Create a unique key for this closure to avoid reprocessing
+                            string coordsKey = string.Join(";", coords.Select(c => $"{c.X:F6},{c.Y:F6}"));
+                            string closureKey = $"{autobahnId}|{startTime:o}|{endTime:o}|{coordsKey}";
+
+                            if (knownClosures.Contains(closureKey)) continue;
+
+                            if (isClosure && updateClosures)
+                            {
+                                knownClosures.Add(closureKey);
+
+                                var block = new SemiTruckLayer.ScheduledRoadClosureByCoordinates(
+                                    id: Guid.NewGuid().ToString(),
+                                    startTime: startTime,
+                                    endTime: endTime,
+                                    coordinates: coords
+                                );
+                                SemiTruckLayer.ScheduledClosuresByCoordinates.Add(block);
+                            }
+                            // Uncomment to add speed reduction for construction sites
+                            // else if (isConstruction && updateConstructions)
+                            // {
+                            //     knownClosures.Add(closureKey);
+                            //
+                            //     var block = new SemiTruckLayer.ScheduledSpeedReductionByCoordinates(
+                            //         id: Guid.NewGuid().ToString(),
+                            //         startTime: startTime,
+                            //         endTime: endTime,
+                            //         coordinates: coords,
+                            //         reducedSpeedKmh: 60
+                            //     );
+                            //     SemiTruckLayer.ScheduledSpeedReductionsByCoordinates.Add(block);
+                            // }
+                        }
+                    }
+                }
+
+                // Warnings (Staus) -> speed reductions
+                if (updateWarnings)
+                {
+                    var warnings = FetchAndParseWarningAsync(autobahnId).GetAwaiter().GetResult();
+
+                    foreach (var warning in warnings)
+                    {
+                        if (warning.Intervals == null || warning.Coordinates == null) continue;
+
+                        // take all intervals; for warnings we ensure End = Begin + 1h in parser
+                        foreach (var interval in warning.Intervals)
+                        {
+                            if (interval.Begin == null || interval.End == null) continue;
+
+                            var startTime = DateTime.Parse(interval.Begin);
+                            var endTime = DateTime.Parse(interval.End);
+
+                            var coords = warning.Coordinates
+                                .Select(pair => new Coordinate(pair[0], pair[1]))
+                                .ToList();
+
+                            string coordsKey = string.Join(";", coords.Select(c => $"{c.X:F6},{c.Y:F6}"));
+                            string warnKey =
+                                $"WARN|{autobahnId}|{startTime:o}|{endTime:o}|{coordsKey}|{Math.Round(warning.AverageSpeedKmh)}";
+
+                            if (knownWarnings.Contains(warnKey)) continue;
+
+                            knownWarnings.Add(warnKey);
+
+                            var block = new SemiTruckLayer.ScheduledSpeedReductionByCoordinates(
                                 id: Guid.NewGuid().ToString(),
                                 startTime: startTime,
                                 endTime: endTime,
-                                coordinates: coords
+                                coordinates: coords,
+                                reducedSpeedKmh: (int)Math.Max(1, Math.Round(warning.AverageSpeedKmh))
                             );
-                            SemiTruckLayer.ScheduledClosuresByCoordinates.Add(block);
+                            SemiTruckLayer.ScheduledSpeedReductionsByCoordinates.Add(block);
                         }
-                        // Uncomment to add speed reduction for construction sites
-                        // else if (isConstruction && updateConstructions)
-                        // {
-                        //     knownClosures.Add(closureKey);
-                        //
-                        //     var block = new SemiTruckLayer.ScheduledSpeedReductionByCoordinates(
-                        //         id: Guid.NewGuid().ToString(),
-                        //         startTime: startTime,
-                        //         endTime: endTime,
-                        //         coordinates: coords,
-                        //         reducedSpeedKmh: 60
-                        //     );
-                        //     SemiTruckLayer.ScheduledSpeedReductionsByCoordinates.Add(block);
-                        // }
                     }
                 }
             }
@@ -151,6 +213,7 @@ namespace SOHModel.SemiTruck.RealTimeData
             // Update last fetch timestamps
             if (updateClosures) lastClosureUpdateTime = currentTime;
             if (updateConstructions) lastConstructionUpdateTime = currentTime;
+            if (updateWarnings) lastWarningUpdateTime = currentTime;
         }
 
         public void PreTick()
@@ -235,6 +298,139 @@ namespace SOHModel.SemiTruck.RealTimeData
 
             return closuresList;
         }
+
+        /// <summary>
+        /// Fetches warning data (Staus) from the Autobahn API and parses it into a list of warnings.
+        /// </summary>
+        public async Task<List<WarningInfo>> FetchAndParseWarningAsync(string roadId)
+        {
+            var warningsList = new List<WarningInfo>();
+            var url = $"{BaseUrl}/{roadId}/services/warning";
+
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.Add("Accept", "application/json");
+
+                var response = await httpClient.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+
+                var json = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(json);
+
+                if (!doc.RootElement.TryGetProperty("warning", out var warnings) ||
+                    warnings.ValueKind != JsonValueKind.Array)
+                {
+                    return warningsList;
+                }
+
+                foreach (var warning in warnings.EnumerateArray())
+                {
+                    // Beschreibung einlesen
+                    List<string> descLines = new();
+                    if (warning.TryGetProperty("description", out var descriptionElement) &&
+                        descriptionElement.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var e in descriptionElement.EnumerateArray())
+                            descLines.Add(e.GetString() ?? string.Empty);
+                    }
+
+                    var timeBlock = ExtractTimeBlock(descLines);
+                    var intervals = ParseTimeLines(timeBlock);
+
+                    // Für Warnings kein Ende -> Ende = Begin + 1h
+                    foreach (var interval in intervals)
+                    {
+                        if (!string.IsNullOrWhiteSpace(interval.Begin) && string.IsNullOrWhiteSpace(interval.End))
+                        {
+                            var begin = DateTime.Parse(interval.Begin);
+                            interval.End = begin.AddHours(1).ToString("o");
+                        }
+                    }
+
+                    // Falls keine Intervalle erkannt -> 1h ab jetzt
+                    if (intervals.Count == 0)
+                    {
+                        var now = (SemiTruckLayer?.Context?.CurrentTimePoint) ?? DateTime.UtcNow;
+                        intervals.Add(new TimeInterval
+                        {
+                            Begin = now.ToString("o"),
+                            End = now.AddHours(1).ToString("o")
+                        });
+                    }
+
+                    // Geometrie lesen
+                    var coords = new List<List<double>>();
+                    if (warning.TryGetProperty("geometry", out var geom) &&
+                        geom.TryGetProperty("coordinates", out var coordinates) &&
+                        coordinates.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var coord in coordinates.EnumerateArray())
+                        {
+                            if (coord.ValueKind == JsonValueKind.Array && coord.GetArrayLength() >= 2)
+                            {
+                                var lon = coord[0].GetDouble();
+                                var lat = coord[1].GetDouble();
+                                coords.Add(new List<double> { lon, lat });
+                            }
+                        }
+                    }
+                    else
+                    {
+                        continue;
+                    }
+
+                    // Ein-Punkt-Geometrien ignorieren
+                    if (coords.Count <= 1)
+                    {
+                        continue;
+                    }
+
+                    // averageSpeed lesen
+                    double? avgSpeed = null;
+                    if (warning.TryGetProperty("averageSpeed", out var avgElement))
+                    {
+                        if (avgElement.ValueKind == JsonValueKind.String)
+                        {
+                            var s = avgElement.GetString();
+                            if (double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var valStr))
+                                avgSpeed = valStr;
+                        }
+                        else if (avgElement.ValueKind == JsonValueKind.Number &&
+                                 avgElement.TryGetDouble(out var valNum))
+                        {
+                            avgSpeed = valNum;
+                        }
+                    }
+
+                    if (avgSpeed is null)
+                    {
+                        continue;
+                    }
+
+                    // Typ bestimmen
+                    string typeLine = "";
+                    var lastBlock = ExtractLastBlock(descLines);
+                    if (lastBlock.Count > 0) typeLine = lastBlock[^1];
+
+                    warningsList.Add(new WarningInfo
+                    {
+                        Intervals = intervals,
+                        Type = typeLine,
+                        Coordinates = coords,
+                        AverageSpeedKmh = avgSpeed.Value
+                    });
+                    
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching warnings for {roadId}: {ex.Message}");
+            }
+
+            return warningsList;
+        }
+
 
         /// <summary>
         /// Extracts the first block of time-related lines from a closure description.

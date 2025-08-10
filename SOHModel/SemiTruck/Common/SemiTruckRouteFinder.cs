@@ -204,8 +204,8 @@ public static class SemiTruckRouteFinder
                 // If a full route could not be computed, try to extract a partial route to the last valid point
                 if ((route == null || route.Count == 0) && closestNode != null)
                 {
-                    Console.WriteLine("No complete route found, but closest partial point is available.");
-                    Console.WriteLine($"Closest reachable node: {closestNode} (distance: {closestDistance:F1} km)");
+                    // Console.WriteLine("No complete route found, but closest partial point is available.");
+                    // Console.WriteLine($"Closest reachable node: {closestNode} (distance: {closestDistance:F1} km)");
 
                     //Attempt to compute a shorter route from the start to the last reachable node
                     route = environment.FindShortestRoute(currentNode, closestNode, edge =>
