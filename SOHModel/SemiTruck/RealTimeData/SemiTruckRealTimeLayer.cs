@@ -300,7 +300,7 @@ namespace SOHModel.SemiTruck.RealTimeData
         }
 
         /// <summary>
-        /// Fetches warning data (Staus) from the Autobahn API and parses it into a list of warnings.
+        /// Fetches traffic jams (Staus) from the Autobahn API and parses it into a list of jams.
         /// </summary>
         public async Task<List<WarningInfo>> FetchAndParseWarningAsync(string roadId)
         {
@@ -326,7 +326,7 @@ namespace SOHModel.SemiTruck.RealTimeData
 
                 foreach (var warning in warnings.EnumerateArray())
                 {
-                    // Beschreibung einlesen
+                    // Read description
                     List<string> descLines = new();
                     if (warning.TryGetProperty("description", out var descriptionElement) &&
                         descriptionElement.ValueKind == JsonValueKind.Array)
@@ -338,7 +338,7 @@ namespace SOHModel.SemiTruck.RealTimeData
                     var timeBlock = ExtractTimeBlock(descLines);
                     var intervals = ParseTimeLines(timeBlock);
 
-                    // Für Warnings kein Ende -> Ende = Begin + 1h
+                    // For traffic jams with no endtime, Endtime = startTime + 1h after that we check the API again
                     foreach (var interval in intervals)
                     {
                         if (!string.IsNullOrWhiteSpace(interval.Begin) && string.IsNullOrWhiteSpace(interval.End))
@@ -347,8 +347,8 @@ namespace SOHModel.SemiTruck.RealTimeData
                             interval.End = begin.AddHours(1).ToString("o");
                         }
                     }
-
-                    // Falls keine Intervalle erkannt -> 1h ab jetzt
+                    
+                    // In case no time is in the information we take currentTime as start and +1h as endTime
                     if (intervals.Count == 0)
                     {
                         var now = (SemiTruckLayer?.Context?.CurrentTimePoint) ?? DateTime.UtcNow;
@@ -359,7 +359,7 @@ namespace SOHModel.SemiTruck.RealTimeData
                         });
                     }
 
-                    // Geometrie lesen
+                    // Read geometry
                     var coords = new List<List<double>>();
                     if (warning.TryGetProperty("geometry", out var geom) &&
                         geom.TryGetProperty("coordinates", out var coordinates) &&
@@ -380,13 +380,13 @@ namespace SOHModel.SemiTruck.RealTimeData
                         continue;
                     }
 
-                    // Ein-Punkt-Geometrien ignorieren
+                    // Ignore if only one coordinate 
                     if (coords.Count <= 1)
                     {
                         continue;
                     }
 
-                    // averageSpeed lesen
+                    // Read averageSpeed
                     double? avgSpeed = null;
                     if (warning.TryGetProperty("averageSpeed", out var avgElement))
                     {
@@ -408,7 +408,7 @@ namespace SOHModel.SemiTruck.RealTimeData
                         continue;
                     }
 
-                    // Typ bestimmen
+                    // Determine Type
                     string typeLine = "";
                     var lastBlock = ExtractLastBlock(descLines);
                     if (lastBlock.Count > 0) typeLine = lastBlock[^1];
