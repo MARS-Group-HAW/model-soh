@@ -100,13 +100,13 @@ The full export and preprocessing pipeline is implemented in Python and can be f
 
 The current final output is a file named:
 
-`autobahn_und_bundesstrassen_deutschland_attributes_08.geojson`
+`autobahn_und_bundesstrassen_deutschland_elevation_21.geojson`
 
 However, due to its large size, it is **not directly stored in the repository**. Instead, it is **compressed as a `.rar`
 file**:
 
 > ⚠️ **Important**  
-> The file `autobahn_und_bundesstrassen_deutschland_attributes_08.geojson` is stored as  
+> The file `autobahn_und_bundesstrassen_deutschland_elevation_21.geojson` is stored as  
 > **`autobahn_und_bundesstrassen_deutschland.rar`** in the repository.  
 > Please extract it **before running the simulation**.
 
@@ -230,10 +230,10 @@ configured and populated the .geojson file.
     "name": "SemiTruckLayer",
     "inputs": [
         {
-        "file": "resources/autobahn_und_bundesstrassen_deutschland_attributes_03.geojson",
+        "file": "resources/autobahn_und_bundesstrassen_deutschland_elevation_21.geojson",
         "inputConfiguration": {
             "modalities": ["CarDriving"],
-            "isBidirectedGraph": true
+            "isBidirectedGraph": false
         }
         }
     ]
@@ -679,7 +679,7 @@ The file is build the following:
       "name": "PreComputeRoutesLayer",
       "inputs": [
         {
-          "file": "resources/autobahn_und_bundesstrassen_deutschland_elevation_08.geojson",
+          "file": "resources/autobahn_und_bundesstrassen_deutschland_elevation_21.geojson",
           "inputConfiguration": {
             "modalities": [
               "CarDriving"
