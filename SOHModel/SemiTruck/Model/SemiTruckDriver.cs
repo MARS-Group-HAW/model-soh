@@ -1,3 +1,4 @@
+using System.Drawing.Printing;
 using Mars.Common.Core;
 using Mars.Components.Environments;
 using Mars.Interfaces.Agents;
@@ -92,7 +93,8 @@ namespace SOHModel.SemiTruck.Model
 
             var route = SemiTruckRouteFinder.Find(_environment, DriveMode, StartLat, StartLon, DestLat, DestLon,
                 startingEdge, "", SemiTruck.Height, SemiTruck.Mass, SemiTruck.Width, SemiTruck.Length,
-                SemiTruck.MaxIncline, _layer.RemovedEdges);
+                SemiTruck.MaxIncline, _layer.RemovedEdges, false);
+            
             foreach (var stop in route.Stops)
             {
                 List<ISpatialLane> lanes = stop.Edge.Lanes?.ToList();
@@ -167,6 +169,7 @@ namespace SOHModel.SemiTruck.Model
                 UpdateOvertakingPermission(currentEdge);
                 AdjustSpeedBasedOnIncline(currentEdge);
             }
+            
 
             // Schedule a rest if needed
             if ((_layer._simulationTime - _lastBreakTime) > _maxDrivingTimeWithoutBreak &&
@@ -216,33 +219,49 @@ namespace SOHModel.SemiTruck.Model
         private bool CreateBypass(ISpatialEdge removedEdge)
         {
             if (_layer.notifyTrucks) _layer.UnregisterTruckFromRoute(this, _steeringHandle.Route);
+            
+            var stops = _steeringHandle.Route.Stops;
+            int passed = _steeringHandle.Route.PassedStops;
+            if (stops == null || stops.Count == 0 || passed >= stops.Count)
+            {
+                Console.WriteLine("Route has no remaining stops. Stopping truck.");
+                _unregister.Invoke(_layer, this);
+                return false;
+            }
+            
             // Find first valid EdgeStop AFTER the removed section
-            var nextValidEdgeStop = _steeringHandle.Route.Stops
+            var candidateStops  = _steeringHandle.Route.Stops
                 .Skip(_steeringHandle.Route.PassedStops) // Start from current position
                 .SkipWhile(stop => stop.Edge != removedEdge)
                 .SkipWhile(stop => _layer.RemovedEdges.Contains(stop.Edge)) // Skip all removed edges
-                .FirstOrDefault(stop => !_layer.RemovedEdges.Contains(stop.Edge)); // Find the first valid edge
+                .Where(stop => !_layer.RemovedEdges.Contains(stop.Edge));
 
+            Route? bypassRoute = null;
+            var nextValidEdgeStop = (EdgeStop?)null;
+            
+            
 
-            if (nextValidEdgeStop == null)
+            foreach (var candidate in candidateStops)
             {
-                Console.WriteLine($"No valid EdgeStop found after removed edges! Stopping truck.");
-                _unregister.Invoke(_layer, this); // Remove truck from simulation
-                return false;
+                bypassRoute = SemiTruckRouteFinder.Find(
+                    _environment, DriveMode, _steeringHandle.Position.Latitude,
+                    _steeringHandle.Position.Longitude,
+                    candidate.Edge.From.Position.Latitude, candidate.Edge.From.Position.Longitude,
+                    null, "", SemiTruck.Height, SemiTruck.Mass,
+                    SemiTruck.Width, SemiTruck.Length, SemiTruck.MaxIncline, _layer.RemovedEdges, true
+                );
+
+                // Bei isByPassRoute==true liefert Find keine Partial-Route (null wenn nur partial möglich)
+                if (bypassRoute != null && bypassRoute.Count > 0)
+                {
+                    nextValidEdgeStop = candidate;
+                    break;
+                }
             }
 
-            // Compute a new bypass route from current position to the next valid stop in the old route
-            var bypassRoute = SemiTruckRouteFinder.Find(
-                _environment, DriveMode, _steeringHandle.Position.Latitude,
-                _steeringHandle.Position.Longitude,
-                nextValidEdgeStop.Edge.From.Position.Latitude, nextValidEdgeStop.Edge.From.Position.Longitude,
-                null, "", SemiTruck.Height, SemiTruck.Mass,
-                SemiTruck.Width, SemiTruck.Length, SemiTruck.MaxIncline, _layer.RemovedEdges
-            );
-
-            if (bypassRoute == null || bypassRoute.Count == 0)
+            if (nextValidEdgeStop == null || bypassRoute == null || bypassRoute.Count == 0)
             {
-                Console.WriteLine($"No alternative route found! Stopping truck.");
+                Console.WriteLine($"No alternative bypass route found up to destination. Stopping truck.");
                 _unregister.Invoke(_layer, this); // Remove truck from simulation
                 return false;
             }
@@ -255,14 +274,23 @@ namespace SOHModel.SemiTruck.Model
                 _steeringHandle.Route.Stops.RemoveAt(removeIndex);
             }
 
-            // Append the remaining part of the original route (after bypass) to the new route
-            foreach (var edgeStop in _steeringHandle.Route)
+            //Check if byPass already leads to goal?
+            var originalLastStop = _steeringHandle.Route.Stops.LastOrDefault();
+            bool bypassEndsAtGoal =
+                originalLastStop != null &&
+                bypassRoute.LastOrDefault()?.Edge?.To?.Equals(originalLastStop.Edge.To) == true;
+
+            if (!bypassEndsAtGoal)
             {
-                List<ISpatialLane> lanes = edgeStop.Edge.Lanes?.ToList();
-                var desiredLane = lanes?.FirstOrDefault();
-                int desiredLaneIndex = desiredLane != null ? lanes.IndexOf(desiredLane) : -1;
-                // Add each stop from the old route to the bypass route to complete it
-                bypassRoute.Add(edgeStop.Edge, desiredLaneIndex);
+                // Append the remaining part of the original route (after bypass) to the new route
+                foreach (var edgeStop in _steeringHandle.Route)
+                {
+                    List<ISpatialLane> lanes = edgeStop.Edge.Lanes?.ToList();
+                    var desiredLane = lanes?.FirstOrDefault();
+                    int desiredLaneIndex = desiredLane != null ? lanes.IndexOf(desiredLane) : -1;
+                    // Add each stop from the old route to the bypass route to complete it
+                    bypassRoute.Add(edgeStop.Edge, desiredLaneIndex);
+                }
             }
 
             // Assign the final composed route to the truck
@@ -626,7 +654,7 @@ namespace SOHModel.SemiTruck.Model
                 targetLat, targetLon,
                 null, "", SemiTruck.Height, SemiTruck.Mass,
                 SemiTruck.Width, SemiTruck.Length, SemiTruck.MaxIncline,
-                _layer.RemovedEdges
+                _layer.RemovedEdges, false
             );
 
             // Remember destination node
@@ -643,7 +671,7 @@ namespace SOHModel.SemiTruck.Model
                 splitNode.Position.Latitude, splitNode.Position.Longitude,
                 null, "", SemiTruck.Height, SemiTruck.Mass,
                 SemiTruck.Width, SemiTruck.Length, SemiTruck.MaxIncline,
-                _layer.RemovedEdges
+                _layer.RemovedEdges, false
             );
 
             if (toStopRoute == null || toStopRoute.Count == 0 || backRoute == null || backRoute.Count == 0)

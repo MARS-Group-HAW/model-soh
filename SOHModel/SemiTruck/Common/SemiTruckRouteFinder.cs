@@ -28,7 +28,7 @@ public static class SemiTruckRouteFinder
     public static Route Find(ISpatialGraphEnvironment environment, int driveMode,
         double startLat, double startLon, double destLat, double destLon,
         ISpatialEdge startingEdge, string osmRoute, double truckHeight, double truckWeight, double truckWidth,
-        double truckLength, int truckMaxIncline, List<ISpatialEdge> RemovedEdges)
+        double truckLength, int truckMaxIncline, List<ISpatialEdge> RemovedEdges, bool isByPassRoute)
     {
         Route route = null;
         ISpatialNode currentNode;
@@ -202,7 +202,7 @@ public static class SemiTruckRouteFinder
 
 
                 // If a full route could not be computed, try to extract a partial route to the last valid point
-                if ((route == null || route.Count == 0) && closestNode != null)
+                if (!isByPassRoute && (route == null || route.Count == 0) && closestNode != null)
                 {
                     // Console.WriteLine("No complete route found, but closest partial point is available.");
                     // Console.WriteLine($"Closest reachable node: {closestNode} (distance: {closestDistance:F1} km)");
@@ -212,6 +212,11 @@ public static class SemiTruckRouteFinder
                     {
                         return CheckValidEdge(edge, truckHeight, truckWeight, truckWidth, truckLength, truckMaxIncline);
                     }) ?? new Route();
+                }
+                else if (isByPassRoute && (route == null || route.Count == 0))
+                {
+                    // When there is a bypass route we cannot create a partial route and must instead find a route to another node
+                    return null;
                 }
                 else if (closestNode == null)
                 {
