@@ -636,7 +636,7 @@ The `PreComputeRoutesLayer` enables precomputing optimized motorway routes betwe
 forming a
 lookup system for agents. The process involves two preprocessing Python scripts and one simulation layer in C#.
 
-### Extract Motoray Entry/Exit Nodes (Python)
+### Extract Motorway Entry/Exit Nodes (Python)
 
 The script `extract_Nodes_For_Lookuptable.py` processes a GeoJSON file (e.g., OSM-based) and identifies motorway
 transition points using `motorway_link` segments. Where a `motorway_link` intersects with an edge that is
