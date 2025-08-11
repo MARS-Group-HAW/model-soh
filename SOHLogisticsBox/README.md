@@ -391,7 +391,7 @@ The **`semi_truck.csv`** defines different types of **`SemiTrucks`** like the fo
 
 
 | Type               | Max Acceleration | Max Deceleration | Max Speed (m/s) | Length (m) | Height (m) | Width (m) | Traffic Code | Passenger Capacity | Velocity | Mass (tons) | Max Incline (%) | Accidents/Year | Power (kW) | Fuel Size (L) | Fuel Consumption (L/100km) |
-| ------------------ | ---------------- | ---------------- | --------------- | ---------- | ---------- | --------- | ------------ | ------------------ | -------- | ----------- | --------------- | -------------- | ---------- | ------------- | -------------------------- |
+| ------------------ | ---------------- | ---------------- | --------------- | ---------- | ---------- | --------- | ------------ | ------------------ | -------- | ----------- |-----------------| -------------- | ---------- | ------------- | -------------------------- |
 | SmallTruck         | 0.5              | 1.2              | 30.83           | 6          | 2.5        | 2.5       | German       | 2                  | 0        | 5.0         | 25              | 11169          | 141        | 100           | 15                         |
 | MediumLoadTruck    | 0.5              | 1.2              | 30.83           | 8          | 2.5        | 2.5       | German       | 2                  | 0        | 10.0        | 22              | 1464           | 141        | 100           | 18                         |
 | HeavyLoadTruck     | 0.5              | 1.2              | 30.83           | 10         | 2.5        | 2.5       | German       | 2                  | 0        | 15.0        | 18              | 685            | 240        | 160           | 20                         |
@@ -401,7 +401,7 @@ The **`semi_truck.csv`** defines different types of **`SemiTrucks`** like the fo
 | HighVolumeTruck    | 0.5              | 1.2              | 30.83           | 14         | 2.5        | 2.5       | German       | 2                  | 0        | 35.0        | 10              | 504            | 336        | 250           | 35                         |
 | MaximumLoadTruck   | 0.5              | 1.2              | 30.83           | 16         | 2.5        | 2.5       | German       | 2                  | 0        | 40.0        | 8               | 504            | 336        | 300           | 40                         |
 | OverloadTruck      | 0.5              | 1.2              | 30.83           | 16         | 2.5        | 2.5       | German       | 2                  | 0        | 50.0        | 6               | 504            | 400        | 300           | 40                         |
-| UnlimitedTruck     | 0.5              | 1.2              | 30.83           | 1          | 1.0        | 1.0       | German       | 2                  | 0        | 2.0         | 25              | 1              | 1000       | 10000         | 1                          |
+| UnlimitedTruck     | 0.5              | 1.2              | 30.83           | 1          | 1.0        | 1.0       | German       | 2                  | 0        | 2.0         | 100             | 1              | 1000       | 10000         | 1                          |
 
 ___
 
@@ -743,9 +743,9 @@ ___
 
 ## SemiTruckRealTimeLayer
 
-The `SemiTruckRealTimeLayer` is a real-time data integration layer that fetches and processes official road closure data
+The `SemiTruckRealTimeLayer` is a real-time data integration layer that fetches and processes official road closure data, and traffic jam information
 from the German Autobahn API (https://autobahn.api.bund.dev/).
-It periodically queries all major Autobahn routes for scheduled closures and construction zones, injecting them into the simulation during runtime.
+It periodically queries all major Autobahn routes for scheduled closures and construction zones and real-time traffic jams, injecting them into the simulation during runtime.
 
 
 This layer parses closure intervals and geospatial coordinates, then adds them as structured events into the `SemiTruckLayer`. These include:
@@ -754,13 +754,17 @@ This layer parses closure intervals and geospatial coordinates, then adds them a
 
 - Construction zones, identified by terms like "Baustelle", "Sanierung", or "Instandsetzung", and marked as areas with reduced speed limits (e.g., 60 km/h) instead of full blockage.
   
-Closures and construction sites are dynamically recognized based on time and location, ensuring that trucks adapt their routes accordingly to avoid disruptions or reduce speed in affected zones.
+- Traffic jams, retrieved from the /services/warning endpoint of the Autobahn API, and represented as speed reduction events. The reduced speed is dynamically determined based on the averageSpeed field in the API response, allowing near real-time adaptation of truck routes to current traffic flow conditions.
+
+Closures, construction and traffic jams sites are dynamically recognized based on time and location, ensuring that trucks adapt their routes accordingly to avoid disruptions or reduce speed in affected zones.
 
 To maintain performance, all detected events are cached using unique keys, preventing redundant processing. The system updates:
 - Closures every 60 minutes
 - Construction zones every 24 hours (due to an enormous amount of construction zones to be processed)
+- Traffic jams every 60 minutes
 
-This real-time integration enables near-live scenario modeling, making it suitable for evaluating time-critical logistics, rerouting strategies, and infrastructure-related delays in long-haul freight transport simulations.
+This real-time integration enables near-live scenario modeling, making it suitable for evaluating time-critical logistics, rerouting strategies, and infrastructure- or congestion-related delays in long-haul freight transport simulations.
+
 
 ## SemiTruckWeatherLayer
 The SemiTruckWeatherLayer is a real-time weather integration layer that fetches and processes live warning data from the German Weather Service (DWD) via the Warnwetter API (https://dwd.api.bund.dev/). 
