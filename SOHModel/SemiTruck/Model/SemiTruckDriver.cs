@@ -533,8 +533,8 @@ namespace SOHModel.SemiTruck.Model
                                 var tagStr = tag?.ToString()?.ToLowerInvariant();
                                 if (tagStr == "rest_area" || tagStr == "services")
                                 {
-                                    Console.WriteLine(
-                                        $"Rest area or service found nearby – edge ID: {connectedEdge.GetId()}, tag: {tagStr}");
+                                    // Console.WriteLine(
+                                    //     $"Rest area or service found nearby – edge ID: {connectedEdge.GetId()}, tag: {tagStr}");
 
 
                                     var restCoord = connectedEdge.To.Position;
@@ -546,7 +546,7 @@ namespace SOHModel.SemiTruck.Model
                     }
                 }
                 // No nearby OSM rest area found → fallback to predefined list (e.g., from CSV)
-                Console.WriteLine("No rest area within next 100 km. Searching external list...");
+                // Console.WriteLine("No rest area within next 100 km. Searching external list...");
                 FindNearestRestAreaFromList();
             }
         }
