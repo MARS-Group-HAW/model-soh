@@ -49,7 +49,7 @@ namespace SOHModel.SemiTruck.Model
         /// If this flag is true, Trucks will be notified if an edge on their route is removed
         /// If this flag is false they instead rely on a lookahead distance (5km) to check if an upcoming edge is removed
         /// </summary>
-        public readonly bool notifyTrucks = true;
+        public readonly bool notifyTrucks = false;
 
         /// <summary>
         /// This variable defines the amount of trucks
@@ -243,16 +243,15 @@ namespace SOHModel.SemiTruck.Model
         /// </summary>
         public void PreTick()
         {
+            
             foreach (var closure in ScheduledClosuresByID)
             {
                 HandleScheduledClosureByID(closure);
             }
-
             foreach (var roadBlock in ScheduledClosuresByCoordinates)
             {
                 HandleScheduledClosureByCoordinates(roadBlock);
             }
-
             foreach (var speedReduction in ScheduledSpeedReductionsByCoordinates)
             {
                 HandleScheduledSpeedReduction(speedReduction);
@@ -319,7 +318,7 @@ namespace SOHModel.SemiTruck.Model
                     incomingModality: SpatialModalityType.CarDriving);
 
                 var route = Environment.FindShortestRoute(currentNode, goal);
-
+                
 
                 if (route != null && route.Stops != null)
                 {
@@ -377,7 +376,7 @@ namespace SOHModel.SemiTruck.Model
                 // Get route defined by coordinates (start to end) as geographic positions
                 var start = reduction.Coordinates.First();
                 var end = reduction.Coordinates.Last();
-
+                
                 // Find the nearest network nodes to the start and end positions
                 var fromNode = Environment.NearestNode(Position.CreateGeoPosition(start.X, start.Y),
                     SpatialModalityType.CarDriving);
