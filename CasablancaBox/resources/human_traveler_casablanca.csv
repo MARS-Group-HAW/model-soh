@@ -1,0 +1,2 @@
+﻿startTime,endTime,spawningIntervalInMinutes,spawningAmount,hasBike,hasCar,prefersBike,prefersCar,usesBikeAndsdRide,usesOwnBikeOutside,usesOwnCar,source,destination,discriminator
+15:00,20:30,3,14,0,0,0,0,0,0,0,"LINESTRING (-7.6761845 33.5335564, -7.6766782 33.5330049)","LINESTRING (-7.6549993 33.513598, -7.6552016 33.513168)",3

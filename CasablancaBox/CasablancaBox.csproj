@@ -7,4 +7,12 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <Folder Include="resources\scripts\outdir\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\SOHModel\SOHModel.csproj" />
+    </ItemGroup>
+
 </Project>

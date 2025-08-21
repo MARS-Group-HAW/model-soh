@@ -1,0 +1,65 @@
+﻿{
+  "globals": {
+    "deltaT": 1,
+    "startTime": "2022-09-01T05:00:00",
+    "endTime":   "2022-09-01T07:00:00",
+    "deltaTUnit": "seconds",
+    "console": true
+  },
+  "outputs": [
+    {
+      "kind": "trips",
+      "outputConfiguration": {
+        "outputPath": "output",
+        "fileSuffix": "all_agents_debug"
+      }
+    }
+  ],
+  "agents": [
+    {
+      "name": "PassengerTraveler",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": [
+              "ActiveCapability"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "BusDriver",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "outputPath": "output",
+            "fileSuffix": "BusDriver",
+            "tripsFields": ["StableId", "Line", "PassengerAmount"]
+          }
+        }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "name": "SpatialGraphMediatorLayer",
+      "inputs": [
+        {
+          "file": "resources/casa_sidi_maarouf_walk_graph.geojson",
+          "inputConfiguration": { "modalities": ["Walking","CarDriving"], "isBidirectedGraph": true }
+        } 
+      ]
+    },
+    {"name": "PassengerTravelerSchedulerLayer", "file": "Resources/passenger_traveler_schedule_casablanca.csv"},
+    { "name": "BusStationLayer",   "file": "resources/stations.geojson" },
+    { "name": "BusRouteLayer",     "file": "resources/bus_L300_line.csv" },
+    { "name": "BusLayer",          "file": "resources/casa_sidi_maarouf_walk_graph.geojson" },   
+    { "name": "BusSchedulerLayer", "file": "resources/bus_driver_schedule_casablanca.csv" }
+  ],
+  "entities": [
+    { "name": "Bus", "file": "resources/bus.csv" }
+  ]
+}

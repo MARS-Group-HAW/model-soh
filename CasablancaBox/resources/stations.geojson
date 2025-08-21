@@ -1,0 +1,427 @@
+{
+
+"type": "FeatureCollection",
+"name": "stations",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.651524,
+          33.5233712
+        ]
+      },
+      "properties": {
+        "id": 2387487893,
+        "lines": "L300",
+        "supplier": "Alsa Al Baida",
+        "x": -7.651524,
+        "y": 33.5233712,
+        "linekat": null,
+        "lineshortkat": null,
+        "short_name": "Préfecture Ain Chock",
+        "priority": "0"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.650193,
+          33.5262904
+        ]
+      },
+      "properties": {
+        "id": 5067639207,
+        "lines": "L300",
+        "supplier": "Alsa Al Baida",
+        "x": -7.650193,
+        "y": 33.5262904,
+        "linekat": null,
+        "lineshortkat": null,
+        "short_name": "Centre Cul. Socio.",
+        "priority": "0"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.637713,
+          33.5404269
+        ]
+      },
+      "properties": {
+        "id": 6204178211,
+        "lines": "L300",
+        "supplier": "Alsa Al Baida",
+        "x": -7.637713,
+        "y": 33.5404269,
+        "linekat": null,
+        "lineshortkat": null,
+        "short_name": "Technoparc",
+        "priority": "0"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.6422497,
+          33.5157253
+        ]
+      },
+      "properties": {
+        "id": 6650871379,
+        "lines": "L300",
+        "supplier": "Alsa Al Baida",
+        "x": -7.6422497,
+        "y": 33.5157253,
+        "linekat": null,
+        "lineshortkat": null,
+        "short_name": "Mosquée Adarissa",
+        "priority": "0"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.6511985,
+          33.5243975
+        ]
+      },
+      "properties": {
+        "id": 10162128101,
+        "lines": "L300",
+        "supplier": "Alsa Al Baida",
+        "x": -7.6511985,
+        "y": 33.5243975,
+        "linekat": null,
+        "lineshortkat": null,
+        "short_name": "Jardin Al Mostakbel",
+        "priority": "0"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.6469399,
+          33.533109
+        ]
+      },
+      "properties": {
+        "id": 10162128103,
+        "lines": "L300",
+        "supplier": "Alsa Al Baida",
+        "x": -7.6469399,
+        "y": 33.533109,
+        "linekat": null,
+        "lineshortkat": null,
+        "short_name": "Residence Bachkou",
+        "priority": "0"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.6432946,
+          33.5380366
+        ]
+      },
+      "properties": {
+        "id": 10162128106,
+        "lines": "L300",
+        "supplier": "Alsa Al Baida",
+        "x": -7.6432946,
+        "y": 33.5380366,
+        "linekat": null,
+        "lineshortkat": null,
+        "short_name": "Carrefour Market",
+        "priority": "0"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.6511771,
+          33.5137949
+        ]
+      },
+      "properties": {
+        "id": 10166999061,
+        "lines": "L300",
+        "supplier": "Alsa Al Baida",
+        "x": -7.6511771,
+        "y": 33.5137949,
+        "linekat": null,
+        "lineshortkat": null,
+        "short_name": "Hay Najah",
+        "priority": "0"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.6457648,
+          33.5147826
+        ]
+      },
+      "properties": {
+        "id": 10166999062,
+        "lines": "L300",
+        "supplier": "Alsa Al Baida",
+        "x": -7.6457648,
+        "y": 33.5147826,
+        "linekat": null,
+        "lineshortkat": null,
+        "short_name": "Res.dandoun",
+        "priority": "0"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.6329496,
+          33.5157253
+        ]
+      },
+      "properties": {
+        "id": 10166999151,
+        "lines": "L300",
+        "supplier": "Alsa Al Baida",
+        "x": -7.6329496,
+        "y": 33.5157253,
+        "linekat": null,
+        "lineshortkat": null,
+        "short_name": "Pépinière De L'Ourika",
+        "priority": "0"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.6485483,
+          33.5299096
+        ]
+      },
+      "properties": {
+        "id": 10213133339,
+        "lines": "L300",
+        "supplier": "Alsa Al Baida",
+        "x": -7.6485483,
+        "y": 33.5299096,
+        "linekat": null,
+        "lineshortkat": null,
+        "short_name": "Residence Al Mostakbel",
+        "priority": "0"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.648991,
+          33.5285001
+        ]
+      },
+      "properties": {
+        "id": 10214764666,
+        "lines": "L300",
+        "supplier": "Alsa Al Baida",
+        "x": -7.648991,
+        "y": 33.5285001,
+        "linekat": null,
+        "lineshortkat": null,
+        "short_name": "Cafe Havana",
+        "priority": "0"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.6548054,
+          33.5152942
+        ]
+      },
+      "properties": {
+        "id": 10214764668,
+        "lines": "L300",
+        "supplier": "Alsa Al Baida",
+        "x": -7.6548054,
+        "y": 33.5152942,
+        "linekat": null,
+        "lineshortkat": null,
+        "short_name": "Résidence Ahali",
+        "priority": "0"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.6317333,
+          33.5129482
+        ]
+      },
+      "properties": {
+        "id": 10214786626,
+        "lines": "L300",
+        "supplier": "Alsa Al Baida",
+        "x": -7.6317333,
+        "y": 33.5129482,
+        "linekat": null,
+        "lineshortkat": null,
+        "short_name": "Sidi Messaoud",
+        "priority": "0"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.6304112,
+          33.5030714
+        ]
+      },
+      "properties": {
+        "id": 10214786629,
+        "lines": "L300",
+        "supplier": "Alsa Al Baida",
+        "x": -7.6304112,
+        "y": 33.5030714,
+        "linekat": null,
+        "lineshortkat": null,
+        "short_name": "Monsieur Bricolage",
+        "priority": "0"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.6296348,
+          33.4945661
+        ]
+      },
+      "properties": {
+        "id": 10214786631,
+        "lines": "L300",
+        "supplier": "Alsa Al Baida",
+        "x": -7.6296348,
+        "y": 33.4945661,
+        "linekat": null,
+        "lineshortkat": null,
+        "short_name": "Onep Bouskoura",
+        "priority": "0"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.6340611,
+          33.4872559
+        ]
+      },
+      "properties": {
+        "id": 10214786633,
+        "lines": "L300",
+        "supplier": "Alsa Al Baida",
+        "x": -7.6340611,
+        "y": 33.4872559,
+        "linekat": null,
+        "lineshortkat": null,
+        "short_name": "Forêt De Bouskoura",
+        "priority": "0"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.6523435,
+          33.5197987
+        ]
+      },
+      "properties": {
+        "id": 12179426945,
+        "lines": "L300",
+        "supplier": "Alsa Al Baida",
+        "x": -7.6523435,
+        "y": 33.5197987,
+        "linekat": null,
+        "lineshortkat": null,
+        "short_name": "Cnss Sidi Maârouf",
+        "priority": "0"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.6551095,
+          33.5140824
+        ]
+      },
+      "properties": {
+        "id": 12193026760,
+        "lines": "L300",
+        "supplier": "Alsa Al Baida",
+        "x": -7.6551095,
+        "y": 33.5140824,
+        "linekat": null,
+        "lineshortkat": null,
+        "short_name": "Pharmacie Sidi Maârouf",
+        "priority": "0"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.6316403,
+          33.5101342
+        ]
+      },
+      "properties": {
+        "id": 12193026763,
+        "lines": "L300",
+        "supplier": "Alsa Al Baida",
+        "x": -7.6316403,
+        "y": 33.5101342,
+        "linekat": null,
+        "lineshortkat": null,
+        "short_name": "Umpa",
+        "priority": "0"
+ } }
+  ]
+}
