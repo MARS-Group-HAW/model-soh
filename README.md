@@ -1,106 +1,103 @@
-<h1 align="center">SmartOpenHH | <a href="https://www.mars-group.org/projects/smartopenhamburg">Website</a></h1>
+# CasablancaBox 🚍
 
-The SmartOpenHamburg model is an agent-based simulation model for the representation of a digital twin. It calculates multi-modal path dynamics and simulates a defined daily routine of a citizen.
+Simulation that runs the SOH model in four modes:
 
-## Quick Start
+> * **bus** – `BusDriver` + `PassengerTraveler` on `CarDriving` + `Walking` graphs
+> * **tram** – `TramDriver` + `PassengerTraveler` on `Tram` track + `Walking` (wire tram as `Ferry` or `TrainDriving`)
+> * **bicycle** – `Coming Soon`
+> * **walk** – `HumanTraveler`s on `Walking` only
 
-Start and adjusting the model requires the following steps.
-
-Clone the Git Repo:
-
-```
-git clone https://github.com/MARS-Group-HAW/model-soh.git
-```
-
-Download and install the SDK for NetCore from the official [website](https://dotnet.microsoft.com/download/dotnet-core/).  Navigate into the cloned directory and make sure that all required dependencies are installed automatically by building the model in the directory where the SOHModel.sln file is located:
-
-```
-dotnet build
-```
-
-We have prepared a scenario in the project ``SOHTravellingBox`` for the entry with agents, travelling within the area of Hamburg Dammtor, which you can start immediately.
-
-Navigate to the folder and start the model:
-
-```
-cd SOHTravellingBox
-dotnet run
-```
-
-This runs the simulation and creates a file call `HumanTraveler_trips.geojson`. Open [kepler.gl](https://kepler.gl/demo) and import the file via drag & drop. See the trajectories which were computed by the simulation.
+The app auto-picks a `config_*.json` per mode (overridable via `--config=...`) and validates that the required graph modalities are present before the simulation starts.
 
 ---
-## SOH modeling introduction
+## Area of Interest
+The following image illustrate the area of interst that was chosen for the scenario.
+![alt text](https://i.ibb.co/5h8yctK5/image.png)
 
-The SOH model provides urban mobility functionality for agents. Agents can therefore use different modalities (transportation devices) to reach their goals in the city. The movement is executed on a graph structure that represents roads, sidewalks or railways.
+## Entity Types
+Coming Soon
+## Agent Types
+Coming Soon
+## Layer Types
+Coming Soon
+## Requirements
+* .NET SDK 8.0+
+* The SOHModel project available and referenced.
+* GeoJSON/CSV resources under a `resources/` directory (see structure below).
+* **Legacy GTFS 1.7.1 NuGet package**: If you keep this package, it will emit an `NU1701` warning because it targets .NET Framework. Remove it if you don’t use GTFS, or suppress the warning.
 
-### Agent types
+---
 
-The model provides two main types of [agents](https://www.mars-group.org/docs/tutorial/soh/agents/) that have a mobility desire (besides pure driver agents that fulfill the role of public transport).
+## Project Layout
 
-[`Traveller` agents](https://www.mars-group.org/docs/tutorial/soh/agents/traveler) have a start and a goal and they try to reach their goal by using available transportation devices, which we call their movement `capabilities`. They can be easily spawned by an `AgentSchedulerLayer` randomly within an area and find random goals within a target area. They are the simple solution to create mobility demand.
+# CasablancaBox 🚍
 
-[`Citizen` agents](https://www.mars-group.org/docs/tutorial/soh/agents/citizen) have a daily schedule that cause their mobility demand. The schedule is dependent on their employment status. They can also choose between the modalities that are generally provided in the respective scenario and that are especially available or reasonable for the particular agent and its current location.
+A minimal, switchable .NET 8 simulation app that runs the SOH model in four modes:
 
-![traveler_zones](https://www.mars-group.org/assets/images/harbug_green4bikes-f03fbc7cde934b63b9740a2abb247d31.png)
+> * **bus** – `BusDriver` + `PassengerTraveler` on `CarDriving` + `Walking` graphs
+> * **tram** – `TramDriver` + `PassengerTraveler` on `Tram` track + `Walking` (wire tram as `Ferry` or `TrainDriving`)
+> * **train** – `TrainDriver` + `PassengerTraveler` on `TrainDriving` + `Walking`
+> * **walk** – `HumanTraveler`s on `Walking` only
 
-### Modalities
+The app auto-picks a `config_*.json` per mode (overridable via `--config=...`) and validates that the required graph modalities are present before the simulation starts.
 
-The model provides a variety of modalities that can be used. We call them `ModalChoice`s.
+---
 
-`Walking` is the main modality and always available.
+## Requirements
 
-`CarDriving` requires an own car for the agent (co-driving is not yet implemented) that has to be parked on a parking place. The agent moves to the car, drives to a parking place near by the goal, and then concludes the rest of the way by foot.
+* .NET SDK 8.0+
+* The SOHModel project available and referenced.
+* GeoJSON/CSV resources under a `resources/` directory (see structure below).
+* **Legacy GTFS 1.7.1 NuGet package**: If you keep this package, it will emit an `NU1701` warning because it targets .NET Framework. Remove it if you don’t use GTFS, or suppress the warning (see [Noise control](#noise-control-optional)).
 
-`CyclingOwnBike` is quite similar to walking, because the bike can either be parked at the node or in a bike station. Because it can be parked quite everywhere, agents can move from start to goal with the bike (if the bike is available at the start node).
+---
 
-`CyclingRentalBike` is using a rental bike. The agent walks to a nearby rental station that has remaining bikes, takes a bike that needs to be returned at another rental station and then finishes the remaining route by foot.
+## Project Layout
 
-`Train` can be used to drive as a passenger. Therefore, the agents searches a reasonable train station near by and exits the train station near the goal. A transfer between lines is possible at stations that provide different lines.
-
-`Ferry` is quite similar to using the train just with ships moving over water.
-
-### Environment
-
-Although there are different modal choices, some of these share the same environment, for instance bikes might also use the streets like cars. We therefore have the `SpatialModalityType` discriminator that describes which lanes can be used by which transportation devices.
-
-For movement, we need a [graph](https://www.mars-group.org/docs/tutorial/development/layers#vector-layer) because all transportation devices require it. The graph is stored in the [`SpatialGraphEnvironment`](https://www.mars-group.org/docs/tutorial/development/environments/spatialgraphenv) (`SGE`) that provides route searching capabilities and supervises movement concerning validity constraints like collision detection.
-
-![railroad_graph](https://www.mars-group.org/assets/images/s-bahn-hh-9959647534f628d49aeb340d9a24d227.png)
-
-The environment is initialized by graphs that can be imported in either `graphml` or `geojson` format. For multimodal route searching, we require to integrate all relevant graphs in one SGE. So use the `inputs` configuration in the simulation config and add an import configuration to define that edges (later transformed to lanes) of this file can be used by a set of modalities (spatial modality types).
-
-```json
-{
-      "name": "SpatialGraphMediatorLayer",
-      "inputs": [
-        {
-          "file": "resources/hamburg_rail_station_areas_drive_graph.geojson",
-          "inputConfiguration": {
-            "modalities": ["Walking"],
-            "isBidirectedGraph": true
-          }
-        },
-        {
-          "file": "resources/hamburg_u1_north_graph.geojson",
-          "inputConfiguration": {
-            "modalities": ["TrainDriving"],
-            "isBidirectedGraph": true
-          }
-        }
-      ]
-    }
+```text
+CasablancaBox/
+├── CasablancaBox.csproj
+├── Program.cs
+├── config_bus.json
+├── config_tram.json
+├── config_train.json
+├── config_walking.json
+├── resources/
+│   ├── casa_sidi_maarouf_walk_graph.geojson
+│   ├── casa_sidi_maarouf_drive_graph.geojson
+│   ├── tram_graph.geojson            # if tram-as-ferry, edges carry "Ferry" modality
+│   ├── train_graph.geojson           # if tram-as-train or train mode, edges carry "TrainDriving"
+│   ├── stations.geojson              # bus or tram/train stations
+│   ├── routes.geojson                # bus route network if BusLayer needs it
+│   ├── bus_300_line.csv              # BusRouteLayer line definition
+│   ├── bus_driver_schedule_casablanca.csv
+│   ├── passenger_traveler_schedule.csv
+│   └── bus.csv / tram.csv / train.csv   # entity catalogs as needed
+└── output/
+    └── *.geojson, *.csv (simulation outputs)
 ```
+Warning: Ensure all resources and configs are copied to the build output by adding this to your CasablancaBox.csproj!
 
+---
 
-![walk_drive_graph](https://www.mars-group.org/assets/images/walk_drive_graph-801821fd5fc0203418d889e88df06e1f.png)
+## Build
+```bash
+dotnet build
+```
+## Running the model
+```bash
+dotnet run
+```
+##### Explicit modes
+* dotnet run bus
+* dotnet run tram
+* dotnet run bicycle
+* dotnet run walk
+* dotnet run all
+##### With flags
+* dotnet run --mode=bus --config=config_bus.json --log=Debug
 
-### Handle concept
-
-The usage of transportation devices follows a [handle concept](https://www.mars-group.org/docs/tutorial/soh/steering) that is a contract between agent and vehicle. If the agent provides the required capabilities, then a vehicle can provide a handle for usage.
-
-![contract](contract_schema.png)
-
-Every vehicle type defines a steering handle that is provided by the respective vehicle on entrance. The handle takes care about the concrete movement logic and so capsulates the movement behavior by following traffic rules (like driving a car without actively thinking how to do it). The handle requires the agent to have certain capabilities that are required to use the vehicle. These are defined in the respective `ISteeringCapabable`. After leaving a vehicle the handle is invalidated and exchanged with the default `WalkingSteeringHandle`.
-
-![car_steering_handle_concept](https://www.mars-group.org/assets/images/uml_car_steering-8f3a1ab6c51f2859739861a231c118c6.png)
+## Visualization
+The agents' movement throughout a simulation can be visualized in kepler.gl.
+The static resources like the routes or the stations can be added from the \resources folder by into kepler.gl via drag-and-drop.
+Additionally, the *_trips.geojson can be added to visualize the agents' movement and interactions over time
