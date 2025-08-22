@@ -21,7 +21,7 @@ public class TramSchedulerLayer: SchedulerLayer
     {
         const string tramTypeKey = "tramType";
 
-        var tramType = dataRow.Data.TryGetValue(tramTypeKey, out var type) ? type.Value<string>() : "HHA-Typ-DT5";
+        var tramType = dataRow.Data.TryGetValue(tramTypeKey, out var type) ? type.Value<string>() : "Alstom Citadis";
 
         if (!dataRow.Data.ContainsKey("line"))
             throw new ArgumentException("Missing line number for tram of field 'line' in input");

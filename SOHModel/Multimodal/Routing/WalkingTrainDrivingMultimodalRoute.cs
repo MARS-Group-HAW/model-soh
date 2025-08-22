@@ -118,18 +118,18 @@ public class WalkingTrainDrivingMultimodalRoute : MultimodalRoute
         return FindGoalTrainStationAndFinalWalkingRoute(unreachable);
     }
 
-    private IEnumerable<Route> FindTrainRoutes(TrainStation startTrainStation, TrainStation goalTrainStation)
+    private IEnumerable<Route> FindTrainRoutes(TrainStation startTramStation, TrainStation goalTramStation)
     {
         var trainRoutes = new List<Route>();
         var startTrainStationNode =
-            _environment.NearestNode(startTrainStation.Position, SpatialModalityType.TrainDriving);
+            _environment.NearestNode(startTramStation.Position, SpatialModalityType.TrainDriving);
         var goalTrainStationNode =
-            _environment.NearestNode(goalTrainStation.Position, SpatialModalityType.TrainDriving);
+            _environment.NearestNode(goalTramStation.Position, SpatialModalityType.TrainDriving);
 
         if (startTrainStationNode.Equals(goalTrainStationNode)) return trainRoutes;
 
-        var startLines = startTrainStation.Lines;
-        var goalLines = goalTrainStation.Lines;
+        var startLines = startTramStation.Lines;
+        var goalLines = goalTramStation.Lines;
 
         bool TrainDrivingFilter(ISpatialEdge edge)
         {
@@ -144,7 +144,7 @@ public class WalkingTrainDrivingMultimodalRoute : MultimodalRoute
         }
         else // find line with transfer point
         {
-            var transferPoint = _trainStationLayer.Nearest(startTrainStation.Position,
+            var transferPoint = _trainStationLayer.Nearest(startTramStation.Position,
                 station => station.Lines.Intersect(startLines).Any() &&
                            station.Lines.Intersect(goalLines).Any());
             if (transferPoint != null) // single transfer point
@@ -163,10 +163,10 @@ public class WalkingTrainDrivingMultimodalRoute : MultimodalRoute
             else // multiple transfer points
             {
                 var transferPointsStart = _trainStationLayer.Features.OfType<TrainStation>().Where(
-                    station => station != startTrainStation && station.Lines.Intersect(startLines).Any() &&
+                    station => station != startTramStation && station.Lines.Intersect(startLines).Any() &&
                                station.Lines.Count > 1);
                 var transferPointsGoal = _trainStationLayer.Features.OfType<TrainStation>().Where(
-                    station => station != goalTrainStation && station.Lines.Intersect(goalLines).Any() &&
+                    station => station != goalTramStation && station.Lines.Intersect(goalLines).Any() &&
                                station.Lines.Count > 1).ToList();
 
 

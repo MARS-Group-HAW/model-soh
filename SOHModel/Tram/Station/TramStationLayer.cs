@@ -16,7 +16,7 @@ public class TramStationLayer: VectorLayer<TramStation>, ITramStationLayer
         return base.Nearest(position != null ? position.PositionArray : _anyPosition.PositionArray, predicate);
     }
 
-    public ModalChoice ModalChoice => ModalChoice.Train;
+    public ModalChoice ModalChoice => ModalChoice.Ferry;
 
     public TramStation Find(string stationId)
     {

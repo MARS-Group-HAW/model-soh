@@ -5,6 +5,7 @@ using Mars.Interfaces.Layers;
 using SOHModel.Bus.Route;
 using SOHModel.Bus.Steering;
 using SOHModel.Domain.Steering.Common;
+using Bus = SOHModel.Bus.Model.Bus;
 
 namespace SOHModel.Bus.Model;
 

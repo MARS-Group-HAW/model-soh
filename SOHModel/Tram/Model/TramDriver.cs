@@ -37,7 +37,7 @@ public class TramDriver: AbstractAgent, ITramSteeringCapable
     private long AmountOfTicksAtCurrentStation => Layer.Context.CurrentTick - _startTickForCurrentStation;
 
     public TramRoute.TramRouteEnumerator TramRouteEnumerator =>
-        (TramRoute.TramRouteEnumerator)(_tramRouteEnumerator ??= TramRoute.GetEnumerator());
+        (TramRoute.TramRouteEnumerator)_tramRouteEnumerator;
 
     public IEnumerable<TramRouteEntry> RemainingStations => TramRoute.Skip(TramRouteEnumerator.CurrentIndex);
 
@@ -89,7 +89,7 @@ public class TramDriver: AbstractAgent, ITramSteeringCapable
         set { }
     }
 
-    private void InitializeTram(string type = "HHA-Typ-DT5")
+    private void InitializeTram(string type = "Alstom Citadis")
     {
         Tram = Layer.EntityManager.Create<Tram>("type", type);
         Tram.Layer = Layer;
@@ -157,12 +157,12 @@ public class TramDriver: AbstractAgent, ITramSteeringCapable
         if (!TramRouteEnumerator.MoveNext()) return false;
 
         var source = Environment.NearestNode(TramRouteEnumerator.Current?.From.Position,
-            SpatialModalityType.TrainDriving);
+            SpatialModalityType.ShipDriving);
         var target =
-            Environment.NearestNode(TramRouteEnumerator.Current?.To.Position, SpatialModalityType.TrainDriving);
+            Environment.NearestNode(TramRouteEnumerator.Current?.To.Position, SpatialModalityType.ShipDriving);
 
         Route = Environment.FindShortestRoute(source, target,
-            edge => edge.Modalities.Contains(SpatialModalityType.TrainDriving));
+            edge => edge.Modalities.Contains(SpatialModalityType.ShipDriving));
 
         if (Route == null || Route.Count == 0)
             throw new ApplicationException(

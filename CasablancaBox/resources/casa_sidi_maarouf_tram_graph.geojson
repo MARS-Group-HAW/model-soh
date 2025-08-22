@@ -1,0 +1,16 @@
+﻿{
+"type": "FeatureCollection",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "id": 1 }, "geometry": { "type": "LineString", "coordinates": [ [ -7.6411469, 33.5407605 ], [ -7.6412474, 33.5407512 ] ] } },
+{ "type": "Feature", "properties": { "id": 2 }, "geometry": { "type": "LineString", "coordinates": [ [ -7.6412474, 33.5407512 ], [ -7.6416617, 33.5407138 ], [ -7.6419494, 33.5407289 ] ] } },
+{ "type": "Feature", "properties": { "id": 3 }, "geometry": { "type": "LineString", "coordinates": [ [ -7.6419494, 33.5407289 ], [ -7.6424139, 33.540752 ], [ -7.6428042, 33.5407714 ] ] } },
+{ "type": "Feature", "properties": { "id": 4 }, "geometry": { "type": "LineString", "coordinates": [ [ -7.6428042, 33.5407714 ], [ -7.6437949, 33.5408451 ] ] } },
+{ "type": "Feature", "properties": { "id": 5 }, "geometry": { "type": "LineString", "coordinates": [ [ -7.6437949, 33.5408451 ], [ -7.6440591, 33.5408658 ], [ -7.6442933, 33.540884 ], [ -7.6445301, 33.5408979 ], [ -7.6446765, 33.5409065 ], [ -7.6446892, 33.5409047 ] ] } },
+{ "type": "Feature", "properties": { "id": 6 }, "geometry": { "type": "LineString", "coordinates": [ [ -7.6446892, 33.5409047 ], [ -7.6456671, 33.540974 ] ] } },
+{ "type": "Feature", "properties": { "id": 7 }, "geometry": { "type": "LineString", "coordinates": [ [ -7.6456671, 33.540974 ], [ -7.647001, 33.5410578 ] ] } },
+{ "type": "Feature", "properties": { "id": 8 }, "geometry": { "type": "LineString", "coordinates": [ [ -7.647001, 33.5410578 ], [ -7.6474798, 33.541089 ], [ -7.6491906, 33.5415735 ], [ -7.650645, 33.5419773 ] ] } },
+{ "type": "Feature", "properties": { "id": 9 }, "geometry": { "type": "LineString", "coordinates": [ [ -7.650645, 33.5419773 ], [ -7.6513593, 33.5421961 ], [ -7.651894, 33.5423898 ], [ -7.6522973, 33.5426044 ], [ -7.6526134, 33.5428997 ], [ -7.6531179, 33.5435634 ] ] } },
+{ "type": "Feature", "properties": { "id": 10 }, "geometry": { "type": "LineString", "coordinates": [ [ -7.6531179, 33.5435634 ], [ -7.6532268, 33.5436913 ], [ -7.653381, 33.5438696 ] ] } }
+]
+}

@@ -1,18 +1,49 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Deterministic>true</Deterministic>
     </PropertyGroup>
 
+    <!-- Reference to your model project -->
     <ItemGroup>
-      <Folder Include="resources\scripts\outdir\" />
+        <ProjectReference Include="..\SOHModel\SOHModel.csproj" />
     </ItemGroup>
 
+    <!-- ALWAYS copy configs and resources to the output folder -->
     <ItemGroup>
-      <ProjectReference Include="..\SOHModel\SOHModel.csproj" />
+        <!-- any config file you run with -->
+        <None Update="config*.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+
+        <!-- every file under resources (geojson, csv, images, aoi, graphs, etc.) -->
+        <None Update="resources\**\*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+
+        <!-- (optional) copy scripts/notebooks if you keep them in resources too -->
+        <None Update="*.ipynb">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="*.py">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="config_all.json">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="resources\trains_stations.geojson">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="resources\passenger_traveler_schedule.csv">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
+    <!-- Create a clean output subfolder for analytics (not required, but handy) -->
+    <Target Name="CreateOutputFolder" AfterTargets="Build">
+        <MakeDir Directories="$(OutDir)output" />
+    </Target>
 </Project>
