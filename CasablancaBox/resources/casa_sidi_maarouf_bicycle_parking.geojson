@@ -1,0 +1,31 @@
+﻿{
+  "type": "FeatureCollection",
+  "name": "casa_sidi_maarouf_bicycle_parking",
+  "crs": { "type": "name", "properties": { "name": "EPSG:4326" } },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Parking – Technopark",
+        "capacity": 18,
+        "covered": true
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-7.636546, 33.489442]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Parking – Bd. Sidi Maârouf",
+        "capacity": 12,
+        "covered": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-7.651199, 33.524398]
+      }
+    }
+  ]
+}

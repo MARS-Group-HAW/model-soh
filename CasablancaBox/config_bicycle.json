@@ -1,2 +1,83 @@
 ﻿{
+  "id": "casa-bikes-only",
+  "globals": {
+    "deltaT": 1,
+    "deltaTUnit": "seconds",
+    "startPoint": "2025-07-16T06:00:00",
+    "endPoint": "2025-07-16T10:00:00",
+    "console": true,
+    "csvOptions": {
+      "outputPath": "results"
+    }
+  },
+  "layers": [
+    {
+      "name": "SpatialGraphMediatorLayer",
+      "inputs": [
+        //{
+        // "file": "resources/casa_sidi_maarouf_walk_graph.geojson",
+        //"inputConfiguration": {
+        // "isBidirectedGraph": true,
+        //"modalities": ["Walking"]
+        //}
+        //},
+        {
+          "file": "resources/casa_sidi_maarouf_drive_graph.geojson",
+          "inputConfiguration": {
+            "isBidirectedGraph": true,
+            "modalities": [
+              "Cycling","Walking"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "BicycleParkingLayer",
+      "file": "resources/casa_sidi_maarouf_bicycle_parking.geojson"
+    },
+    {
+      "name": "HumanTravelerSchedulerLayer",
+      "file": "resources/human_traveler_bike_only.csv"
+    }
+  ],
+  "agents": [
+    {
+      "name": "HumanTraveler",
+      "individual": [
+        {
+          "parameter": "ResultTrajectoryEnabled",
+          "value": true
+        }
+      ],
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": [
+              "StableId",
+              "ActiveCapability",
+              "RouteLength",
+              "RouteMainModality",
+              "StartX",
+              "StartY",
+              "GoalX",
+              "GoalY",
+              "ActualTravelTime",
+              "ExpectedTravelTime"
+            ]
+          }
+        },
+        {
+          "kind": "default"
+        }
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "name": "Bicycle",
+      "file": "resources/bicycle.csv"
+    }
+  ]
 }

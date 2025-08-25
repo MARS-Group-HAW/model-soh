@@ -1,0 +1,2 @@
+startTime,endTime,spawningIntervalInMinutes,spawningAmount,HasOwnBikeProbability,SourceGeometry,TargetGeometry
+06:00,07:00,10,2,1.0,"POINT(-7.636546 33.489442)","POINT(-7.6511985 33.5243975)"

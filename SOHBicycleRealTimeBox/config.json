@@ -1,7 +1,6 @@
 ﻿{
   "globals": {
     "deltaT": 1,
-    // set the simulation time into the future to get real-time input from sensors
     "startPoint": "2024-07-15T16:00:00",
     "endPoint": "2024-07-16T20:00:00",
     "deltaTUnit": "seconds",

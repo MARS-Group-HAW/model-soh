@@ -9,6 +9,7 @@ using Mars.Components.Starter;
 using Mars.Core.Simulation;
 using Mars.Interfaces;
 using Mars.Interfaces.Model;
+using SOHModel.Bicycle.Model;
 using SOHModel.Bicycle.Rental;
 using SOHModel.Domain.Graph;
 using SOHModel.Multimodal.Model;
@@ -31,7 +32,7 @@ internal static class Program
         description.AddLayer<CycleTravelerSchedulerLayer>();
 
         description.AddAgent<CycleTraveler, CycleTravelerLayer>();
-        description.AddEntity<RentalBicycle>();
+        description.AddEntity<Bicycle>();
 
         ISimulationContainer application;
 
