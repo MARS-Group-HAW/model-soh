@@ -1,0 +1,83 @@
+﻿{
+  "id": "casa_citizen",
+  "globals": {
+    "startPoint": "2025-01-01T07:00:00",
+    "endPoint":   "2025-01-01T10:00:00",
+    "deltaT": 1,
+    "deltaTUnit": "seconds",
+    "console": true,
+    "csvOptions": { "outputPath": "results" }
+  },
+
+  "agents": [
+    {
+      "name": "Citizen",
+      "count": 1000,
+      "inputs": [
+        { "file": "resources/citizen_init_10k.csv" }  
+      ],
+      "individual": [
+        { "parameter": "ResultTrajectoryEnabled", "value": true },
+        { "parameter": "CapabilityDriving", "value": false },   // no car
+        { "parameter": "CapabilityCycling", "value": false }    // no cycling
+      ],
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": [ "StableId", "ActiveCapability", "RouteMainModality", "RouteModalities", "RouteLength" ]
+          }
+        },
+        { "kind": "default" }
+      ],
+      "outputFilter": [
+        { "parameter": "StoreTickResult", "operator": "in", "values": [ true ] }
+      ]
+    },
+    {
+      "name": "BusDriver",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "fileSuffix": "BusDriver",
+            "tripsFields": [ "StableId", "Line", "PassengerAmount" ]
+          }
+        },
+        { "kind": "default" }
+      ]
+    }
+  ],
+
+  "layers": [
+    { "name": "VectorBuildingsLayer", "file": "resources/casa_buildings.geojson" },
+    { "name": "VectorLanduseLayer",   "file": "resources/casa_landuse.geojson" },
+    { "name": "VectorPoiLayer",       "file": "resources/casa_sidi_maarouf_pois_clean.geojson" },
+
+    {
+      "name": "SpatialGraphMediatorLayer",
+      "inputs": [
+        {
+          "file": "resources/casa_sidi_maarouf_walk.graphml",
+          "inputConfiguration": { "modalities": ["Walking"], "isBidirectedGraph": true }
+        },
+        {
+          "file": "resources/casa_sidi_maarouf_drive.graphml",
+          "inputConfiguration": { "modalities": ["CarDriving"], "isBidirectedGraph": true, "noHelperNodes": true }
+        }
+      ]
+    },
+
+    { "name": "BusStationLayer", "file": "resources/stations.geojson" },
+    { "name": "BusRouteLayer",   "file": "resources/bus_L300_line.csv" },
+    { "name": "BusLayer",        "file": "resources/casa_sidi_maarouf_drive.graphml" },
+
+    { "name": "CitizenLayer" },
+
+    { "name": "BusSchedulerLayer", "file": "resources/bus_driver_schedule_casablanca.csv" }
+  ],
+
+  "entities": [
+    { "name": "Bus", "file": "resources/bus.csv" }
+  ]
+}

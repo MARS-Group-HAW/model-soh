@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using Mars.Common.Core.Logging;
 using Mars.Components.Layers;
@@ -9,62 +10,60 @@ using Mars.Components.Starter;
 using Mars.Core.Simulation;
 using Mars.Interfaces;
 using Mars.Interfaces.Model;
-using SOHModel.Bicycle.Model;
-using SOHModel.Bicycle.Parking;
-using SOHModel.Bicycle.Rental;
-using SOHModel.Car.Model;
-using SOHModel.Car.Parking;
-using SOHModel.Car.Rental;
+using SOHModel;
+
+// Graph + vectors
 using SOHModel.Domain.Graph;
-using SOHModel.Multimodal.Model;
+using SOHModel.Multimodal.Layers;     // VectorBuildingsLayer, VectorLanduseLayer, VectorPoiLayer
 
-namespace SOHTravellingBox;
+// Bus
+using SOHModel.Bus.Model;
+using SOHModel.Bus.Route;
+using SOHModel.Bus.Station;
 
-/// <summary>
-///     This pre-defined starter program runs the the
-///     <value>Kellinghusen scenario</value>
-///     with outside passed arguments or
-///     a default simulation inputConfiguration with CSV output and trips.
-/// </summary>
-internal static class Program
+// Citizen
+using SOHModel.Multimodal.Model;      // Citizen, CitizenLayer
+
+namespace CasablancaBox
 {
-    public static void Main(string[] args)
+    internal static class Program
     {
-        Thread.CurrentThread.CurrentCulture = new CultureInfo("EN-US");
-        LoggerFactory.SetLogLevel(LogLevel.Info);
-
-        var description = new ModelDescription();
-        description.AddLayer<SpatialGraphMediatorLayer>(new[] { typeof(ISpatialGraphLayer) });
-        description.AddLayer<BicycleParkingLayer>(new[] { typeof(IBicycleParkingLayer) });
-        description.AddLayer<HumanTravelerLayer>();
-        description.AddLayer<AgentSchedulerLayer<HumanTraveler, HumanTravelerLayer>>(
-            "HumanTravelerSchedulerLayer");
-
-        description.AddAgent<HumanTraveler, HumanTravelerLayer>();
-        description.AddEntity<Bicycle>();
-
-        ISimulationContainer application;
-        if (args != null && args.Length != 0)
+        private static void Main(string[] args)
         {
-            var container = CommandParser.ParseAndEvaluateArguments(description, args);
-            var config = container.SimulationConfig;
-            application = SimulationStarter.BuildApplication(description, config);
-        }
-        else
-        {
-            var file = File.ReadAllText("config_bicycle.json");
-            var simConfig = SimulationConfig.Deserialize(file);
-            application = SimulationStarter.BuildApplication(description, simConfig);
+            var watch = Stopwatch.StartNew();
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("EN-US");
+            LoggerFactory.SetLogLevel(LogLevel.Off);
+
+            var description = Startup.CreateModelDescription();
+
+            var application = args != null && args.Length != 0
+                ? SimulationStarter.BuildApplication(description, args)
+                : SimulationStarter.BuildApplication(description, GetConfig());
+
+            var simulation = application.Resolve<ISimulation>();
+            simulation.StartSimulation();
+            watch.Stop();
+            Console.WriteLine($"Complete execution lasted:           {watch.ElapsedMilliseconds}");
         }
 
-        var simulation = application.Resolve<ISimulation>();
-        
-        var watch = Stopwatch.StartNew();
-        var state = simulation.StartSimulation();
+        private static SimulationConfig GetConfig()
+        {
+            SimulationConfig simulationConfig;
+            var configValue = Environment.GetEnvironmentVariable("CONFIG");
 
-        watch.Stop();
+            if (configValue != null)
+            {
+                Console.WriteLine("Use passed simulation config by environment variable");
+                simulationConfig = SimulationConfig.Deserialize(configValue);
+                Console.WriteLine(simulationConfig.Serialize());
+            }
+            else
+            {
+                var file = File.ReadAllText("config_citizen.json");
+                simulationConfig = SimulationConfig.Deserialize(file);
+            }
 
-        Console.WriteLine($"Executed iterations {state.Iterations} lasted {watch.Elapsed}");
-        application.Dispose();
+            return simulationConfig;
+        }
     }
 }

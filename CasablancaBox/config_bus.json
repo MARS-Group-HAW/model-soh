@@ -48,15 +48,19 @@
       "name": "SpatialGraphMediatorLayer",
       "inputs": [
         {
+          "file": "resources/casa_sidi_maarouf_drive_graph.geojson",
+          "inputConfiguration": { "modalities": ["CarDriving"], "isBidirectedGraph": true }
+        } ,
+        {
           "file": "resources/casa_sidi_maarouf_walk_graph.geojson",
-          "inputConfiguration": { "modalities": ["Walking","CarDriving"], "isBidirectedGraph": true }
-        } 
+          "inputConfiguration": { "modalities": ["Walking"], "isBidirectedGraph": true }
+        }
       ]
     },
     {"name": "PassengerTravelerSchedulerLayer", "file": "Resources/passenger_traveler_schedule_casablanca.csv"},
     { "name": "BusStationLayer",   "file": "resources/stations.geojson" },
     { "name": "BusRouteLayer",     "file": "resources/bus_L300_line.csv" },
-    { "name": "BusLayer",          "file": "resources/casa_sidi_maarouf_walk_graph.geojson" },   
+    { "name": "BusLayer",          "file": "resources/casa_sidi_maarouf_drive_graph.geojson" },   
     { "name": "BusSchedulerLayer", "file": "resources/bus_driver_schedule_casablanca.csv" }
   ],
   "entities": [
