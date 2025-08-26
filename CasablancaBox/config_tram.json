@@ -42,7 +42,7 @@
       "name": "SpatialGraphMediatorLayer",
       "inputs": [
         {
-          "file": "resources/casa_sidi_maarouf_drive_graph.geojson",
+          "file": "resources/casa_sidi_maarouf_walk_graph.geojson",
           "inputConfiguration": {
             "modalities": [
               "Walking"

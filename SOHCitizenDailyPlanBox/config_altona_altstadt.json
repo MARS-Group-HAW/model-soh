@@ -8,7 +8,7 @@
   },
   "agents": [
     {
-      "count": 1000,
+      "count": 50,
       "name": "Citizen",
       "inputs": [
         {
@@ -17,8 +17,13 @@
       ],
       "outputs": [
         {
-          "kind": "trips"
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": [ "StableId", "ActiveCapability", "RouteMainModality", "RouteModalities", "RouteLength" ]
+          }
+
         }
+        
       ],
       "individual": [
         {

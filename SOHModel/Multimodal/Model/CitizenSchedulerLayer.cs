@@ -3,6 +3,7 @@ using Mars.Common;
 using Mars.Common.Core;
 using Mars.Components.Layers;
 using Mars.Interfaces.Annotations;
+using Mars.Interfaces.Environments;
 using SOHModel.Multimodal.Layers;
 
 namespace SOHModel.Multimodal.Model;
@@ -40,6 +41,11 @@ public class CitizenSchedulerLayer : SchedulerLayer
             StartPosition = source, Worker = isWorker, PartTimeWorker = isPartTimeWorker, MediatorLayer = MediatorLayer
         };
         citizen.Init(_citizenLayer);
+        if (dataRow.Data.TryGetValue("CapabilityBus", out var capBus) && capBus.Value<bool>())
+        {
+            // call the *public property*; this is allowed and will enable the capability internally
+            citizen.CapabilityBus = true;
+        }
 
         if (dataRow.Data.TryGetValue("gender", out var gender)) citizen.Gender = gender.Value<GenderType>();
         if (dataRow.Data.TryGetValue("mass", out var mass)) citizen.Mass = mass.Value<double>();

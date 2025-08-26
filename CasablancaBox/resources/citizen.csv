@@ -1,2 +1,2 @@
-﻿gender;length;age;worker;partTimeWorker;averageSpeed;speed;position;height;width;mass
-1;0.22;29;True;False;True;0;;1.7;0.46;65
+﻿gender;length;age;worker;partTimeWorker;averageSpeed;speed;position;height;width;mass;source,destination
+1;0.22;29;True;False;True;0;;1.7;0.46;65;"POINT(-7.636546 33.489442)";"POINT(-7.6511985 33.5243975)"

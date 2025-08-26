@@ -12,20 +12,19 @@
   "agents": [
     {
       "name": "Citizen",
-      "count": 1000,
+      "count": 200,
       "inputs": [
         { "file": "resources/citizen_init_10k.csv" }  
       ],
       "individual": [
         { "parameter": "ResultTrajectoryEnabled", "value": true },
-        { "parameter": "CapabilityDriving", "value": false },   // no car
-        { "parameter": "CapabilityCycling", "value": false }    // no cycling
+        { "parameter": "CapabilityBus", "value": true }   // no cycling
       ],
       "outputs": [
         {
           "kind": "trips",
           "outputConfiguration": {
-            "tripsFields": [ "StableId", "ActiveCapability", "RouteMainModality", "RouteModalities", "RouteLength" ]
+            "tripsFields": [ "StableId", "ActiveCapability", "RouteMainModality", "RouteModalities" ]
           }
         },
         { "kind": "default" }
@@ -75,6 +74,7 @@
     { "name": "CitizenLayer" },
 
     { "name": "BusSchedulerLayer", "file": "resources/bus_driver_schedule_casablanca.csv" }
+
   ],
 
   "entities": [

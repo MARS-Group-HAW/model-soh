@@ -21,7 +21,7 @@ public class Citizen : MultiCapableAgent<IMultimodalLayer>
         StartPosition ??= MediatorLayer.VectorBuildingsLayer.RandomPosition();
 
         base.Init(layer);
-
+        EnableCapability(ModalChoice.Bus); //Citizen kann Bus jetzt nutzen
         Home = new PointOfInterest(TripReason.HomeTime, StartPosition);
 
         if (Worker)
@@ -32,6 +32,18 @@ public class Citizen : MultiCapableAgent<IMultimodalLayer>
 
         Tour = new Tour(layer.Context, Worker, PartTimeWorker);
     }
+    // Enable Bus via config: "CapabilityBus": true
+    [PropertyDescription(Name = "CapabilityBus")]
+    public bool CapabilityBus
+    {
+        set
+        {
+            if (value) EnableCapability(ModalChoice.Bus);
+        }
+    }
+
+    
+
 
     private const double FreeTimeAtHomeProbability = 0.5;
     private const double EatAtHomeProbability = 0.8;
