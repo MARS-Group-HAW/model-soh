@@ -9,9 +9,10 @@ using Mars.Components.Starter;
 using Mars.Core.Simulation;
 using Mars.Interfaces;
 using Mars.Interfaces.Model;
+using SOHModel.ChristmasMarket;
 using SOHModel.Domain.Graph;
+using SOHModel.Domain.Model;
 using SOHModel.Multimodal.Model;
-using SOHModel.Multimodal.Layers;
 
 namespace SOHChristmasMarketBox;
 
@@ -24,26 +25,14 @@ internal static class Program
 
         var description = new ModelDescription();
         
-        /*description.AddLayer<SpatialGraphMediatorLayer>(new[] { typeof(ISpatialGraphLayer) });
-        
-        description.AddLayer<HumanTravelerLayer>();
-        description.AddLayer<AgentSchedulerLayer<HumanTraveler, HumanTravelerLayer>>(
-            "HumanTravelerSchedulerLayer");
-
-        description.AddAgent<HumanTraveler, HumanTravelerLayer>();*/
-        
-        // Spatial Graph Environment
         description.AddLayer<SpatialGraphMediatorLayer>(new[] { typeof(ISpatialGraphLayer) });
-        description.AddLayer<StreetLayer>();
-
-        // Kartesisches Environment
-        description.AddLayer<VectorBuildingsLayer>();
-        description.AddLayer<VectorPoiLayer>();
-
-        // Agenten und Scheduler
-        description.AddLayer<HumanTravelerLayer>();
-        description.AddLayer<AgentSchedulerLayer<HumanTraveler, HumanTravelerLayer>>("HumanTravelerSchedulerLayer");
-        description.AddAgent<HumanTraveler, HumanTravelerLayer>();
+        
+        description.AddLayer<MarketLayer>();
+        description.AddLayer<MarketTravelerLayer>();
+        description.AddLayer<AgentSchedulerLayer<RandomWalkMarketTraveler, MarketTravelerLayer>>("MarketTravelerSchedulerLayer");
+        //description.AddLayer<AgentSchedulerLayer<SocialForcesMarketTraveler, MarketTravelerLayer>>("MarketTravelerSchedulerLayer");
+        description.AddAgent<RandomWalkMarketTraveler, MarketTravelerLayer>();
+        //description.AddAgent<SocialForcesMarketTraveler, MarketTravelerLayer>();
         
         ISimulationContainer application;
         if (args != null && args.Length != 0)

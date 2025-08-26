@@ -2,14 +2,14 @@
   "id": "rathausmarkt_2023",
   "globals": {
     "deltaT": 1,
-    "startPoint": "2023-12-10T15:00:00",
-    "endPoint": "2023-12-10T20:00:00",
+    "startPoint": "2023-12-10T16:00:00",
+    "endPoint": "2023-12-10T17:00:00",
     "deltaTUnit": "seconds",
     "console": true
   },
   "agents": [
     {
-      "name": "HumanTraveler",
+      "name": "RandomWalkMarketTraveler",
       "outputs": [
         {
           "kind": "trips",
@@ -24,7 +24,24 @@
         {
           "value": true,
           "parameter": "ResultTrajectoryEnabled"
+        },
+        {
+          "parameter": "topLeftCorner",
+          "value": "9.992230367450674,53.550967416608785"
+        },
+        {
+          "parameter": "topRightCorner",
+          "value": "9.993077605872003,53.55039694865533"
+        },
+        {
+          "parameter": "bottomRightCorner",
+          "value": "9.993672555518117,53.55069672493096"
+        },
+        {
+          "parameter": "bottomLeftCorner",
+          "value": "9.992893096170604,53.55126495174483"
         }
+
       ]
     }
   ],
@@ -44,7 +61,15 @@
       ]
     },
     {
-      "name": "HumanTravelerSchedulerLayer",
+      "name": "MarketLayer",
+      "inputs": [
+        {
+          "file": "resources/weihnachtsmarkt_polygon.geojson"
+        }
+      ]
+    },
+    {
+      "name": "MarketTravelerSchedulerLayer",
       "file": "resources/human_traveler_rathausmarkt_v2.csv"
     }
   ]
