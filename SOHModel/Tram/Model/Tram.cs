@@ -10,7 +10,7 @@ public class Tram: Vehicle<ITramSteeringCapable, IPassengerCapable, TramSteering
     public Tram()
     {
         IsCollidingEntity = false;
-        ModalityType = SpatialModalityType.ShipDriving;
+        ModalityType = SpatialModalityType.TrainDriving;
     }
 
     public TramLayer Layer { get; set; }

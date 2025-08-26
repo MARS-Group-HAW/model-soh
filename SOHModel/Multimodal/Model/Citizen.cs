@@ -42,6 +42,15 @@ public class Citizen : MultiCapableAgent<IMultimodalLayer>
         }
     }
 
+    // Enable Bus via config: "CapabilityTram": true
+    [PropertyDescription(Name = "CapabilityTram")]
+    public bool CapabilityTram
+    {
+        set
+        {
+            if (value) EnableCapability(ModalChoice.Train);
+        }
+    }
     
 
 
