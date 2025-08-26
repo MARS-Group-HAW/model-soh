@@ -2,35 +2,61 @@
   "id": "casa_citizen",
   "globals": {
     "startPoint": "2025-01-01T07:00:00",
-    "endPoint":   "2025-01-01T10:00:00",
+    "endPoint": "2025-01-01T10:00:00",
     "deltaT": 1,
     "deltaTUnit": "seconds",
     "console": true,
-    "csvOptions": { "outputPath": "results" }
+    "csvOptions": {
+      "outputPath": "results"
+    }
   },
-
   "agents": [
     {
       "name": "Citizen",
-      "count": 200,
+      "count": 100,
       "inputs": [
-        { "file": "resources/citizen_init_10k.csv" }  
+        {
+          "file": "resources/citizen_init_10k.csv"
+        }
       ],
       "individual": [
-        { "parameter": "ResultTrajectoryEnabled", "value": true },
-        { "parameter": "CapabilityBus", "value": true }   // no cycling
+        {
+          "parameter": "ResultTrajectoryEnabled",
+          "value": true
+        },
+        {
+          "parameter": "CapabilityBus",
+          "value": true
+        },
+        {
+          "parameter": "CapabilityCycling",
+          "value": true
+        }
       ],
       "outputs": [
         {
           "kind": "trips",
           "outputConfiguration": {
-            "tripsFields": [ "StableId", "ActiveCapability", "RouteMainModality", "RouteModalities" ]
+            "tripsFields": [
+              "StableId",
+              "ActiveCapability",
+              "RouteMainModality",
+              "RouteModalities"
+            ]
           }
         },
-        { "kind": "default" }
+        {
+          "kind": "default"
+        }
       ],
       "outputFilter": [
-        { "parameter": "StoreTickResult", "operator": "in", "values": [ true ] }
+        {
+          "parameter": "StoreTickResult",
+          "operator": "in",
+          "values": [
+            true
+          ]
+        }
       ]
     },
     {
@@ -40,44 +66,89 @@
           "kind": "trips",
           "outputConfiguration": {
             "fileSuffix": "BusDriver",
-            "tripsFields": [ "StableId", "Line", "PassengerAmount" ]
+            "tripsFields": [
+              "StableId",
+              "Line",
+              "PassengerAmount"
+            ]
           }
         },
-        { "kind": "default" }
+        {
+          "kind": "default"
+        }
       ]
     }
   ],
-
   "layers": [
-    { "name": "VectorBuildingsLayer", "file": "resources/casa_buildings.geojson" },
-    { "name": "VectorLanduseLayer",   "file": "resources/casa_landuse.geojson" },
-    { "name": "VectorPoiLayer",       "file": "resources/casa_sidi_maarouf_pois_clean.geojson" },
-
+    {
+      "name": "VectorBuildingsLayer",
+      "file": "resources/casa_buildings.geojson"
+    },
+    {
+      "name": "VectorLanduseLayer",
+      "file": "resources/casa_landuse.geojson"
+    },
+    {
+      "name": "VectorPoiLayer",
+      "file": "resources/casa_sidi_maarouf_pois_clean.geojson"
+    },
     {
       "name": "SpatialGraphMediatorLayer",
       "inputs": [
         {
           "file": "resources/casa_sidi_maarouf_walk.graphml",
-          "inputConfiguration": { "modalities": ["Walking"], "isBidirectedGraph": true }
+          "inputConfiguration": {
+            "modalities": [
+              "Walking"
+            ],
+            "isBidirectedGraph": true
+          }
         },
         {
           "file": "resources/casa_sidi_maarouf_drive.graphml",
-          "inputConfiguration": { "modalities": ["CarDriving"], "isBidirectedGraph": true, "noHelperNodes": true }
+          "inputConfiguration": {
+            "modalities": [
+              "CarDriving",
+              "Cycling"
+            ],
+            "isBidirectedGraph": true,
+            "noHelperNodes": true
+          }
         }
       ]
     },
-
-    { "name": "BusStationLayer", "file": "resources/stations.geojson" },
-    { "name": "BusRouteLayer",   "file": "resources/bus_L300_line.csv" },
-    { "name": "BusLayer",        "file": "resources/casa_sidi_maarouf_drive.graphml" },
-
-    { "name": "CitizenLayer" },
-
-    { "name": "BusSchedulerLayer", "file": "resources/bus_driver_schedule_casablanca.csv" }
-
+    {
+      "file": "resources/bicycle_rental_sidi_maarouf.geojson",
+      "name": "BicycleRentalLayer"
+    },
+    {
+      "name": "BusStationLayer",
+      "file": "resources/stations.geojson"
+    },
+    {
+      "name": "BusRouteLayer",
+      "file": "resources/bus_L300_line.csv"
+    },
+    {
+      "name": "BusLayer",
+      "file": "resources/casa_sidi_maarouf_drive.graphml"
+    },
+    {
+      "name": "CitizenLayer"
+    },
+    {
+      "name": "BusSchedulerLayer",
+      "file": "resources/bus_driver_schedule_casablanca.csv"
+    }
   ],
-
   "entities": [
-    { "name": "Bus", "file": "resources/bus.csv" }
+    {
+      "file": "resources/bicycle.csv",
+      "name": "RentalBicycle"
+    },
+    {
+      "name": "Bus",
+      "file": "resources/bus.csv"
+    }
   ]
 }
