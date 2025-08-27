@@ -23,5 +23,12 @@
         <PackageReference Include="GTFS" Version="1.7.1" />
         <PackageReference Include="Mars.Life.Simulations" Version="5.3.0" />
     </ItemGroup>
+    <PropertyGroup>
+        <!-- turns nullable analysis off -->
+        <Nullable>disable</Nullable>
+
+        <!-- optional: also suppress the “unused field” warning -->
+        <NoWarn>$(NoWarn);CS0169</NoWarn>
+    </PropertyGroup>
 
 </Project>
