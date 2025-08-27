@@ -22,9 +22,6 @@ using SOHModel.Multimodal.Multimodal;
 using SOHModel.Multimodal.Routing;
 using SOHModel.Train.Station;
 using SOHModel.Train.Steering;
-using SOHModel.Tram.Steering;
-using SOHModel.Tram.Station;
-
 
 namespace SOHModel.Multimodal.Model;
 
@@ -33,7 +30,7 @@ namespace SOHModel.Multimodal.Model;
 /// </summary>
 public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>, 
     IWalkingCapable, ICarSteeringCapable, IBicycleSteeringAndRentalCapable, 
-    ICarRentalCapable, IBusPassenger, IFerryPassenger, ITrainPassenger, ITramPassenger
+    ICarRentalCapable, IBusPassenger, IFerryPassenger, ITrainPassenger
     where TLayer : IMultimodalLayer
 {
     private const double DeltaDistanceEqualsInM = 3d;
@@ -510,9 +507,6 @@ public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>,
     [PropertyDescription] public IFerryStationLayer FerryStationLayer { get; set; }
 
     [PropertyDescription] public ITrainStationLayer TrainStationLayer { get; set; }
-    
-    [PropertyDescription] public ITramStationLayer TramStationLayer { get; set; }
-
 
     [PropertyDescription] public IBicycleRentalLayer BicycleRentalLayer { get; set; }
 
@@ -564,6 +558,4 @@ public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>,
     }
 
     #endregion
-
-    
 }

@@ -29,6 +29,10 @@
           "value": true
         },
         {
+          "parameter": "CapabilityTram",
+          "value": true
+        },
+        {
           "parameter": "CapabilityCycling",
           "value": true
         }
@@ -77,6 +81,25 @@
           "kind": "default"
         }
       ]
+    },
+    {
+      "name": "TrainDriver",
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "fileSuffix": "TrainDriver",
+            "tripsFields": [
+              "StableId",
+              "Line",
+              "PassengerAmount"
+            ]
+          }
+        },
+        {
+          "kind": "default"
+        }
+      ]
     }
   ],
   "layers": [
@@ -96,7 +119,7 @@
       "name": "SpatialGraphMediatorLayer",
       "inputs": [
         {
-          "file": "resources/casa_sidi_maarouf_walk.graphml",
+          "file": "resources/casa_sidi_maarouf_walk_graph.geojson",
           "inputConfiguration": {
             "modalities": [
               "Walking"
@@ -105,7 +128,16 @@
           }
         },
         {
-          "file": "resources/casa_sidi_maarouf_drive.graphml",
+          "file": "resources/casablanca_T1_graph.geojson",
+          "inputConfiguration": {
+            "modalities": [
+              "TrainDriving"
+            ],
+            "isBidirectedGraph": true
+          }
+        },
+        {
+          "file": "resources/casa_sidi_maarouf_drive_graph.geojson",
           "inputConfiguration": {
             "modalities": [
               "CarDriving",
@@ -131,7 +163,7 @@
     },
     {
       "name": "BusLayer",
-      "file": "resources/casa_sidi_maarouf_drive.graphml"
+      "file": "resources/casa_sidi_maarouf_drive_graph.geojson"
     },
     {
       "name": "CitizenLayer"
@@ -139,6 +171,22 @@
     {
       "name": "BusSchedulerLayer",
       "file": "resources/bus_driver_schedule_casablanca.csv"
+    },
+    {
+      "name": "TrainStationLayer",
+      "file": "resources/casablanca_T1_stations.geojson"
+    },
+    {
+      "name": "TrainRouteLayer",
+      "file": "resources/tram_t1_line.csv"
+    },
+    {
+      "name": "TrainLayer",
+      "file": "resources/casa_sidi_maarouf_walk_graph.geojson"
+    },
+    {
+      "name": "TrainSchedulerLayer",
+      "file": "resources/tram_driver_schedule.csv"
     }
   ],
   "entities": [
@@ -149,6 +197,10 @@
     {
       "name": "Bus",
       "file": "resources/bus.csv"
+    },
+    {
+      "name": "Train",
+      "file": "resources/train.csv"
     }
   ]
 }

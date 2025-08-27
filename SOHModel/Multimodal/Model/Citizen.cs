@@ -22,6 +22,8 @@ public class Citizen : MultiCapableAgent<IMultimodalLayer>
 
         base.Init(layer);
         EnableCapability(ModalChoice.Bus); //Citizen kann Bus jetzt nutzen
+        EnableCapability(ModalChoice.Train); //Citizen kann Tram jetzt nutzen
+
         Home = new PointOfInterest(TripReason.HomeTime, StartPosition);
 
         if (Worker)

@@ -1,8 +1,8 @@
 ﻿{
   "globals": {
     "deltaT": 1,
-    "startPoint": "2025-09-01T06:00:00",
-    "endPoint": "2025-09-01T07:00:00",
+    "startPoint": "2022-09-01T06:00:00",
+    "endPoint": "2022-09-01T07:00:00",
     "deltaTUnit": "seconds",
     "console": true
   },
@@ -51,7 +51,7 @@
           }
         },
         {
-          "file": "resources/casa_sidi_maarouf_tram_graph.geojson",
+          "file": "resources/casablanca_T1_graph.geojson",
           "inputConfiguration": {
             "modalities": [
               "TrainDriving"
@@ -63,11 +63,11 @@
     },
     {
       "name": "PassengerTravelerSchedulerLayer",
-      "file": "resources/passenger_traveler_schedule_tram_casablanca.csv"
+      "file": "resources/passenger_traveler_schedule.csv"
     },
     {
       "name": "TrainStationLayer",
-      "file": "resources/tramstations.geojson"
+      "file": "resources/casablanca_T1_stations.geojson"
     },
     {
       "name": "TrainRouteLayer",
@@ -75,7 +75,7 @@
     },
     {
       "name": "TrainLayer",
-      "file": "resources/casa_sidi_maarouf_tram_graph.geojson"
+      "file": "resources/casa_sidi_maarouf_walk_graph.geojson"
     },
     {
       "name": "TrainSchedulerLayer",

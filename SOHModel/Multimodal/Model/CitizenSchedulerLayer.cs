@@ -46,6 +46,11 @@ public class CitizenSchedulerLayer : SchedulerLayer
             // call the *public property*; this is allowed and will enable the capability internally
             citizen.CapabilityBus = true;
         }
+        if (dataRow.Data.TryGetValue("CapabilityTram", out var capTram) && capTram.Value<bool>())
+        {
+            // call the *public property*; this is allowed and will enable the capability internally
+            citizen.CapabilityTram = true;
+        }
 
         if (dataRow.Data.TryGetValue("gender", out var gender)) citizen.Gender = gender.Value<GenderType>();
         if (dataRow.Data.TryGetValue("mass", out var mass)) citizen.Mass = mass.Value<double>();

@@ -1,0 +1,12 @@
+﻿{
+"type": "FeatureCollection",
+"name": "casablanca_T1_stations",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "id": 92900, "lines": "T1", "linekat": "S-Bahn", "lineshortkat": "T", "short_name": "Lissasfa Terminus" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ -7.6701, 33.5351 ] ] } },
+{ "type": "Feature", "properties": { "id": 92901, "lines": "T1", "linekat": "S-Bahn", "lineshortkat": "T", "short_name": "Al Laymoun" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ -7.6664, 33.5401 ] ] } },
+{ "type": "Feature", "properties": { "id": 92902, "lines": "T1", "linekat": "S-Bahn", "lineshortkat": "T", "short_name": "Facultés" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ -7.6572, 33.5458 ] ] } },
+{ "type": "Feature", "properties": { "id": 92903, "lines": "T1", "linekat": "T-Bahn", "lineshortkat": "T", "short_name": "Gare Casa Sud" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ -7.6506, 33.5420 ] ] } },
+{ "type": "Feature", "properties": { "id": 71900, "lines": "T1", "linekat": "S-Bahn", "lineshortkat": "T", "short_name": "Zenith" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ -7.6428, 33.5408 ] ] } }
+]
+}

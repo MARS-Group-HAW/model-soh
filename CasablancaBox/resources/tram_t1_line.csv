@@ -1,8 +1,6 @@
-line,station_id,minutes
+﻿line,station_id,minutes
 T1,92900,0
 T1,92901,3
-T1,92902,2
-T1,92903,2
+T1,92902,3
+T1,92903,5
 T1,71900,4
-T1,71901,2
-T1,71902,2
