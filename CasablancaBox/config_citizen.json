@@ -13,7 +13,7 @@
   "agents": [
     {
       "name": "Citizen",
-      "count": 100,
+      "count": 50,
       "inputs": [
         {
           "file": "resources/citizen_init_10k.csv"
