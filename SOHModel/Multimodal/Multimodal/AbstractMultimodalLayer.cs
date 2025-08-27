@@ -15,6 +15,7 @@ using SOHModel.Domain.Graph;
 using SOHModel.Ferry.Station;
 using SOHModel.Multimodal.Routing;
 using SOHModel.Train.Station;
+using SOHModel.Tram.Station;
 
 namespace SOHModel.Multimodal.Multimodal;
 
@@ -61,6 +62,15 @@ public abstract class AbstractMultimodalLayer : AbstractLayer, IMultimodalLayer,
     /// </summary>
     [PropertyDescription]
     public TrainStationLayer TrainStationLayer { get; set; } = default!;
+    
+    /// <summary>
+    ///     Gets the <see cref="TramStationLayer" /> holding all stations
+    ///     where the <see cref="ModalChoice.Train" /> is available.
+    /// </summary>
+    [PropertyDescription]
+    public TramStationLayer TramStationLayer { get; set; } = default!;
+
+    
 
     /// <summary>
     ///     Gets the <see cref="BusStationLayer" /> holding all stations
@@ -135,7 +145,9 @@ public abstract class AbstractMultimodalLayer : AbstractLayer, IMultimodalLayer,
                     result = result.Concat(ResolveModalChoice(source, modalChoice, FerryStationLayer));
                     break;
                 case ModalChoice.Train:
-                    result = result.Concat(ResolveModalChoice(source, modalChoice, TrainStationLayer));
+                   // result = result.Concat(ResolveModalChoice(source, modalChoice, TrainStationLayer));
+                    result = result.Concat(ResolveModalChoice(source, modalChoice, TramStationLayer));
+
                     break;
                 case ModalChoice.Bus:
                     result = result.Concat(ResolveModalChoice(source, modalChoice, BusStationLayer));
@@ -157,7 +169,8 @@ public abstract class AbstractMultimodalLayer : AbstractLayer, IMultimodalLayer,
             ModalChoice.CyclingRentalBike => ConsumeModalChoice(source, BicycleRentalLayer),
             ModalChoice.CarDriving => ConsumeModalChoice(source, CarParkingLayer),
             ModalChoice.Ferry => ConsumeModalChoice(source, FerryStationLayer),
-            ModalChoice.Train => ConsumeModalChoice(source, TrainStationLayer),
+           // ModalChoice.Train => ConsumeModalChoice(source, TrainStationLayer),
+            ModalChoice.Train => ConsumeModalChoice(source, TramStationLayer),
             ModalChoice.Bus => ConsumeModalChoice(source, BusStationLayer),
             _ => throw new ArgumentOutOfRangeException()
         };

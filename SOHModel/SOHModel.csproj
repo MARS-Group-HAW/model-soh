@@ -14,7 +14,9 @@
       <Folder Include="Domain\" />
       <Folder Include="Ferry\" />
       <Folder Include="Multimodal\" />
-      <Folder Include="Train\" />
+      <Folder Include="Train\" /> 
+      <Folder Include="Tram\" />
+        
     </ItemGroup>
 
     <ItemGroup>

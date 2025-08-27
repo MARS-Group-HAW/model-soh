@@ -18,6 +18,9 @@ using SOHModel.Multimodal.Routing;
 using SOHModel.Train.Model;
 using SOHModel.Train.Route;
 using SOHModel.Train.Station;
+using SOHModel.Tram.Model;
+using SOHModel.Tram.Route;
+using SOHModel.Tram.Station;
 
 namespace SOHModel;
 
@@ -43,6 +46,12 @@ public static class Startup
         description.AddLayer<BusStationLayer>();
         description.AddLayer<BusRouteLayer>([typeof(IBusRouteLayer)]);
 
+        description.AddLayer<TramLayer>();
+        description.AddLayer<TramSchedulerLayer>();
+        description.AddLayer<TramStationLayer>();
+        description.AddLayer<TramRouteLayer>([typeof(ITramRouteLayer)]);
+
+        
         description.AddLayer<TrainLayer>();
         description.AddLayer<TrainSchedulerLayer>();
         description.AddLayer<TrainStationLayer>();
@@ -78,7 +87,10 @@ public static class Startup
         description.AddAgent<BusDriver, BusLayer>();
         description.AddAgent<PassengerTraveler, PassengerTravelerLayer>();
         description.AddAgent<TrainDriver, TrainLayer>();
+        description.AddAgent<TramDriver, TramLayer>();
+
         description.AddEntity<Bus.Model.Bus>();
+        description.AddEntity<Tram.Model.Tram>();
 
         description.AddEntity<Bicycle.Model.Bicycle>();
         description.AddEntity<Car.Model.Car>();

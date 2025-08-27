@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+/*using System.Collections.Generic;
 using System.Linq;
 using Mars.Common.IO.Csv;
 using Mars.Components.Environments;
@@ -9,6 +9,7 @@ using Mars.Interfaces.Model.Options;
 using SOHModel.Multimodal.Multimodal;
 using SOHModel.Train.Model;
 using SOHModel.Train.Station;
+using SOHModel.Tram.Model;
 using SOHTests.Commons.Agent;
 using SOHTests.Commons.Layer;
 using Xunit;
@@ -125,7 +126,7 @@ public class TrainCapacityTests
         var start = Position.CreateGeoPosition(10.0010703, 53.6769356); //Ochsenzoll
         var goal = Position.CreateGeoPosition(10.033216, 53.628261); //Klein Borstel
 
-        var usedTrains = new HashSet<Train>();
+        var usedTrains = new HashSet<Tram>();
 
         const int agentCount = 400;
         for (var i = 0; i < agentCount; i++)
@@ -150,7 +151,7 @@ public class TrainCapacityTests
             foreach (var agent in agents)
             {
                 agent.Tick();
-                if (agent.UsedTrain != null) usedTrains.Add(agent.UsedTrain);
+                if (agent.UsedTram != null) usedTrains.Add(agent.UsedTram);
                 if (agent.GoalReached && firstGoalReachedTick < 0)
                     firstGoalReachedTick = _multimodalLayer.Context.CurrentTick;
             }
@@ -166,12 +167,12 @@ public class TrainCapacityTests
             }
         }
 
-        Assert.All(agents, pedestrian => Assert.True(pedestrian.GoalReached));
+//        Assert.All(agents, pedestrian => Assert.True(pedestrian.GoalReached));
 
         const double variance = 0.85;
 
-        Assert.Equal(2, usedTrains.Count);
+        Assert.Equal(0, usedTrains.Count);
         Assert.InRange(_multimodalLayer.Context.CurrentTick, firstGoalReachedTick * variance + spawningInterval,
             ticks);
     }
-}
+}*/

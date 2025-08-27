@@ -22,6 +22,8 @@ using SOHModel.Multimodal.Multimodal;
 using SOHModel.Multimodal.Routing;
 using SOHModel.Train.Station;
 using SOHModel.Train.Steering;
+using SOHModel.Tram.Station;
+using SOHModel.Tram.Steering;
 
 namespace SOHModel.Multimodal.Model;
 
@@ -30,7 +32,7 @@ namespace SOHModel.Multimodal.Model;
 /// </summary>
 public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>, 
     IWalkingCapable, ICarSteeringCapable, IBicycleSteeringAndRentalCapable, 
-    ICarRentalCapable, IBusPassenger, IFerryPassenger, ITrainPassenger
+    ICarRentalCapable, IBusPassenger, IFerryPassenger, ITrainPassenger, ITramPassenger
     where TLayer : IMultimodalLayer
 {
     private const double DeltaDistanceEqualsInM = 3d;
@@ -295,10 +297,15 @@ public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>,
                     var ferry = ferryStation.Find(route.Goal);
                     return TryEnterVehicleAsPassenger(ferry, this);
                 case ModalChoice.Train:
-                    var trainStation = TrainStationLayer.Nearest(Position);
-                    if (trainStation == null) return false;
-                    var train = trainStation.Find(route.Goal);
-                    return TryEnterVehicleAsPassenger(train, this);
+                    var tramStation = TramStationLayer.Nearest(Position);
+                    if (tramStation == null) return false;
+                    var tram = tramStation.Find(route.Goal);
+                    return TryEnterVehicleAsPassenger(tram, this);
+                   // var trainStation = TrainStationLayer.Nearest(Position);
+                    //if (trainStation == null) return false;
+                    //var train = trainStation.Find(route.Goal);
+                    //return TryEnterVehicleAsPassenger(train, this);
+                
                 case ModalChoice.Bus:
                     var busStation = BusStationLayer.Nearest(Position);
                     if (busStation == null) return false;
@@ -515,6 +522,9 @@ public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>,
     [PropertyDescription] public ICarParkingLayer CarParkingLayer { get; set; }
 
     [PropertyDescription] public IBusStationLayer BusStationLayer { get; set; }
+    
+    [PropertyDescription] public ITramStationLayer TramStationLayer { get; set; }
+
 
     /// <summary>
     ///     The currently active modal type.
@@ -558,4 +568,5 @@ public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>,
     }
 
     #endregion
+
 }

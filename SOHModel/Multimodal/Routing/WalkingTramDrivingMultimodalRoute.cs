@@ -1,7 +1,6 @@
 ﻿using Mars.Interfaces.Environments;
 using SOHModel.Domain.Graph;
 using SOHModel.Tram.Station;
-using TramStation = SOHModel.Tram.Station.TramStation;
 
 namespace SOHModel.Multimodal.Routing;
 
@@ -45,7 +44,7 @@ public class WalkingTramDrivingMultimodalRoute : MultimodalRoute
         unreachable ??= new HashSet<TramStation>();
         var tramStation = _tramStationLayer.Nearest(_start, station => !unreachable.Contains(station));
         if (tramStation == null)
-            throw new ApplicationException($"No reachable Tram station found for route from {_start} to {_goal}");
+            throw new ApplicationException($"No reachable tram station found for route from {_start} to {_goal}");
 
         var startNode = _environment.NearestNode(_start, SpatialModalityType.Walking);
         var tramStationNode = _environment.NearestNode(tramStation.Position, SpatialModalityType.Walking);
@@ -53,13 +52,13 @@ public class WalkingTramDrivingMultimodalRoute : MultimodalRoute
             return (tramStation, null);
 
         var route = _environment.FindShortestRoute(startNode, tramStationNode, WalkingFilter);
-        if (route == null) // no walking route exists, Tram station is excluded from next search
+        if (route == null) // no walking route exists, tram station is excluded from next search
         {
             unreachable.Add(tramStation);
             return FindStartTramStationAndWalkingRoute(unreachable);
         }
 
-        // var distance = startNode.Position.DistanceInMTo(TrainStationNode.Position);
+        // var distance = startNode.Position.DistanceInMTo(tramStationNode.Position);
         // if (route.RouteLength > distance * 2)
         {
             var nextTramStation = _tramStationLayer.Nearest(_start,
@@ -79,13 +78,13 @@ public class WalkingTramDrivingMultimodalRoute : MultimodalRoute
         return (tramStation, route);
     }
 
-    private (Tram.Station.TramStation, Route) FindGoalTramStationAndFinalWalkingRoute(HashSet<Tram.Station.TramStation> unreachable = null)
+    private (TramStation, Route) FindGoalTramStationAndFinalWalkingRoute(HashSet<TramStation> unreachable = null)
     {
-        unreachable ??= new HashSet<Tram.Station.TramStation>();
+        unreachable ??= new HashSet<TramStation>();
         var tramStation = _tramStationLayer.Nearest(_goal, station => !unreachable.Contains(station));
         if (tramStation == null)
             throw new ApplicationException(
-                $"No Tram route available within the spatial graph environment to reach goal station from {_start} to {_goal}");
+                $"No tram route available within the spatial graph environment to reach goal station from {_start} to {_goal}");
 
         var tramStationNode = _environment.NearestNode(tramStation.Position, SpatialModalityType.Walking);
         var goalNode = _environment.NearestNode(_goal, SpatialModalityType.Walking);
@@ -150,26 +149,24 @@ public class WalkingTramDrivingMultimodalRoute : MultimodalRoute
                            station.Lines.Intersect(goalLines).Any());
             if (transferPoint != null) // single transfer point
             {
-                var transferTramStationWaterwayNode =
+                var transferTramStationNode =
                     _environment.NearestNode(transferPoint.Position, SpatialModalityType.TrainDriving);
                 var tramRoute1 = _environment.FindShortestRoute(startTramStationNode,
-                    transferTramStationWaterwayNode, TramDrivingFilter);
+                    transferTramStationNode, TramDrivingFilter);
                 tramRoutes.Add(tramRoute1);
 
-                var tramRoute2 = _environment.FindShortestRoute(transferTramStationWaterwayNode,
-                    goalTramStationNode,
-                    TramDrivingFilter);
+                var tramRoute2 = _environment.FindShortestRoute(transferTramStationNode,
+                    goalTramStationNode, TramDrivingFilter);
                 tramRoutes.Add(tramRoute2);
             }
             else // multiple transfer points
             {
-                var transferPointsStart = _tramStationLayer.Features.OfType<TramStation>().Where(
-                    station => station != startTramStation && station.Lines.Intersect(startLines).Any() &&
-                               station.Lines.Count > 1);
-                var transferPointsGoal = _tramStationLayer.Features.OfType<TramStation>().Where(
-                    station => station != goalTramStation && station.Lines.Intersect(goalLines).Any() &&
-                               station.Lines.Count > 1).ToList();
-
+                var transferPointsStart = _tramStationLayer.Features.OfType<TramStation>().Where(station =>
+                    station != startTramStation && station.Lines.Intersect(startLines).Any() &&
+                    station.Lines.Count > 1);
+                var transferPointsGoal = _tramStationLayer.Features.OfType<TramStation>().Where(station =>
+                    station != goalTramStation && station.Lines.Intersect(goalLines).Any() &&
+                    station.Lines.Count > 1).ToList();
 
                 foreach (var transferStart in transferPointsStart)
                 foreach (var transferGoal in transferPointsGoal)

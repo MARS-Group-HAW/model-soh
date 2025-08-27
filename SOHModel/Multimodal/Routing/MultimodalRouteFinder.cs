@@ -10,6 +10,7 @@ using SOHModel.Domain.Graph;
 using SOHModel.Ferry.Steering;
 using SOHModel.Multimodal.Multimodal;
 using SOHModel.Train.Steering;
+using SOHModel.Tram.Steering;
 
 namespace SOHModel.Multimodal.Routing;
 
@@ -46,7 +47,9 @@ public class MultimodalRouteFinder : IMultimodalRouteFinder
                 case ModalChoice.Bus:
                     return FindBusRoute(agent, start, goal);
                 case ModalChoice.Train:
-                    return FindTrainRoute(agent, start, goal);
+                    //return FindTrainRoute(agent, start, goal);
+                    return FindTramRoute(agent, start, goal);
+
             }
         }
         catch (ArgumentException exc)
@@ -150,6 +153,15 @@ public class MultimodalRouteFinder : IMultimodalRouteFinder
 
         return null;
     }
+    private MultimodalRoute? FindTramRoute(IModalCapabilitiesAgent agent, Position start, Position goal)
+    {
+        if (agent is ITramPassenger { TramStationLayer: not null } tramPassenger)
+            return new WalkingTramDrivingMultimodalRoute(_environmentMediatorLayer,
+                tramPassenger.TramStationLayer, start, goal);
+
+        return null;
+    }
+
     
     private MultimodalRoute? FindBusRoute(IModalCapabilitiesAgent agent, Position start, Position goal)
     {

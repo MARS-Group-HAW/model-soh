@@ -83,12 +83,12 @@
       ]
     },
     {
-      "name": "TrainDriver",
+      "name": "TramDriver",
       "outputs": [
         {
           "kind": "trips",
           "outputConfiguration": {
-            "fileSuffix": "TrainDriver",
+            "fileSuffix": "TramDriver",
             "tripsFields": [
               "StableId",
               "Line",
@@ -173,19 +173,19 @@
       "file": "resources/bus_driver_schedule_casablanca.csv"
     },
     {
-      "name": "TrainStationLayer",
+      "name": "TramStationLayer",
       "file": "resources/casablanca_T1_stations.geojson"
     },
     {
-      "name": "TrainRouteLayer",
+      "name": "TramRouteLayer",
       "file": "resources/tram_t1_line.csv"
     },
     {
-      "name": "TrainLayer",
+      "name": "TramLayer",
       "file": "resources/casa_sidi_maarouf_walk_graph.geojson"
     },
     {
-      "name": "TrainSchedulerLayer",
+      "name": "TramSchedulerLayer",
       "file": "resources/tram_driver_schedule.csv"
     }
   ],
@@ -199,8 +199,8 @@
       "file": "resources/bus.csv"
     },
     {
-      "name": "Train",
-      "file": "resources/train.csv"
+      "name": "Tram",
+      "file": "resources/tram.csv"
     }
   ]
 }
