@@ -13,7 +13,7 @@
   "agents": [
     {
       "name": "Citizen",
-      "count": 1000,
+      "count": 200,
       "inputs": [
         {
           "file": "resources/citizen_init_10k.csv"
@@ -182,7 +182,7 @@
     },
     {
       "name": "TramLayer",
-      "file": "resources/casa_sidi_maarouf_walk_graph.geojson"
+      "file": "resources/casa_sidi_maarouf_drive_graph.geojson"
     },
     {
       "name": "TramSchedulerLayer",

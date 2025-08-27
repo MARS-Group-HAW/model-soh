@@ -186,6 +186,25 @@ public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>,
         get => IsCapabilityEnabled(ModalChoice.CyclingRentalBike);
         set => EnableCapability(ModalChoice.CyclingRentalBike, value);
     }
+    
+    [PropertyDescription(Ignore = true)]
+    public bool CapabilityBus
+    {
+        get => IsCapabilityEnabled(ModalChoice.Bus);
+        set => EnableCapability(ModalChoice.Bus, value);
+    }
+    
+    [PropertyDescription(Ignore = true)]
+    public bool CapabilityTram
+    {
+        get => IsCapabilityEnabled(ModalChoice.Train);
+        set => EnableCapability(ModalChoice.Train, value);
+    }
+
+    
+    
+    
+    
 
     #endregion
 
