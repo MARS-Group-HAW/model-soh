@@ -29,6 +29,8 @@
 
         <!-- optional: also suppress the “unused field” warning -->
         <NoWarn>$(NoWarn);CS0169</NoWarn>
+        <NoWarn>NU1701</NoWarn>
     </PropertyGroup>
+    
 
 </Project>

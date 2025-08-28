@@ -13,7 +13,7 @@
   "agents": [
     {
       "name": "Citizen",
-      "count": 200,
+      "count": 400,
       "inputs": [
         {
           "file": "resources/citizen_init_10k.csv"
@@ -119,16 +119,19 @@
       "name": "SpatialGraphMediatorLayer",
       "inputs": [
         {
-          "file": "resources/casa_sidi_maarouf_walk_graph.geojson",
+          "file": "resources/casa_sidi_maarouf_walk.graphml",
           "inputConfiguration": {
             "modalities": [
               "Walking"
             ],
-            "isBidirectedGraph": true
+            "isBidirectedGraph": true,
+            "noHelperNodes": false,
+            "helperNodeSnapDistanceMeters": 400
+
           }
         },
         {
-          "file": "resources/casablanca_T1_graph.geojson",
+          "file": "resources/casablanca_tram_line.graphml",
           "inputConfiguration": {
             "modalities": [
               "TrainDriving"
@@ -137,14 +140,13 @@
           }
         },
         {
-          "file": "resources/casa_sidi_maarouf_drive_graph.geojson",
+          "file": "resources/casa_sidi_maarouf_drive.graphml",
           "inputConfiguration": {
             "modalities": [
               "CarDriving",
               "Cycling"
             ],
-            "isBidirectedGraph": true,
-            "noHelperNodes": true
+            "isBidirectedGraph": true
           }
         }
       ]
@@ -163,7 +165,7 @@
     },
     {
       "name": "BusLayer",
-      "file": "resources/casa_sidi_maarouf_drive_graph.geojson"
+      "file": "resources/casa_sidi_maarouf_drive.graphml"
     },
     {
       "name": "CitizenLayer"
@@ -182,7 +184,7 @@
     },
     {
       "name": "TramLayer",
-      "file": "resources/casa_sidi_maarouf_drive_graph.geojson"
+      "file": "resources/casablanca_tram_line.graphml"
     },
     {
       "name": "TramSchedulerLayer",

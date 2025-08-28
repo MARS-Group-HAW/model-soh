@@ -48,6 +48,9 @@
       <Content Update="resources\citizen_init_10k.csv">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
+      <Content Update="resources\casablanca_tram_line.graphml">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
     <!-- Create a clean output subfolder for analytics (not required, but handy) -->

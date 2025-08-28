@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d5" for="node" attr.name="geometry" attr.type="string" />
+  <key id="d4" for="node" attr.name="short_name" attr.type="string" />
+  <key id="d3" for="node" attr.name="lineshortkat" attr.type="string" />
+  <key id="d2" for="node" attr.name="linekat" attr.type="string" />
+  <key id="d1" for="node" attr.name="lines" attr.type="string" />
+  <key id="d0" for="node" attr.name="id" attr.type="string" />
+  <graph edgedefault="undirected">
+    <node id="Lissasfa Terminus">
+      <data key="d0">92900.0</data>
+      <data key="d1">T1</data>
+      <data key="d2">S-Bahn</data>
+      <data key="d3">T</data>
+      <data key="d4">Lissasfa Terminus</data>
+      <data key="d5">POINT (-7.6701 33.5351)</data>
+    </node>
+    <node id="Al Laymoun">
+      <data key="d0">92901.0</data>
+      <data key="d1">T1</data>
+      <data key="d2">S-Bahn</data>
+      <data key="d3">T</data>
+      <data key="d4">Al Laymoun</data>
+      <data key="d5">POINT (-7.6664 33.5401)</data>
+    </node>
+    <node id="Facultés">
+      <data key="d0">92902.0</data>
+      <data key="d1">T1</data>
+      <data key="d2">S-Bahn</data>
+      <data key="d3">T</data>
+      <data key="d4">Facultés</data>
+      <data key="d5">POINT (-7.6572 33.5458)</data>
+    </node>
+    <node id="Gare Casa Sud">
+      <data key="d0">92903.0</data>
+      <data key="d1">T1</data>
+      <data key="d2">S-Bahn</data>
+      <data key="d3">T</data>
+      <data key="d4">Gare Casa Sud</data>
+      <data key="d5">POINT (-7.6506 33.542)</data>
+    </node>
+    <node id="Zenith">
+      <data key="d0">71900.0</data>
+      <data key="d1">T1</data>
+      <data key="d2">S-Bahn</data>
+      <data key="d3">T</data>
+      <data key="d4">Zenith</data>
+      <data key="d5">POINT (-7.6428 33.5408)</data>
+    </node>
+    <edge source="Lissasfa Terminus" target="Al Laymoun" />
+    <edge source="Al Laymoun" target="Facultés" />
+    <edge source="Facultés" target="Gare Casa Sud" />
+    <edge source="Gare Casa Sud" target="Zenith" />
+  </graph>
+</graphml>
