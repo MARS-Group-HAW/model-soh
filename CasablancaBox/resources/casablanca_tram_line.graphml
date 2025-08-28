@@ -1,55 +1,634 @@
 <?xml version='1.0' encoding='utf-8'?>
-<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
-  <key id="d5" for="node" attr.name="geometry" attr.type="string" />
-  <key id="d4" for="node" attr.name="short_name" attr.type="string" />
-  <key id="d3" for="node" attr.name="lineshortkat" attr.type="string" />
-  <key id="d2" for="node" attr.name="linekat" attr.type="string" />
-  <key id="d1" for="node" attr.name="lines" attr.type="string" />
-  <key id="d0" for="node" attr.name="id" attr.type="string" />
-  <graph edgedefault="undirected">
-    <node id="Lissasfa Terminus">
-      <data key="d0">92900.0</data>
-      <data key="d1">T1</data>
-      <data key="d2">S-Bahn</data>
-      <data key="d3">T</data>
-      <data key="d4">Lissasfa Terminus</data>
-      <data key="d5">POINT (-7.6701 33.5351)</data>
-    </node>
-    <node id="Al Laymoun">
-      <data key="d0">92901.0</data>
-      <data key="d1">T1</data>
-      <data key="d2">S-Bahn</data>
-      <data key="d3">T</data>
-      <data key="d4">Al Laymoun</data>
-      <data key="d5">POINT (-7.6664 33.5401)</data>
-    </node>
-    <node id="Facultés">
-      <data key="d0">92902.0</data>
-      <data key="d1">T1</data>
-      <data key="d2">S-Bahn</data>
-      <data key="d3">T</data>
-      <data key="d4">Facultés</data>
-      <data key="d5">POINT (-7.6572 33.5458)</data>
-    </node>
-    <node id="Gare Casa Sud">
-      <data key="d0">92903.0</data>
-      <data key="d1">T1</data>
-      <data key="d2">S-Bahn</data>
-      <data key="d3">T</data>
-      <data key="d4">Gare Casa Sud</data>
-      <data key="d5">POINT (-7.6506 33.542)</data>
-    </node>
-    <node id="Zenith">
-      <data key="d0">71900.0</data>
-      <data key="d1">T1</data>
-      <data key="d2">S-Bahn</data>
-      <data key="d3">T</data>
-      <data key="d4">Zenith</data>
-      <data key="d5">POINT (-7.6428 33.5408)</data>
-    </node>
-    <edge source="Lissasfa Terminus" target="Al Laymoun" />
-    <edge source="Al Laymoun" target="Facultés" />
-    <edge source="Facultés" target="Gare Casa Sud" />
-    <edge source="Gare Casa Sud" target="Zenith" />
-  </graph>
-</graphml>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"><key id="d3" for="edge" attr.name="modality" attr.type="string"/>
+<key id="d2" for="edge" attr.name="length" attr.type="double"/>
+<key id="d1" for="node" attr.name="y" attr.type="double"/>
+<key id="d0" for="node" attr.name="x" attr.type="double"/>
+<graph edgedefault="undirected"><node id="0">
+  <data key="d0">-7.6411469</data>
+  <data key="d1">33.5407605</data>
+</node>
+<node id="1">
+  <data key="d0">-7.6412474</data>
+  <data key="d1">33.5407512</data>
+</node>
+<node id="2">
+  <data key="d0">-7.6416617</data>
+  <data key="d1">33.5407138</data>
+</node>
+<node id="3">
+  <data key="d0">-7.6419494</data>
+  <data key="d1">33.5407289</data>
+</node>
+<node id="4">
+  <data key="d0">-7.6424139</data>
+  <data key="d1">33.540752</data>
+</node>
+<node id="5">
+  <data key="d0">-7.6428042</data>
+  <data key="d1">33.5407714</data>
+</node>
+<node id="6">
+  <data key="d0">-7.6437949</data>
+  <data key="d1">33.5408451</data>
+</node>
+<node id="7">
+  <data key="d0">-7.6440591</data>
+  <data key="d1">33.5408658</data>
+</node>
+<node id="8">
+  <data key="d0">-7.6442933</data>
+  <data key="d1">33.540884</data>
+</node>
+<node id="9">
+  <data key="d0">-7.6445301</data>
+  <data key="d1">33.5408979</data>
+</node>
+<node id="10">
+  <data key="d0">-7.6446765</data>
+  <data key="d1">33.5409065</data>
+</node>
+<node id="11">
+  <data key="d0">-7.6446892</data>
+  <data key="d1">33.5409047</data>
+</node>
+<node id="12">
+  <data key="d0">-7.6456671</data>
+  <data key="d1">33.540974</data>
+</node>
+<node id="13">
+  <data key="d0">-7.647001</data>
+  <data key="d1">33.5410578</data>
+</node>
+<node id="14">
+  <data key="d0">-7.6474798</data>
+  <data key="d1">33.541089</data>
+</node>
+<node id="15">
+  <data key="d0">-7.6491906</data>
+  <data key="d1">33.5415735</data>
+</node>
+<node id="16">
+  <data key="d0">-7.650645</data>
+  <data key="d1">33.5419773</data>
+</node>
+<node id="17">
+  <data key="d0">-7.6513593</data>
+  <data key="d1">33.5421961</data>
+</node>
+<node id="18">
+  <data key="d0">-7.651894</data>
+  <data key="d1">33.5423898</data>
+</node>
+<node id="19">
+  <data key="d0">-7.6522973</data>
+  <data key="d1">33.5426044</data>
+</node>
+<node id="20">
+  <data key="d0">-7.6526134</data>
+  <data key="d1">33.5428997</data>
+</node>
+<node id="21">
+  <data key="d0">-7.6531179</data>
+  <data key="d1">33.5435634</data>
+</node>
+<node id="22">
+  <data key="d0">-7.6532268</data>
+  <data key="d1">33.5436913</data>
+</node>
+<node id="23">
+  <data key="d0">-7.653381</data>
+  <data key="d1">33.5438696</data>
+</node>
+<node id="24">
+  <data key="d0">-7.6534592</data>
+  <data key="d1">33.5439601</data>
+</node>
+<node id="25">
+  <data key="d0">-7.6542123</data>
+  <data key="d1">33.5446503</data>
+</node>
+<node id="26">
+  <data key="d0">-7.655247</data>
+  <data key="d1">33.5455606</data>
+</node>
+<node id="27">
+  <data key="d0">-7.6556831</data>
+  <data key="d1">33.5459399</data>
+</node>
+<node id="28">
+  <data key="d0">-7.6558331</data>
+  <data key="d1">33.54605</data>
+</node>
+<node id="29">
+  <data key="d0">-7.65591</data>
+  <data key="d1">33.5460761</data>
+</node>
+<node id="30">
+  <data key="d0">-7.6559598</data>
+  <data key="d1">33.5460935</data>
+</node>
+<node id="31">
+  <data key="d0">-7.656013</data>
+  <data key="d1">33.5461054</data>
+</node>
+<node id="32">
+  <data key="d0">-7.6561253</data>
+  <data key="d1">33.5461101</data>
+</node>
+<node id="33">
+  <data key="d0">-7.656232</data>
+  <data key="d1">33.5460992</data>
+</node>
+<node id="34">
+  <data key="d0">-7.6571703</data>
+  <data key="d1">33.5458466</data>
+</node>
+<node id="35">
+  <data key="d0">-7.6572969</data>
+  <data key="d1">33.5458117</data>
+</node>
+<node id="36">
+  <data key="d0">-7.6577466</data>
+  <data key="d1">33.5456876</data>
+</node>
+<node id="37">
+  <data key="d0">-7.6581092</data>
+  <data key="d1">33.5455875</data>
+</node>
+<node id="38">
+  <data key="d0">-7.660004</data>
+  <data key="d1">33.5450686</data>
+</node>
+<node id="39">
+  <data key="d0">-7.6601571</data>
+  <data key="d1">33.5450267</data>
+</node>
+<node id="40">
+  <data key="d0">-7.6606327</data>
+  <data key="d1">33.5449041</data>
+</node>
+<node id="41">
+  <data key="d0">-7.6608044</data>
+  <data key="d1">33.5448673</data>
+</node>
+<node id="42">
+  <data key="d0">-7.6609778</data>
+  <data key="d1">33.5448437</data>
+</node>
+<node id="43">
+  <data key="d0">-7.6610857</data>
+  <data key="d1">33.5448363</data>
+</node>
+<node id="44">
+  <data key="d0">-7.6611972</data>
+  <data key="d1">33.5448438</data>
+</node>
+<node id="45">
+  <data key="d0">-7.6612842</data>
+  <data key="d1">33.5448529</data>
+</node>
+<node id="46">
+  <data key="d0">-7.661776</data>
+  <data key="d1">33.5449352</data>
+</node>
+<node id="47">
+  <data key="d0">-7.6618589</data>
+  <data key="d1">33.544947</data>
+</node>
+<node id="48">
+  <data key="d0">-7.6619294</data>
+  <data key="d1">33.5449481</data>
+</node>
+<node id="49">
+  <data key="d0">-7.6619911</data>
+  <data key="d1">33.5449442</data>
+</node>
+<node id="50">
+  <data key="d0">-7.66205</data>
+  <data key="d1">33.5449329</data>
+</node>
+<node id="51">
+  <data key="d0">-7.6621069</data>
+  <data key="d1">33.5449137</data>
+</node>
+<node id="52">
+  <data key="d0">-7.6621289</data>
+  <data key="d1">33.544903</data>
+</node>
+<node id="53">
+  <data key="d0">-7.6621691</data>
+  <data key="d1">33.5448834</data>
+</node>
+<node id="54">
+  <data key="d0">-7.66222</data>
+  <data key="d1">33.5448495</data>
+</node>
+<node id="55">
+  <data key="d0">-7.6622671</data>
+  <data key="d1">33.5448093</data>
+</node>
+<node id="56">
+  <data key="d0">-7.6623109</data>
+  <data key="d1">33.5447571</data>
+</node>
+<node id="57">
+  <data key="d0">-7.6627876</data>
+  <data key="d1">33.5442163</data>
+</node>
+<node id="58">
+  <data key="d0">-7.6634672</data>
+  <data key="d1">33.5434268</data>
+</node>
+<node id="59">
+  <data key="d0">-7.6635359</data>
+  <data key="d1">33.5433526</data>
+</node>
+<node id="60">
+  <data key="d0">-7.663686</data>
+  <data key="d1">33.5431832</data>
+</node>
+<node id="61">
+  <data key="d0">-7.6648254</data>
+  <data key="d1">33.5418815</data>
+</node>
+<node id="62">
+  <data key="d0">-7.6650469</data>
+  <data key="d1">33.5416412</data>
+</node>
+<node id="63">
+  <data key="d0">-7.6657893</data>
+  <data key="d1">33.5407577</data>
+</node>
+<node id="64">
+  <data key="d0">-7.6663597</data>
+  <data key="d1">33.5400945</data>
+</node>
+<node id="65">
+  <data key="d0">-7.6664554</data>
+  <data key="d1">33.5399832</data>
+</node>
+<node id="66">
+  <data key="d0">-7.6665006</data>
+  <data key="d1">33.5399307</data>
+</node>
+<node id="67">
+  <data key="d0">-7.6666233</data>
+  <data key="d1">33.5397881</data>
+</node>
+<node id="68">
+  <data key="d0">-7.6666459</data>
+  <data key="d1">33.5397618</data>
+</node>
+<node id="69">
+  <data key="d0">-7.6669008</data>
+  <data key="d1">33.5394654</data>
+</node>
+<node id="70">
+  <data key="d0">-7.6682131</data>
+  <data key="d1">33.537959</data>
+</node>
+<node id="71">
+  <data key="d0">-7.6692264</data>
+  <data key="d1">33.5368068</data>
+</node>
+<node id="72">
+  <data key="d0">-7.6694319</data>
+  <data key="d1">33.5365685</data>
+</node>
+<node id="73">
+  <data key="d0">-7.669593</data>
+  <data key="d1">33.536331</data>
+</node>
+<node id="74">
+  <data key="d0">-7.6696958</data>
+  <data key="d1">33.5361208</data>
+</node>
+<node id="75">
+  <data key="d0">-7.6699736</data>
+  <data key="d1">33.5353481</data>
+</node>
+<node id="76">
+  <data key="d0">-7.6700775</data>
+  <data key="d1">33.5350512</data>
+</node>
+<node id="77">
+  <data key="d0">-7.6701491</data>
+  <data key="d1">33.5348464</data>
+</node>
+<node id="78">
+  <data key="d0">-7.6703052</data>
+  <data key="d1">33.5344003</data>
+</node>
+<edge source="0" target="1">
+  <data key="d2">11.256348103740978</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="1" target="2">
+  <data key="d2">46.38937519011627</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="2" target="3">
+  <data key="d2">32.09005135546883</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="3" target="4">
+  <data key="d2">51.79986144395854</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="4" target="5">
+  <data key="d2">43.52518647683892</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="5" target="6">
+  <data key="d2">110.7226172588451</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="6" target="7">
+  <data key="d2">29.540264669410984</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="7" target="8">
+  <data key="d2">26.184096364332177</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="8" target="9">
+  <data key="d2">26.425745778266602</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="9" target="10">
+  <data key="d2">16.337599034723016</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="10" target="11">
+  <data key="d2">1.4340518342392072</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="11" target="12">
+  <data key="d2">109.25209109368473</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="12" target="13">
+  <data key="d2">148.91026953859352</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="13" target="14">
+  <data key="d2">53.462414459906185</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="14" target="15">
+  <data key="d2">201.1385669686436</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="15" target="16">
+  <data key="d2">170.64930612599892</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="16" target="17">
+  <data key="d2">84.71537262461877</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="17" target="18">
+  <data key="d2">64.90161800861618</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="18" target="19">
+  <data key="d2">53.26433550994746</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="19" target="20">
+  <data key="d2">52.856003107142136</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="20" target="21">
+  <data key="d2">104.93775184697537</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="21" target="22">
+  <data key="d2">20.94696250829598</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="22" target="23">
+  <data key="d2">29.355898830891388</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="23" target="24">
+  <data key="d2">14.89583887863669</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="24" target="25">
+  <data key="d2">124.60498516905211</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="25" target="26">
+  <data key="d2">167.48006817214718</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="26" target="27">
+  <data key="d2">70.16646899231152</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="27" target="28">
+  <data key="d2">22.250291538292352</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="28" target="29">
+  <data key="d2">9.24306924454378</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="29" target="30">
+  <data key="d2">6.011150588523304</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="30" target="31">
+  <data key="d2">6.131779781215598</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="31" target="32">
+  <data key="d2">12.516930736777429</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="32" target="33">
+  <data key="d2">11.96668062375685</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="33" target="34">
+  <data key="d2">109.76488546936429</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="34" target="35">
+  <data key="d2">14.843955643147424</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="35" target="36">
+  <data key="d2">52.73317458200698</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="36" target="37">
+  <data key="d2">42.521084079208656</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="37" target="38">
+  <data key="d2">222.02280748887287</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="38" target="39">
+  <data key="d2">17.93832369883629</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="39" target="40">
+  <data key="d2">55.41804361106588</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="40" target="41">
+  <data key="d2">19.735421473930856</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="41" target="42">
+  <data key="d2">19.558473772900854</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="42" target="43">
+  <data key="d2">12.051969411251491</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="43" target="44">
+  <data key="d2">12.452480377914075</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="44" target="45">
+  <data key="d2">9.760765665183191</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="45" target="46">
+  <data key="d2">55.8395670421029</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="46" target="47">
+  <data key="d2">9.362001075130475</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="47" target="48">
+  <data key="d2">7.849399211597847</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="48" target="49">
+  <data key="d2">6.888136823749923</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="49" target="50">
+  <data key="d2">6.72818441932582</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="50" target="51">
+  <data key="d2">6.83351122800612</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="51" target="52">
+  <data key="d2">2.8355202215136863</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="52" target="53">
+  <data key="d2">5.1845150194556595</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="53" target="54">
+  <data key="d2">7.253040013070745</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="54" target="55">
+  <data key="d2">7.504647360127308</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="55" target="56">
+  <data key="d2">8.507804261497723</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="56" target="57">
+  <data key="d2">89.62891942994383</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="57" target="58">
+  <data key="d2">129.77879634088927</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="58" target="59">
+  <data key="d2">12.518002891649632</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="59" target="60">
+  <data key="d2">28.12648112085081</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="60" target="61">
+  <data key="d2">215.2058509698958</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="61" target="62">
+  <data key="d2">40.47253032586015</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="62" target="63">
+  <data key="d2">144.06147372735126</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="63" target="64">
+  <data key="d2">108.9834298019654</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="64" target="65">
+  <data key="d2">18.288147157854606</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="65" target="66">
+  <data key="d2">8.630273625213094</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="66" target="67">
+  <data key="d2">23.43678989835222</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="67" target="68">
+  <data key="d2">4.320557997843034</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="68" target="69">
+  <data key="d2">48.70535773077314</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="69" target="70">
+  <data key="d2">248.62983225600368</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="70" target="71">
+  <data key="d2">190.79487697178348</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="71" target="72">
+  <data key="d2">39.19400241179455</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="72" target="73">
+  <data key="d2">36.43720128988787</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="73" target="74">
+  <data key="d2">30.31526657080501</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="74" target="75">
+  <data key="d2">107.7281469259843</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="75" target="76">
+  <data key="d2">41.303237776791775</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="76" target="77">
+  <data key="d2">28.488501559441303</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+<edge source="77" target="78">
+  <data key="d2">62.05842317469804</data>
+  <data key="d3">TrainDriving</data>
+</edge>
+</graph></graphml>
