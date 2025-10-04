@@ -1,25 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Threading;
-using Mars.Common.Core;
 using Mars.Common.Core.Logging;
 using Mars.Components.Starter;
-using Mars.Core.Data.Wrapper.Relational;
 using Mars.Core.Simulation;
 using Mars.Interfaces;
-using Mars.Interfaces.Environments;
 using Mars.Interfaces.Model;
-using Mars.Interfaces.Model.Options;
 using SOHModel.SemiTruck.Model;
 using SOHModel.SemiTruck.RealTimeData;
 using SOHModel.SemiTruck.Scheduling;
-using SOHRoutingOptimization.resources.PreComputeRoutes;
 
-
-namespace SOHRoutingOptimization;
+namespace SOHLogisticsBox;
 
 internal static class Program
 {
@@ -50,6 +43,7 @@ internal static class Program
         ISimulationContainer application;
         if (args != null && args.Length != 0)
         {
+            Console.WriteLine("default config");
             var container = CommandParser.ParseAndEvaluateArguments(description, args);
             var config = container.SimulationConfig;
             application = SimulationStarter.BuildApplication(description, config);
@@ -57,6 +51,7 @@ internal static class Program
         else
         {
             var configPath = Environment.GetEnvironmentVariable("MARS_CONFIG_PATH") ?? "config_GeoJSON.json";
+            Console.WriteLine("mars config path: {0}", configPath);
             var file = File.ReadAllText(configPath);
             var simConfig = SimulationConfig.Deserialize(file);
             
