@@ -7,11 +7,11 @@
     "deltaTUnit": "seconds",
     "console": true,
     "npgSqlOptions": {
+      "host": "127.0.0.1",
       "port": "5432",
-      "host": "postgres-service",
-      "user": "mars_user",
-      "password": "Your-Password",
-      "databaseName": "mars_user",
+      "user": "mars_soh_logistics",
+      "password": "admin",
+      "databaseName": "mars_soh_logistics",
       "overrideByConflict": true
     }
   },
@@ -38,7 +38,7 @@
       "name": "SemiTruckLayer",
       "inputs": [
         {
-          "file": "resources/autobahn_und_bundesstrassen_deutschland_elevation_08.geojson",
+          "file": "resources/autobahn_und_bundesstrassen_deutschland_elevation_21.geojson",
           "inputConfiguration": {
             "modalities": ["CarDriving"],
             "isBidirectedGraph": true
