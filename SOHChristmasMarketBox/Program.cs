@@ -9,10 +9,11 @@ using Mars.Components.Starter;
 using Mars.Core.Simulation;
 using Mars.Interfaces;
 using Mars.Interfaces.Model;
-using SOHModel.ChristmasMarket;
+using SOHModel.ChristmasMarket.Agents;
+using SOHModel.ChristmasMarket.Analytics;
+using SOHModel.ChristmasMarket.Entities;
+using SOHModel.ChristmasMarket.Layers;
 using SOHModel.Domain.Graph;
-using SOHModel.Domain.Model;
-using SOHModel.Multimodal.Model;
 
 namespace SOHChristmasMarketBox;
 
@@ -24,16 +25,23 @@ internal static class Program
         LoggerFactory.SetLogLevel(LogLevel.Off);
 
         var description = new ModelDescription();
-        
+
         description.AddLayer<SpatialGraphMediatorLayer>(new[] { typeof(ISpatialGraphLayer) });
-        
+
         description.AddLayer<MarketLayer>();
         description.AddLayer<MarketTravelerLayer>();
-        description.AddLayer<AgentSchedulerLayer<RandomWalkMarketTraveler, MarketTravelerLayer>>("MarketTravelerSchedulerLayer");
-        //description.AddLayer<AgentSchedulerLayer<SocialForcesMarketTraveler, MarketTravelerLayer>>("MarketTravelerSchedulerLayer");
-        description.AddAgent<RandomWalkMarketTraveler, MarketTravelerLayer>();
-        //description.AddAgent<SocialForcesMarketTraveler, MarketTravelerLayer>();
-        
+
+        //description.AddLayer<AgentSchedulerLayer<SocialForceMarketTraveler, MarketTravelerLayer>>("MarketTravelerSchedulerLayer");
+        //description.AddAgent<SocialForceMarketTraveler, MarketTravelerLayer>();
+
+        //description.AddLayer<AgentSchedulerLayer<CollisionFreeSpeedMarketTraveler, MarketTravelerLayer>>("MarketTravelerSchedulerLayer");
+        //description.AddAgent<CollisionFreeSpeedMarketTraveler, MarketTravelerLayer>();
+
+        description.AddLayer<AgentSchedulerLayer<OptimalStepsMarketTraveler, MarketTravelerLayer>>("MarketTravelerSchedulerLayer");
+        description.AddAgent<OptimalStepsMarketTraveler, MarketTravelerLayer>();
+
+        description.AddEntity<MarketStall>();
+
         ISimulationContainer application;
         if (args != null && args.Length != 0)
         {
@@ -49,13 +57,16 @@ internal static class Program
         }
 
         var simulation = application.Resolve<ISimulation>();
-        
+
         var watch = Stopwatch.StartNew();
         var state = simulation.StartSimulation();
 
         watch.Stop();
 
         Console.WriteLine($"Executed iterations {state.Iterations} lasted {watch.Elapsed}");
+
+        ChristmasMarketAnalysics.PrintResults();
+
         application.Dispose();
     }
 }
