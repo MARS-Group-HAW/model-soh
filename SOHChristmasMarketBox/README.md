@@ -57,6 +57,7 @@ This scenario offers configuration options for running the simulation. While in 
     *   `bottomRightCorner`
     *   `bottomLeftCorner`
 
+> **Important**: Please make sure that when selecting a different agent in `config.json`, the same agent must also be registered in `Program.cs`.
 
 
 ## Project Structure
