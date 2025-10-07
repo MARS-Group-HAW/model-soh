@@ -1,10 +1,22 @@
 using System.Globalization;
 
-namespace SOHModel.ChristmasMarket;
+namespace SOHModel.ChristmasMarket.Utils;
 
+/// <summary>
+/// Provides utility methods for handling polygon geometry for market areas.
+/// </summary>
 public class PolygonUtils
 {
-    public static List<(double lon, double lat)> ParsePolygon(string topLeft, string topRight, string bottomRight, string bottomLeft)
+    /// <summary>
+    /// Parses four corner strings into a list of coordinate tuples representing a polygon.
+    /// </summary>
+    /// <param name="topLeft">The top left corner in "longitude, latitude" format.</param>
+    /// <param name="topRight">The top right corner in "longitude, latitude" format.</param>
+    /// <param name="bottomRight">The bottom right corner in "longitude, latitude" format.</param>
+    /// <param name="bottomLeft">The bottom left corner in "longitude, latitude" format.</param>
+    /// <returns>A list of (lon, lat) tuples on success, or null if the input is invalid.</returns>
+    public static List<(double lon, double lat)> ParsePolygon(string topLeft, string topRight, string bottomRight,
+        string bottomLeft)
     {
         var corners = new[] { topLeft, topRight, bottomRight, bottomLeft };
         var pts = new List<(double lon, double lat)>(4);
@@ -27,6 +39,13 @@ public class PolygonUtils
         return pts;
     }
 
+    /// <summary>
+    /// Determines if a given point is inside of a convex polygon.
+    /// </summary>
+    /// <param name="lon">The longitude of the point to check.</param>
+    /// <param name="lat">The latitude of the point to check.</param>
+    /// <param name="polygon">A list of (lon, lat) tuples.</param>
+    /// <returns>True if the point is inside the polygon, false it is not.</returns>
     public static bool IsPointInPolygon(double lon, double lat, List<(double lon, double lat)> polygon)
     {
         if (polygon == null || polygon.Count < 3)
@@ -34,9 +53,6 @@ public class PolygonUtils
             return false;
         }
 
-        // Kanten werden in dieser Reihenfolge geprüft:
-        // (oben links -> oben rechts), (oben rechts -> unten rechts),
-        // (unten rechts -> unten links), (unten links -> oben links)
         double Sign(int i1, int i2)
         {
             var (x1, y1) = polygon[i1];
@@ -48,6 +64,7 @@ public class PolygonUtils
             return vx * wy - vy * wx;
         }
 
+        // Edges are checked in order: (TL -> TR), (TR -> BR), (BR -> BL), (BL -> TL)
         var s0 = Sign(0, 1);
         var s1 = Sign(1, 2);
         var s2 = Sign(2, 3);

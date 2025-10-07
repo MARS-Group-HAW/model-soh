@@ -6,25 +6,19 @@ using Mars.Interfaces.Annotations;
 using Mars.Interfaces.Data;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Layers;
-using SOHModel.ChristmasMarket;
-using SOHModel.Multimodal.Model;
+using SOHModel.ChristmasMarket.Agents;
+using SOHModel.ChristmasMarket.Entities;
+using SOHModel.ChristmasMarket.Utils;
 
-namespace SOHModel.Domain.Model;
+namespace SOHModel.ChristmasMarket.Layers;
 
+/// <summary>
+/// Manages the static environment of the Christmas market, including the market stalls and geographic boundaries.
+/// This layer is responsible for loading environmental data from vector files and providing it to agents.
+/// It uses the 'Current' property for easy global access (Singleton).
+/// </summary>
 public class MarketLayer : VectorLayer, ILayer
 {
-    private long _currentTick;
-    public static MarketLayer Current { get; private set; }
-    private RegisterAgent _registerAgent;
-    private UnregisterAgent _unregisterAgent;
-    private readonly HashSet<MarketTraveler> _activeTravelers = new();
-    private static readonly ConcurrentQueue<ITickClient> PendingRegistrations = new();
-
-    public ISimulationContext Context { get; private set; }
-
-    private readonly List<MarketStall> _stalls = new();
-    public IReadOnlyList<MarketStall> Stalls => _stalls;
-    
     [PropertyDescription(Name = "topLeftCorner")]
     public string TopLeftCorner { get; set; }
 
@@ -37,20 +31,41 @@ public class MarketLayer : VectorLayer, ILayer
     [PropertyDescription(Name = "bottomLeftCorner")]
     public string BottomLeftCorner { get; set; }
 
+    public static MarketLayer Current { get; private set; }
+    private long _currentTick;
+
+    private RegisterAgent _registerAgent;
+    private UnregisterAgent _unregisterAgent;
+
+    private readonly HashSet<MarketTraveler> _activeTravelers = new();
+    private static readonly ConcurrentQueue<ITickClient> PendingRegistrations = new();
+
+    public ISimulationContext Context { get; private set; }
+    private readonly List<MarketStall> _stalls = new();
+    public IReadOnlyList<MarketStall> Stalls => _stalls;
+
     private List<(double lon, double lat)> _marketPolygon;
     private bool _polygonParsed;
 
-
-    public override bool InitLayer(LayerInitData layerInitData, RegisterAgent registerAgentHandle, UnregisterAgent unregisterAgentHandle)
+    /// <summary>
+    /// Initializes the layer by loading market stalls from the provided data source.
+    /// It parses stall properties like name and type and sets up the simulation context.
+    /// </summary>
+    /// <param name="layerInitData">Initialization data from the simulation framework.</param>
+    /// <param name="registerAgentHandle">Delegate for registering agents.</param>
+    /// <param name="unregisterAgentHandle">Delegate for unregistering agents.</param>
+    /// <returns>True if initialization is successful.</returns>
+    public override bool InitLayer(LayerInitData layerInitData, RegisterAgent registerAgentHandle,
+        UnregisterAgent unregisterAgentHandle)
     {
         base.InitLayer(layerInitData, registerAgentHandle, unregisterAgentHandle);
-        
+
         Context = layerInitData?.Context;
         Current = this;
 
         _registerAgent = registerAgentHandle;
         _unregisterAgent = unregisterAgentHandle;
-        
+
         foreach (var feature in Features)
         {
             var stall = new MarketStall();
@@ -72,47 +87,59 @@ public class MarketLayer : VectorLayer, ILayer
                 int typeAsInt = Convert.ToInt32(typeObject);
                 stall.Type = (MarketStallType)typeAsInt;
             }
-            
+
             stall.ID = Guid.NewGuid();
             _stalls.Add(stall);
         }
 
-        Console.WriteLine($"[INFO] Loaded and initialized {_stalls.Count} market stalls via EntityManager");
+        Console.WriteLine($"[INFO] Loaded and initialized {_stalls.Count} market stalls");
         foreach (var stall in _stalls)
         {
-            Console.WriteLine($"[INFO] -> Stall '{stall.StallName}' of type '{stall.Type}' at ({stall.Position.X:F6}, {stall.Position.Y:F6})");
+            Console.WriteLine(
+                $"[INFO] Stall '{stall.StallName}' of type '{stall.Type}' at ({stall.Position.X:F6}, {stall.Position.Y:F6})");
         }
+
         return true;
     }
-    
+
     /// <summary>
-    /// Findet alle MarketTraveler innerhalb eines bestimmten Radius um eine Position.
+    /// Finds all MarketTraveler agents within the radius of a given position.
     /// </summary>
-    /// <param name="position">Der Mittelpunkt der Suche.</param>
-    /// <param name="radius">Der Suchradius in Metern.</param>
-    /// <returns>Eine Liste von MarketTravelern im Umkreis.</returns>
+    /// <param name="position">The center of the search area.</param>
+    /// <param name="radius">The search radius in meters.</param>
+    /// <returns>A list of MarketTraveler agents within the specified radius.</returns>
     public List<MarketTraveler> GetTravelersWithinRadius(Position position, double radius)
     {
         if (position == null || _activeTravelers.Count == 0)
         {
             return new List<MarketTraveler>();
         }
-        
+
         return _activeTravelers
             .Where(traveler => traveler.Position != null && position.DistanceInMTo(traveler.Position) < radius)
             .ToList();
     }
-    
+
+    /// <summary>
+    /// Finds the closest MarketStall to a given position.
+    /// </summary>
+    /// <param name="pos">The position from which to search.</param>
+    /// <returns>The nearest MarketStall, or null if no stalls exist.</returns>
     public MarketStall? FindNearestStall(Position pos)
     {
         if (_stalls.Count == 0 || pos == null) return null;
-        
+
         return _stalls
             .Where(s => s.Position != null)
             .OrderBy(s => pos.DistanceInMTo(s.Position))
-            .FirstOrDefault();    
+            .FirstOrDefault();
     }
-    
+
+    /// <summary>
+    /// Checks if a given position is within the defined market boundaries.
+    /// </summary>
+    /// <param name="p">The position to check.</param>
+    /// <returns>True if the point is inside the market area, false if it is not.</returns>
     public bool IsInsideMarketArea(Position p)
     {
         ParsePolygon();
@@ -120,12 +147,19 @@ public class MarketLayer : VectorLayer, ILayer
         return PolygonUtils.IsPointInPolygon(p.X, p.Y, _marketPolygon);
     }
 
+    /// <summary>
+    /// Gives back the market's polygon.
+    /// </summary>
+    /// <returns>A list of (longitude, latitude) tuples representing the polygon's vertices.</returns>
     public List<(double lon, double lat)> GetMarketPolygon()
     {
         ParsePolygon();
         return _marketPolygon;
     }
 
+    /// <summary>
+    /// Parses the corner strings into a polygon.
+    /// </summary>
     private void ParsePolygon()
     {
         if (_polygonParsed) return;
@@ -133,8 +167,16 @@ public class MarketLayer : VectorLayer, ILayer
         _polygonParsed = true;
     }
 
+    /// <summary>
+    /// Gets the current tick of the simulation.
+    /// </summary>
+    /// <returns>The current simulation tick as a long integer.</returns>
     public long GetCurrentTick() => _currentTick;
 
+    /// <summary>
+    /// Sets the current simulation tick and processes any pending agent registrations.
+    /// </summary>
+    /// <param name="currentStep">The new current tick value.</param>
     public override void SetCurrentTick(long currentStep)
     {
         _currentTick = currentStep;
@@ -146,25 +188,36 @@ public class MarketLayer : VectorLayer, ILayer
         }
     }
 
+    /// <summary>
+    /// Registers an agent with the simulation and adds it to the layer's internal list.
+    /// </summary>
+    /// <param name="agent">The agent to register.</param>
     public void EnqueueRegister(ITickClient agent)
     {
         if (agent is MarketTraveler traveler)
         {
             _activeTravelers.Add(traveler);
         }
-        
+
         _registerAgent?.Invoke(this, agent);
     }
 
+    /// <summary>
+    /// Unregisters an agent from the simulation and removes it from the layer's internal list.
+    /// </summary>
+    /// <param name="agent">The agent to unregister.</param>
     public void Unregister(ITickClient agent)
     {
         if (agent is MarketTraveler traveler)
         {
             _activeTravelers.Remove(traveler);
         }
-        
+
         _unregisterAgent?.Invoke(this, agent);
     }
-    
-    public new void DisposeLayer() { }
+
+    /// <summary>
+    /// Disposes the layer.
+    /// </summary>
+    public new void DisposeLayer() {}
 }

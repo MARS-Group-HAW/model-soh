@@ -3,19 +3,29 @@ using Mars.Interfaces.Agents;
 using Mars.Interfaces.Data;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Layers;
+using SOHModel.ChristmasMarket.Agents;
 using SOHModel.Multimodal.Multimodal;
 
-namespace SOHModel.Multimodal.Model;
+namespace SOHModel.ChristmasMarket.Layers;
 
+/// <summary>
+/// A specialized multimodal layer responsible for managing MarketTraveler agents.
+/// </summary>
 public class MarketTravelerLayer : AbstractMultimodalLayer, IMarketTravelerLayer
 {
     private RegisterAgent _registerAgent;
     private UnregisterAgent _unregisterAgent;
 
     private static readonly ConcurrentQueue<ITickClient> PendingRegistrations = new();
-
     private readonly List<MarketTraveler> _activeTravelers = new();
 
+    /// <summary>
+    /// Initializes the layer.
+    /// </summary>
+    /// <param name="layerInitData">Initialization data provided by the simulation.</param>
+    /// <param name="registerAgentHandle">The delegate to register agents.</param>
+    /// <param name="unregisterAgentHandle">The delegate to unregister agents.</param>
+    /// <returns>True when the initialization is successful.</returns>
     public new bool InitLayer(LayerInitData layerInitData, RegisterAgent registerAgentHandle,
         UnregisterAgent unregisterAgentHandle)
     {
@@ -24,15 +34,22 @@ public class MarketTravelerLayer : AbstractMultimodalLayer, IMarketTravelerLayer
         return base.InitLayer(layerInitData, registerAgentHandle, unregisterAgentHandle);
     }
 
+    /// <summary>
+    /// Queues an agent to be registered with the simulation at the start of the next tick.
+    /// </summary>
+    /// <param name="agent">The agent to be registered.</param>
     public void EnqueueRegister(ITickClient agent)
     {
         if (agent != null)
             PendingRegistrations.Enqueue(agent);
     }
 
+    /// <summary>
+    /// Unregisters an agent from the simulation and removes it from the internal tracking list.
+    /// </summary>
+    /// <param name="agent">The agent to be unregistered.</param>
     public void Unregister(ITickClient agent)
     {
-        // --- UPDATED: Remove the agent from our tracking list before unregistering ---
         if (agent is MarketTraveler traveler)
         {
             _activeTravelers.Remove(traveler);
@@ -41,6 +58,11 @@ public class MarketTravelerLayer : AbstractMultimodalLayer, IMarketTravelerLayer
         _unregisterAgent?.Invoke(this, agent);
     }
 
+    /// <summary>
+    /// Advances the simulation time for this layer by one step. At the beginning of each tick,
+    /// it processes any pending agent registrations.
+    /// </summary>
+    /// <param name="currentStep">The current simulation tick.</param>
     public override void SetCurrentTick(long currentStep)
     {
         base.SetCurrentTick(currentStep);
@@ -49,7 +71,6 @@ public class MarketTravelerLayer : AbstractMultimodalLayer, IMarketTravelerLayer
         {
             _registerAgent?.Invoke(this, agent);
 
-            // --- NEW: Once registered, add the agent to our active list for queries ---
             if (agent is MarketTraveler traveler && !_activeTravelers.Contains(traveler))
             {
                 _activeTravelers.Add(traveler);
@@ -57,10 +78,12 @@ public class MarketTravelerLayer : AbstractMultimodalLayer, IMarketTravelerLayer
         }
     }
 
-    // --- NEW: Implementation of the spatial query method ---
     /// <summary>
-    /// Finds all MarketTraveler agents within a specified radius of a given position.
+    /// Finds all MarketTraveler agents within a radius of a given position.
     /// </summary>
+    /// <param name="position">The center of the search area.</param>
+    /// <param name="radius">The search radius in meters.</param>
+    /// <returns>An enumeration of nearby MarketTraveler agents.</returns>
     public IEnumerable<MarketTraveler> GetNearest(Position position, double radius)
     {
         if (position == null)
@@ -68,7 +91,6 @@ public class MarketTravelerLayer : AbstractMultimodalLayer, IMarketTravelerLayer
             return Enumerable.Empty<MarketTraveler>();
         }
 
-        // Query our active traveler list
         return _activeTravelers.Where(traveler =>
             traveler.Position != null &&
             position.DistanceInMTo(traveler.Position) <= radius
