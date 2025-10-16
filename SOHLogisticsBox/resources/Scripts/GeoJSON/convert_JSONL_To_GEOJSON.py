@@ -1,3 +1,4 @@
+import argparse
 import json
 
 """
@@ -46,7 +47,23 @@ def convert_jsonl_to_geojson(input_path, output_path):
 
 
 if __name__ == "__main__":
-    input_path = "InputDirectory/truck_lines.jsonl"   # Path to input JSONL file
-    output_path = "OutputDirectory/truck_lines.geojson"  # Path to output GeoJSON file
+    parser = argparse.ArgumentParser(
+        description="Convert a JSONL file of truck lines to a GeoJSON file.",
+        formatter_class=argparse.RawTextHelpFormatter
+    )
+    
+    parser.add_argument(
+        "input_path",
+        type=str,
+        help="Path to the input JSONL file (e.g., input/truck_lines.jsonl)"
+    )
 
-    convert_jsonl_to_geojson(input_path, output_path)
+    parser.add_argument(
+        "output_path",
+        type=str,
+        help="Path to the output GeoJSON file (e.g., output/truck_lines.geo.json)"
+    )
+
+    args = parser.parse_args()
+
+    convert_jsonl_to_geojson(args.input_path, args.output_path)
