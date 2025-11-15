@@ -7,15 +7,15 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <Content Include="resources\*.*">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-        <Content Update="config.json">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
+        <ProjectReference Include="..\SOHModel\SOHModel.csproj" />
     </ItemGroup>
     
     <ItemGroup>
-        <ProjectReference Include="..\SOHModel\SOHModel.csproj" />
+      <None Update="config.json">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="resources\*.*">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 </Project>
