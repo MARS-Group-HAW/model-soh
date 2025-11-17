@@ -37,6 +37,8 @@ Project("{98068F67-608A-4090-9F47-CC81FA776382}") = "SOHTrafficSignalRealTimeBox
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOHLLMImposterBox", "SOHLLMImposterBox\SOHLLMImposterBox.csproj", "{F79670AB-992C-40B4-B565-7BD6DC2606BA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOHChristmasMarketBox", "SOHChristmasMarketBox\SOHChristmasMarketBox.csproj", "{887B5EE6-566B-4843-8AB1-1F3D086F9FA8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -126,6 +128,8 @@ Global
 		{F79670AB-992C-40B4-B565-7BD6DC2606BA}.Full|Any CPU.Build.0 = Debug|Any CPU
 		{F79670AB-992C-40B4-B565-7BD6DC2606BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F79670AB-992C-40B4-B565-7BD6DC2606BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{887B5EE6-566B-4843-8AB1-1F3D086F9FA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{887B5EE6-566B-4843-8AB1-1F3D086F9FA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
