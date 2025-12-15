@@ -88,7 +88,7 @@ public abstract class MarketTraveler : Traveler<MarketTravelerLayer>
         {
             if (_targetStall != null)
             {
-                ChristmasMarketAnalysics.RecordStallVisit(_targetStall);
+                OnStallVisit(_targetStall);
                 _ticksToWaitAtStall = _random.Next(3, 11); // Wait for 3 to 10 ticks at the stall
                 _targetStall = null;
                 return;
@@ -302,10 +302,20 @@ public abstract class MarketTraveler : Traveler<MarketTravelerLayer>
     }
 
     /// <summary>
+    /// Called when the agent arrives at a target stall.
+    /// Can be overridden by subclasses to implement specific behavior (e.g. buying, drinking).
+    /// </summary>
+    /// <param name="stall">The stall visited.</param>
+    protected virtual void OnStallVisit(MarketStall stall)
+    {
+        ChristmasMarketAnalysics.RecordStallVisit(stall);
+    }
+
+    /// <summary>
     /// Selects a new random market stall for the agent to travel to.
     /// Ensures the new stall is different from the current one if possible.
     /// </summary>
-    private void ChooseNewTargetStall()
+    protected virtual void ChooseNewTargetStall()
     {
         var marketLayer = MarketLayer.Current;
         if (marketLayer == null || marketLayer.Stalls.Count == 0)

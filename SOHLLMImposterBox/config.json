@@ -1,96 +1,100 @@
 {
+  "id": "rathausmarkt_2024",
   "globals": {
     "deltaT": 1,
-    "startPoint": "2022-09-01T06:00:00",
-    "endPoint": "2022-09-01T07:00:00",
+    "startPoint": "2024-12-10T16:00:00",
+    "endPoint": "2024-12-10T18:00:00",
     "deltaTUnit": "seconds",
     "console": true
   },
   "agents": [
     {
-      "name": "PassengerTraveler",
-      "outputs": [
+      "name": "DesireMarketTraveler",
+      "individual": [
         {
-          "kind": "trips",
-          "outputConfiguration": {
-            "tripsFields": [
-              "ActiveCapability"
-            ]
-          }
+          "parameter": "PreferredSpeed",
+          "value": 1.4
+        },
+        {
+          "parameter": "hunger",
+          "distribution": "UniformDistribution",
+          "values": [
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "parameter": "thirst",
+          "distribution": "UniformDistribution",
+          "values": [
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "parameter": "budget",
+          "distribution": "UniformDistribution",
+          "values": [
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "value": true,
+          "parameter": "ResultTrajectoryEnabled"
         }
-      ]
-    },
-    {
-      "name": "TrainDriver",
+      ],
       "outputs": [
         {
-          "kind": "trips",
-          "outputConfiguration": {
-            "tripsFields": [
-              "LoadPercentage"
-            ]
-          }
+          "kind": "trips"
         }
       ]
     }
   ],
   "layers": [
     {
-      "name": "PassengerTravelerLayer"
-    },
-    {
       "name": "SpatialGraphMediatorLayer",
       "inputs": [
         {
-          "file": "Resources/hamburg_rail_station_areas_drive_graph.geojson",
+          "file": "Resources/walk_graph_rathausmarkt.geojson",
           "inputConfiguration": {
             "modalities": [
               "Walking"
             ],
             "isBidirectedGraph": true
           }
-        },
-        {
-          "file": "Resources/hamburg_u1_north_graph.geojson",
-          "inputConfiguration": {
-            "modalities": [
-              "TrainDriving"
-            ],
-            "isBidirectedGraph": true,
-            "noHelperNodes": true
-          }
         }
       ]
     },
     {
-      "name": "PassengerTravelerSchedulerLayer",
-      "file": "Resources/passenger_traveler_schedule.csv"
+      "name": "MarketLayer",
+      "inputs": [
+        {
+          "file": "Resources/market_stalls.geojson"
+        }
+      ],
+      "individual": [
+        {
+          "parameter": "topLeftCorner",
+          "value": "9.992230367450674,53.550967416608785"
+        },
+        {
+          "parameter": "topRightCorner",
+          "value": "9.993077605872003,53.55039694865533"
+        },
+        {
+          "parameter": "bottomRightCorner",
+          "value": "9.993672555518117,53.55069672493096"
+        },
+        {
+          "parameter": "bottomLeftCorner",
+          "value": "9.992893096170604,53.55126495174483"
+        }
+      ]
     },
     {
-      "name": "TrainStationLayer",
-      "file": "Resources/hamburg_u1_north_stations.geojson"
-    },
-    {
-      "name": "TrainRouteLayer",
-      "file": "Resources/train_u1_line.csv"
-    },
-    {
-      "name": "TrainGtfsRouteLayer",
-      "file": "Resources/HVV_GTFS"
-    },
-    {
-      "name": "TrainLayer",
-      "file": "Resources/hamburg_u1_north_graph.geojson"
-    },
-    {
-      "name": "TrainSchedulerLayer",
-      "file": "Resources/train_driver_schedule.csv"
-    }
-  ],
-  "entities": [
-    {
-      "name": "Train",
-      "file": "Resources/train.csv"
+      "name": "MarketTravelerSchedulerLayer",
+      "file": "Resources/human_traveler_rathausmarkt.csv"
     }
   ]
 }
