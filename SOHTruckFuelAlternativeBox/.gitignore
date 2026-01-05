@@ -1,0 +1,4 @@
+.env
+
+resources/streets_hamburg_final_no_el.geojson
+route_cache.db
