@@ -6,7 +6,6 @@ using Mars.Core.Simulation;
 using Mars.Interfaces;
 using Mars.Interfaces.Model;
 using SOHModel.SemiTruck.Model;
-using SOHModel.SemiTruck.Scheduling;
 
 namespace TruckFuelAlternativeBox;
 
@@ -23,7 +22,7 @@ internal static class Program
 
 
         description.AddLayer<SemiTruckLayer>();
-        description.AddLayer<SemiTruckSchedulerLayer>();
+        // description.AddLayer<SemiTruckSchedulerLayer>();
 
         description.AddAgent<SemiTruckDriver, SemiTruckLayer>();
         // Add semi-truck-related entities
