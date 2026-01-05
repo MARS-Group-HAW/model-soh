@@ -14,6 +14,8 @@ internal static class Program
 {
     public static void Main(string[] args)
     {
+        DotNetEnv.Env.Load();
+        
         var watch = Stopwatch.StartNew();
         Thread.CurrentThread.CurrentCulture = new CultureInfo("EN-US");
         LoggerFactory.SetLogLevel(LogLevel.Info);
