@@ -6,31 +6,40 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>TruckFuelAlternativeBox</RootNamespace>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Mars.Life.Simulations" Version="5.3.1" />
+        <PackageReference Include="Mars.Life.Simulations" Version="5.3.1"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\SOHModel\SOHModel.csproj" />
+        <ProjectReference Include="..\SOHModel\SOHModel.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="config.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
+        <None Include=".env">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <Content Include="..\.dockerignore">
+          <Link>.dockerignore</Link>
+        </Content>
+        <Content Include="config.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="resources\*.*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="input\" />
-        <Folder Include="output\" />
-        <Folder Include="resources\Scripts\GeoJSON\" />
+        <Folder Include="input\"/>
+        <Folder Include="output\"/>
     </ItemGroup>
 
     <ItemGroup>
-        <None Remove="route_cache.db" />
-        <None Remove="SemiTruckDriver_trips.geojson" />
+        <None Remove="route_cache.db"/>
+        <None Remove="SemiTruckDriver_trips.geojson"/>
     </ItemGroup>
 
 </Project>
