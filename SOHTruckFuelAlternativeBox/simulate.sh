@@ -5,18 +5,17 @@
 set -e  # Exit on error
 
 # Configuration
-CONTAINER_NAME="mars_postgis"
-DB_NAME="soh_truck_fuel_alternative"
-DB_USER="mars_soh_logistics"
-DB_PASSWORD="admin"
-DB_HOST="127.0.0.1"
-DB_PORT="5432"
-DB_TABLE="semitruckdriver"
-WORKING_DIR="./output"
-DATETIME=$(date +"%Y_%m_%d_%H%M")
-OUTPUT_FILE_JSONL="truck_lines_${DATETIME}.jsonl"
-OUTPUT_FILE_GEOJSON="truck_lines_${DATETIME}.geo.json"
+if [ -f .env ]; then
+  export $(grep -v '^#' .env | xargs)
+else
+  echo ".env file not found"
+  exit 1
+fi
 
+WORKING_DIR="./output"
+mkdir -p "$WORKING_DIR"
+DATETIME=$(date +"%Y_%m_%d_%H%M")
+OUTPUT_FILE_GEOJSON="truck_lines_${DATETIME}.geo.json"
 
 echo "=== Starting SemiTruckDriver data processing ==="
 echo "Timestamp: $(date)"
@@ -24,7 +23,7 @@ echo "Timestamp: $(date)"
 # Step 1: Drop table semitruckdriver
 echo ""
 echo "Step 1: Dropping table '${DB_TABLE}'..."
-PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "DROP TABLE IF EXISTS ${DB_NAME}.${DB_TABLE} CASCADE;" || {
+podman exec -e PGPASSWORD=$DB_PASSWORD $CONTAINER_NAME psql -U $DB_USER -d $DB_NAME -c "DROP TABLE IF EXISTS ${DB_NAME}.${DB_TABLE} CASCADE;" || {
      echo "Warning: Failed to drop table. It may not exist yet."
 }
 
@@ -37,49 +36,58 @@ dotnet run --configuration Debug --framework net9.0 || {
     exit 1
 }
 
-# Step 3: Create truck_lines.jsonl file from semitruckdriver table
+# Step 3 & 4: Create truck_lines.geo.json directly using COPY and podman exec
 echo ""
-echo "Step 3: Creating ${OUTPUT_FILE_JSONL} from '${DB_TABLE}' table..."
+echo "Step 3 & 4: Exporting '${DB_TABLE}' data directly to ${WORKING_DIR}/${OUTPUT_FILE_GEOJSON}..."
 
-# Execute the last query from convert_to_geojson.sql
-PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -t -A -F"," -c "
-    SELECT jsonb_build_object(
-                   'type', 'Feature',
-                   'geometry', jsonb_build_object(
-                           'type', 'LineString',
-                           'coordinates', jsonb_agg(
-                                   jsonb_build_array(x, y, 0, EXTRACT(EPOCH FROM datetime)::int)
-                                   ORDER BY tick
-                                          )
-                               ),
-                   'properties', jsonb_build_object(
-                           'id', id
-                                 )
-           )
-    FROM ${DB_NAME}.${DB_TABLE}
-    GROUP BY id;
-" -o "/tmp/$OUTPUT_FILE_JSONL" || {
+# We use COPY with a subquery to generate a single FeatureCollection JSON object
+# and write it directly to the output file via STDOUT redirection.
+
+podman exec -e PGPASSWORD=$DB_PASSWORD $CONTAINER_NAME psql -U $DB_USER -d $DB_NAME -t -A -c "
+    COPY (
+        SELECT jsonb_build_object(
+            'type', 'FeatureCollection',
+            'features', jsonb_agg(feature)
+        )
+        FROM (
+            SELECT jsonb_build_object(
+                       'type', 'Feature',
+                       'geometry', jsonb_build_object(
+                               'type', 'LineString',
+                               'coordinates', jsonb_agg(
+                                       jsonb_build_array(x, y, 0, EXTRACT(EPOCH FROM datetime)::int)
+                                       ORDER BY tick
+                                              )
+                                   ),
+                       'properties', jsonb_build_object(
+                               'id', id
+                                     )
+               ) AS feature
+            FROM ${DB_NAME}.${DB_TABLE}
+            GROUP BY id
+        ) features_subquery
+    ) TO STDOUT;
+" > "${WORKING_DIR}/${OUTPUT_FILE_GEOJSON}" || {
     echo "Error: Failed to export data from database!"
     exit 1
 }
 
-echo "Successfully created ${OUTPUT_FILE_JSONL}"
+echo "Successfully created ${WORKING_DIR}/${OUTPUT_FILE_GEOJSON}"
 
-# Step 4: Copy output file to working directory (if using podman container)
-echo ""
-echo "Step 4: Copying output file to working directory..."
-
-cp /tmp/"${OUTPUT_FILE_JSONL}" ${WORKING_DIR}/"${OUTPUT_FILE_JSONL}" || {
-        echo "Warning: Could not copy from container. File may already be in working directory."
-    }
-    
-echo ""
-echo "Step 5: Converting jsonl to geo.json"
-
-python3 resources/Scripts/GEOJSON/convert_JSONL_To_GEOJSON.py ${WORKING_DIR}/"${OUTPUT_FILE_JSONL}" ${WORKING_DIR}/"${OUTPUT_FILE_GEOJSON}"
-rm ${WORKING_DIR}/"${OUTPUT_FILE_JSONL}"
+# echo ""
+# echo "Step 4: Copying output file to working directory..."
+# 
+# cp /tmp/"${OUTPUT_FILE_JSONL}" ${WORKING_DIR}/"${OUTPUT_FILE_JSONL}" || {
+#         echo "Warning: Could not copy from container. File may already be in working directory."
+#     }
+#     
+# echo ""
+# echo "Step 5: Converting jsonl to geo.json"
+# 
+# python3 resources/Scripts/GEOJSON/convert_JSONL_To_GEOJSON.py ${WORKING_DIR}/"${OUTPUT_FILE_JSONL}" ${WORKING_DIR}/"${OUTPUT_FILE_GEOJSON}"
+# rm ${WORKING_DIR}/"${OUTPUT_FILE_JSONL}"
 
 echo ""
 echo "=== Processing complete ==="
-echo "Output file: ${WORKING_DIR}/${OUTPUT_FILE_JSONL}"
+echo "Output file: ${WORKING_DIR}/${OUTPUT_FILE_GEOJSON}"
 echo "Finished at: $(date)"
