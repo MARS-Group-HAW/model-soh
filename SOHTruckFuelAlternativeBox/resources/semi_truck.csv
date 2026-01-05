@@ -1,0 +1,13 @@
+type,maxAcceleration,maxDeceleration,maxSpeed,length,height,width,trafficCode,passengerCapacity,velocity,mass,maxIncline,accidentsPerYear,power,fuelSize,fuelConsumptionPer100km
+SmallTruck,1.0,1.2,30.83,6,2.5,2.5,german,2,0,5.0,25,11169,141,100,15
+MediumLoadTruck,1.0,1.2,30.83,8,2.5,2.5,german,2,0,10.0,22,1464,141,100,18
+HeavyLoadTruck,1.0,1.2,30.83,10,2.5,2.5,german,2,0,15.0,18,685,240,160,20
+ExtendedLoadTruck,1.0,1.2,30.83,12,2.5,2.5,german,2,0,20.0,15,257,240,180,25
+LargeCapacityTruck,1.0,1.2,30.83,12,2.5,2.5,german,2,0,25.0,13,504,317,200,30
+ExtraCapacityTruck,1.0,1.2,30.83,14,2.5,2.5,german,2,0,30.0,12,504,336,250,33
+HighVolumeTruck,1.0,1.2,30.83,14,2.5,2.5,german,2,0,35.0,10,504,336,250,35
+MaximumLoadTruck,1.0,1.2,30.83,16,2.5,2.5,german,2,0,40.0,8,504,336,300,40
+OverloadTruck,1.0,1.2,30.83,16,2.5,2.5,german,2,0,50.0,6,504,400,300,40
+UnlimitedTruck,1.0,1.2,30.83,1,1.0,1.0,german,2,0,2.0,100,1,1000,10000,1
+
+

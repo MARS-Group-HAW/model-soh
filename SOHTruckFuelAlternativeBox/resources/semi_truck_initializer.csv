@@ -1,0 +1,3 @@
+TruckType,StartLat,StartLon,DestLat,DestLon,DriveMode
+SmallTruck,53.499145,10.093979,53.494420,10.132120,3
+SmallTruck,53.494420,10.132120,53.499145,10.093979,3
