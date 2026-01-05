@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>TruckFuelAlternativeBox</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Mars.Life.Simulations" Version="5.3.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\SOHModel\SOHModel.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="config.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="input\" />
+        <Folder Include="output\" />
+        <Folder Include="resources\Scripts\GeoJSON\" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Remove="route_cache.db" />
+        <None Remove="SemiTruckDriver_trips.geojson" />
+    </ItemGroup>
+
+</Project>
