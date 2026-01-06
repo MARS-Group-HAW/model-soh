@@ -100,16 +100,28 @@ public abstract class RoadUser : ISpatialGraphEntity
     public double AccidentsPerYear { get; set; }
     
     /// <summary>
-    /// The amount of Fuel a truck can fit
+    /// The type of energy used by the vehicle (Fuel, Battery, Hydrogen, etc.)
     /// </summary>
-    [PropertyDescription(Name = "fuelSize", Ignore = true)]
-    public double FuelTankLevelLiters   { get; set; }
+    [PropertyDescription(Name = "energyType", Ignore = true)]
+    public EnergyType EnergyType { get; set; } = EnergyType.Fuel;
+
+    /// <summary>
+    /// The amount of Energy a truck can fit
+    /// </summary>
+    [PropertyDescription(Name = "energyAmount", Ignore = true)]
+    public double EnergyAmount   { get; set; }
     
     /// <summary>
-    /// The average amount of fuel a truck uses during 100km
+    /// The average amount of energy a truck uses during 100km
     /// </summary>
-    [PropertyDescription(Name = "fuelConsumptionPer100km", Ignore = true)]
-    public double FuelConsumptionPer100Km  { get; set; }
+    [PropertyDescription(Name = "energyConsumptionPer100km", Ignore = true)]
+    public double EnergyConsumptionPer100Km  { get; set; }
+
+    /// <summary>
+    /// The time it takes to refuel/recharge the vehicle in minutes.
+    /// </summary>
+    [PropertyDescription(Name = "refuelTimeInMinutes", Ignore = true)]
+    public double RefuelTimeInMinutes { get; set; } = 5;
 
     
     

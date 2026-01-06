@@ -77,7 +77,7 @@ namespace SOHModel.SemiTruck.Model
 
         public List<RestArea> AllRestAreas { get; private set; }
 
-        public List<GasStations> AllGasStations { get; private set; }
+        public List<RefuelStation> AllRefuelStations { get; private set; }
 
 
         /// <summary>
@@ -104,9 +104,9 @@ namespace SOHModel.SemiTruck.Model
                 Path.Combine(AppContext.BaseDirectory, "resources", "road_closures_by_Coordinates.csv");
             LoadRoadClosuresByCoordinates(filePathCoordinates);
             string fullPath_rest_areas = Path.Combine(AppContext.BaseDirectory, "resources", "rest_areas.csv");
-            string fullPath_gas_stations = Path.Combine(AppContext.BaseDirectory, "resources", "gas_stations.csv");
+            string fullPath_stations = Path.Combine(AppContext.BaseDirectory, "resources", "gas_stations.csv");
             AllRestAreas = LoadRestAreas(fullPath_rest_areas);
-            AllGasStations = LoadGasStations(fullPath_gas_stations);
+            AllRefuelStations = LoadRefuelStations(fullPath_stations);
             // Attempt to initialize the environment from Mapping.Value or file
             if (Mapping.Value is ISpatialGraphEnvironment input)
             {
@@ -501,19 +501,19 @@ namespace SOHModel.SemiTruck.Model
         }
 
         /// <summary>
-        /// Loads a list of gas stations from a CSV file.
+        /// Loads a list of refuel stations from a CSV file.
         /// The CSV is expected to have at least three columns: ID, Latitude, Longitude (in this order).
         /// The first line (header) will be skipped.
         /// </summary>
-        /// <param name="path">The file path to the CSV containing gas station data.</param>
-        /// <returns>A list of GasStations objects parsed from the file.</returns>
-        public List<GasStations> LoadGasStations(string path)
+        /// <param name="path">The file path to the CSV containing station data.</param>
+        /// <returns>A list of RefuelStation objects parsed from the file.</returns>
+        public List<RefuelStation> LoadRefuelStations(string path)
         {
             var lines = File.ReadAllLines(path).Skip(1); // Skip header
             return lines.Select(line =>
             {
                 var parts = line.Split(',');
-                return new GasStations()
+                return new RefuelStation()
                 {
                     Id = int.Parse(parts[0]),
                     Lat = double.Parse(parts[1], CultureInfo.InvariantCulture),
@@ -597,9 +597,9 @@ namespace SOHModel.SemiTruck.Model
         }
 
         /// <summary>
-        /// Represents a gas station location used for refueling logic in the simulation.
+        /// Represents a station location (Gas, Charging, etc.) used for refueling logic in the simulation.
         /// </summary>
-        public class GasStations
+        public class RefuelStation
         {
             public int Id { get; set; }
             public double Lat { get; set; }

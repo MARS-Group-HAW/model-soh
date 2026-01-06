@@ -48,7 +48,7 @@ namespace SOHModel.SemiTruck.Model
         private bool _goingToRefuel = false; // Heading to refueling location
         private bool _isRefueling = false; // Truck is currently being refueled
 
-        private double _FuelTank; // Current fuel level
+        private double _EnergyLevel; // Current energy level
         private double _lastRemainingDistanceToGoal = -1; // For tracking fuel usage
         private bool _routeChanged = false; // Whether route was modified (due to detours, etc.)
 
@@ -84,7 +84,7 @@ namespace SOHModel.SemiTruck.Model
             // Create the SemiTruck
             SemiTruck = CreateSemiTruck();
             SemiTruck.Environment = _environment;
-            _FuelTank = SemiTruck.FuelTankLevelLiters;
+            _EnergyLevel = SemiTruck.EnergyAmount;
             DefaultAccidentsPerYear = SemiTruck.AccidentsPerYear;
 
 
@@ -737,15 +737,15 @@ namespace SOHModel.SemiTruck.Model
                 distanceDrivenKm = (_lastRemainingDistanceToGoal - currentRemainingDistance) / 1000.0;
                 if (distanceDrivenKm < 0) distanceDrivenKm = 0;
 
-                // Calculate fuel usage and reduce tank level
-                double fuelUsed = (SemiTruck.FuelConsumptionPer100Km / 100.0) * distanceDrivenKm;
-                _FuelTank -= fuelUsed;
+                // Calculate energy usage and reduce level
+                double energyUsed = (SemiTruck.EnergyConsumptionPer100Km / 100.0) * distanceDrivenKm;
+                _EnergyLevel -= energyUsed;
 
-                if (_FuelTank <= 0)
+                if (_EnergyLevel <= 0)
                 {
-                    _FuelTank = 0;
-                    // Truck has no fuel left; will stop moving until refueled
-                    //TODO What should happen when a truck runs out of gas?
+                    _EnergyLevel = 0;
+                    // Truck has no energy left; will stop moving until refueled
+                    //TODO What should happen when a truck runs out of energy?
                 }
             }
 
@@ -754,15 +754,15 @@ namespace SOHModel.SemiTruck.Model
 
         /// <summary>
         /// Checks whether the truck must refuel soon based on current tank level and remaining route length.
-        /// If needed, it searches for nearby gas stations along the route and plans a detour.
+        /// If needed, it searches for nearby refuel stations along the route and plans a detour.
         /// </summary>
         private void CheckIfRefuelIsRequired()
         {
             // Skip if already on a refueling mission
             if (_goingToRefuel || _refuelPlanned) return;
 
-            // Estimate how far the truck can go with current fuel (in km)
-            double availableRangeKm = (_FuelTank / SemiTruck.FuelConsumptionPer100Km) * 100;
+            // Estimate how far the truck can go with current energy (in km)
+            double availableRangeKm = (_EnergyLevel / SemiTruck.EnergyConsumptionPer100Km) * 100;
 
             // If range is too low, prepare refuel plan
             if (availableRangeKm < 100)
@@ -771,7 +771,7 @@ namespace SOHModel.SemiTruck.Model
                 if (Route.RemainingRouteDistanceToGoal > 100_000)
                 {
                     double accumulatedDistance = 0;
-                    Console.WriteLine($"[Truck {SemiTruck.ID}] Fuel low: {availableRangeKm:F1} km remaining – searching for gas station...");
+                    Console.WriteLine($"[Truck {SemiTruck.ID}] Energy low: {availableRangeKm:F1} km remaining – searching for refuel station...");
                     // Scan the next 100 km along the route for gas station tags
                     foreach (var routeStep in _steeringHandle.Route)
                     {
@@ -789,12 +789,12 @@ namespace SOHModel.SemiTruck.Model
                                 if (connectedEdge.Attributes.TryGetValue("source_tag", out var tag))
                                 {
                                     var tagStr = tag?.ToString()?.ToLowerInvariant();
-                                    if (tagStr == "services" || tagStr == "fuel")
+                                    if (tagStr == "services" || tagStr == "fuel" || tagStr == "charging_station")
                                     {
                                         var serviceCoord = connectedEdge.To.Position;
                                         var insertFromNode = connectedEdge.From;
 
-                                        // Plan a detour to the gas station
+                                        // Plan a detour to the refuel station
                                         PlanRouteWithStop(serviceCoord.Latitude, serviceCoord.Longitude, insertFromNode,
                                             StopType.Refuel);
                                         _refuelPlanned = true;
@@ -805,9 +805,9 @@ namespace SOHModel.SemiTruck.Model
                         }
                     }
 
-                    // No station found on the way – fallback to external list
-                    Console.WriteLine($"[Truck {SemiTruck.ID}] No gas station found along route – fallback to CSV list.");
-                    FindNearestGasStationsFromList();
+                    // No refuel station found on the way – fallback to external list
+                    Console.WriteLine($"[Truck {SemiTruck.ID}] No refuel station found along route – fallback to CSV list.");
+                    FindNearestRefuelStationFromList();
                     _refuelPlanned = true;
                 }
             }
@@ -827,8 +827,8 @@ namespace SOHModel.SemiTruck.Model
             // Refueling just completed
             if (_isRefueling && _refuelUntilTime <= _layer._simulationTime)
             {
-                Console.WriteLine($"[Truck {SemiTruck.ID}] Tanken abgeschlossen – Weiterfahrt.");
-                _FuelTank = SemiTruck.FuelTankLevelLiters; // Reset to full
+                Console.WriteLine($"[Truck {SemiTruck.ID}] Refueling/Recharging completed – continuing trip.");
+                _EnergyLevel = SemiTruck.EnergyAmount; // Reset to full
                 _isRefueling = false;
                 _refuelPlanned = false;
                 _refuelNode = null;
@@ -840,11 +840,11 @@ namespace SOHModel.SemiTruck.Model
                 _refuelNode != null &&
                 IsOnNode(_refuelNode))
             {
-                Console.WriteLine($"[Truck {SemiTruck.ID}] Tankstelle erreicht. Starte Tankpause (5 Min).");
-                _refuelUntilTime = _layer._simulationTime + TimeSpan.FromMinutes(5);
+                Console.WriteLine($"[Truck {SemiTruck.ID}] Refuel station reached. Starting pause ({SemiTruck.RefuelTimeInMinutes} min).");
+                _refuelUntilTime = _layer._simulationTime + TimeSpan.FromMinutes(SemiTruck.RefuelTimeInMinutes);
                 _isRefueling = true;
                 _goingToRefuel = false;
-                return true; // Tick abbrechen
+                return true; // Stop tick
             }
 
             return false;
@@ -916,24 +916,24 @@ namespace SOHModel.SemiTruck.Model
         }
 
         /// <summary>
-        /// Searches for the nearest gas station from the external list (e.g., CSV).
-        /// Used if no gas station was found along the currently planned route.
+        /// Searches for the nearest refuel station from the external list (e.g., CSV).
+        /// Used if no refuel station was found along the currently planned route.
         /// </summary>
-        private void FindNearestGasStationsFromList()
+        private void FindNearestRefuelStationFromList()
         {
             var currentLat = _steeringHandle.Position.Latitude;
             var currentLon = _steeringHandle.Position.Longitude;
 
-            var nearest = _layer.AllGasStations.MinBy(r => GetSquaredDistance(currentLat, currentLon, r.Lat, r.Lon));
+            var nearest = _layer.AllRefuelStations.MinBy(r => GetSquaredDistance(currentLat, currentLon, r.Lat, r.Lon));
             if (nearest != null)
             {
-                Console.WriteLine($"Using fallback gas station from CSV – ID: {nearest.Id} @ ({nearest.Lat}, {nearest.Lon})");
+                Console.WriteLine($"Using fallback refuel station from CSV – ID: {nearest.Id} @ ({nearest.Lat}, {nearest.Lon})");
                 PlanRouteWithStop(nearest.Lat, nearest.Lon, Route.Stops[_steeringHandle.Route.PassedStops].Edge.To,
                     StopType.Refuel);
             }
             else
             {
-                Console.WriteLine("No fallback gas station found in external list.");
+                Console.WriteLine("No fallback refuel station found in external list.");
             }
         }
 
