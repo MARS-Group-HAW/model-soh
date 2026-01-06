@@ -104,7 +104,7 @@ namespace SOHModel.SemiTruck.Model
                 Path.Combine(AppContext.BaseDirectory, "resources", "road_closures_by_Coordinates.csv");
             LoadRoadClosuresByCoordinates(filePathCoordinates);
             string fullPath_rest_areas = Path.Combine(AppContext.BaseDirectory, "resources", "rest_areas.csv");
-            string fullPath_stations = Path.Combine(AppContext.BaseDirectory, "resources", "gas_stations.csv");
+            string fullPath_stations = Path.Combine(AppContext.BaseDirectory, "resources", "refuel_stations.csv");
             AllRestAreas = LoadRestAreas(fullPath_rest_areas);
             AllRefuelStations = LoadRefuelStations(fullPath_stations);
             // Attempt to initialize the environment from Mapping.Value or file
