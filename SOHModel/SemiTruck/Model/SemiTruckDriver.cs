@@ -48,7 +48,6 @@ namespace SOHModel.SemiTruck.Model
         private bool _goingToRefuel = false; // Heading to refueling location
         private bool _isRefueling = false; // Truck is currently being refueled
 
-        private double _EnergyLevel; // Current energy level
         private double _lastRemainingDistanceToGoal = -1; // For tracking fuel usage
         private bool _routeChanged = false; // Whether route was modified (due to detours, etc.)
 
@@ -84,9 +83,8 @@ namespace SOHModel.SemiTruck.Model
             // Create the SemiTruck
             SemiTruck = CreateSemiTruck();
             SemiTruck.Environment = _environment;
-            _EnergyLevel = SemiTruck.EnergyAmount;
+            EnergyLevel = SemiTruck.EnergyAmount;
             DefaultAccidentsPerYear = SemiTruck.AccidentsPerYear;
-
 
             //Define SpatialEdge for driveMode 5 as First Outgoing Edge
             ISpatialEdge startingEdge = null;
@@ -739,11 +737,11 @@ namespace SOHModel.SemiTruck.Model
 
                 // Calculate energy usage and reduce level
                 double energyUsed = (SemiTruck.EnergyConsumptionPer100Km / 100.0) * distanceDrivenKm;
-                _EnergyLevel -= energyUsed;
+                EnergyLevel -= energyUsed;
 
-                if (_EnergyLevel <= 0)
+                if (EnergyLevel <= 0)
                 {
-                    _EnergyLevel = 0;
+                    EnergyLevel = 0;
                     // Truck has no energy left; will stop moving until refueled
                     //TODO What should happen when a truck runs out of energy?
                 }
@@ -762,7 +760,7 @@ namespace SOHModel.SemiTruck.Model
             if (_goingToRefuel || _refuelPlanned) return;
 
             // Estimate how far the truck can go with current energy (in km)
-            double availableRangeKm = (_EnergyLevel / SemiTruck.EnergyConsumptionPer100Km) * 100;
+            double availableRangeKm = (EnergyLevel / SemiTruck.EnergyConsumptionPer100Km) * 100;
 
             // If range is too low, prepare refuel plan
             if (availableRangeKm < 100)
@@ -828,7 +826,7 @@ namespace SOHModel.SemiTruck.Model
             if (_isRefueling && _refuelUntilTime <= _layer._simulationTime)
             {
                 Console.WriteLine($"[Truck {SemiTruck.ID}] Refueling/Recharging completed – continuing trip.");
-                _EnergyLevel = SemiTruck.EnergyAmount; // Reset to full
+                EnergyLevel = SemiTruck.EnergyAmount; // Reset to full
                 _isRefueling = false;
                 _refuelPlanned = false;
                 _refuelNode = null;
@@ -999,6 +997,11 @@ namespace SOHModel.SemiTruck.Model
         [PropertyDescription] public double DestLon { get; set; }
         [PropertyDescription] public int DriveMode { get; set; }
         [PropertyDescription] public string TruckType { get; set; }
+
+        public double EnergyLevel { get; set; }
+
+        public string EnergyType => SemiTruck?.EnergyType.ToString() ?? "Unknown";
+
         public double Latitude => Position?.Latitude ?? 0.0;
 
         public double Longitude => Position?.Longitude ?? 0.0;
