@@ -97,14 +97,14 @@ namespace SOHModel.SemiTruck.Model
         {
             // Call the base layer initialization
             base.InitLayer(layerInitData, registerAgentHandle, unregisterAgent);
-            string filePathID = Path.Combine(AppContext.BaseDirectory, "resources", "road_closures_by_ID.csv");
+            string filePathID = Path.Combine(AppContext.BaseDirectory, ResourcesConstants.ResourcesFolder, ResourcesConstants.RoadClosuresByIdFile);
             LoadRoadClosuresByID(filePathID);
             base.InitLayer(layerInitData, registerAgentHandle, unregisterAgent);
             string filePathCoordinates =
-                Path.Combine(AppContext.BaseDirectory, "resources", "road_closures_by_Coordinates.csv");
+                Path.Combine(AppContext.BaseDirectory, ResourcesConstants.ResourcesFolder, ResourcesConstants.RoadClosuresByCoordinatesFile);
             LoadRoadClosuresByCoordinates(filePathCoordinates);
-            string fullPath_rest_areas = Path.Combine(AppContext.BaseDirectory, "resources", "rest_areas.csv");
-            string fullPath_stations = Path.Combine(AppContext.BaseDirectory, "resources", "refuel_stations.csv");
+            string fullPath_rest_areas = Path.Combine(AppContext.BaseDirectory, ResourcesConstants.ResourcesFolder, ResourcesConstants.RestAreasFile);
+            string fullPath_stations = Path.Combine(AppContext.BaseDirectory, ResourcesConstants.ResourcesFolder, ResourcesConstants.RefuelStationsFile);
             AllRestAreas = LoadRestAreas(fullPath_rest_areas);
             AllRefuelStations = LoadRefuelStations(fullPath_stations);
             // Attempt to initialize the environment from Mapping.Value or file
