@@ -118,6 +118,26 @@ public abstract class RoadUser : ISpatialGraphEntity
     public double EnergyConsumptionPer100Km  { get; set; }
 
     /// <summary>
+    /// Drag coefficient of the vehicle (unitless).
+    /// TODO: example value, consult drag coefficient table
+    /// </summary>
+    [PropertyDescription(Name = "dragCoefficient", Ignore = true)]
+    public double DragCoefficient { get; set; } = 0.6;
+
+    /// <summary>
+    /// Rolling resistance coefficient (unitless).
+    /// TODO: not constant, see https://doi.org/10.1109/TVT.2022.3220157 
+    /// </summary>
+    [PropertyDescription(Name = "rollingResistance", Ignore = true)]
+    public double RollingResistance { get; set; } = 0.006;
+
+    /// <summary>
+    /// Efficiency of the engine/drivetrain (0-1).
+    /// </summary>
+    [PropertyDescription(Name = "efficiency", Ignore = true)]
+    public double Efficiency { get; set; } = 0.35;
+
+    /// <summary>
     /// The time it takes to refuel/recharge the vehicle in minutes.
     /// </summary>
     [PropertyDescription(Name = "refuelTimeInMinutes", Ignore = true)]
