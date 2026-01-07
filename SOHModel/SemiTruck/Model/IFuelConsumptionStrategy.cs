@@ -3,6 +3,15 @@ using SOHModel.SemiTruck.Model;
 namespace SOHModel.SemiTruck.Model
 {
     /// <summary>
+    /// Specifies the type of fuel consumption strategy used for a SemiTruck.
+    /// </summary>
+    public enum FuelStrategyType
+    {
+        Linear,
+        RoadLoad
+    }
+    
+    /// <summary>
     /// Defines a strategy for calculating fuel/energy consumption for a SemiTruck.
     /// </summary>
     public interface IFuelConsumptionStrategy

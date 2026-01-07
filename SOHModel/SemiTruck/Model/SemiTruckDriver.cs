@@ -88,10 +88,11 @@ namespace SOHModel.SemiTruck.Model
             EnergyLevel = SemiTruck.EnergyAmount;
             DefaultAccidentsPerYear = SemiTruck.AccidentsPerYear;
 
-            _fuelConsumptionStrategy = FuelStrategyName switch
+            _fuelConsumptionStrategy = FuelStrategy switch
             {
-                "RoadLoad" => new RoadLoadFuelConsumptionStrategy(),
-                _ => new LinearFuelConsumptionStrategy()
+                FuelStrategyType.Linear => new LinearFuelConsumptionStrategy(),
+                FuelStrategyType.RoadLoad => new RoadLoadFuelConsumptionStrategy(),
+                _ => throw new InvalidOperationException($"Unknown strategy: {FuelStrategy}")
             };
 
             //Define SpatialEdge for driveMode 5 as First Outgoing Edge
@@ -1008,7 +1009,7 @@ namespace SOHModel.SemiTruck.Model
         [PropertyDescription] public double DestLon { get; set; }
         [PropertyDescription] public int DriveMode { get; set; }
         [PropertyDescription] public string TruckType { get; set; }
-        [PropertyDescription(Name = "fuelStrategy")] public string FuelStrategyName { get; set; } = "Linear";
+        [PropertyDescription] public FuelStrategyType FuelStrategy { get; set; } = FuelStrategyType.Linear; // TODO this should be part of the truck, not the driver of course
 
         public double EnergyLevel { get; set; }
 
