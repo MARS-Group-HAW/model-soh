@@ -51,7 +51,6 @@ namespace SOHModel.SemiTruck.Model
         private double _lastRemainingDistanceToGoal = -1; // For tracking fuel usage
         private bool _routeChanged = false; // Whether route was modified (due to detours, etc.)
         private double _currentIncline = 0; // Current road incline in percent
-        private IFuelConsumptionStrategy _fuelConsumptionStrategy;
 
         private double _originalMaxSpeed = -1; // Stored value for resetting speed after incline/weather
         private TimeSpan _maxDrivingTimeWithoutBreak = TimeSpan.FromHours(9); // Legal driving limit
@@ -85,15 +84,10 @@ namespace SOHModel.SemiTruck.Model
             // Create the SemiTruck
             SemiTruck = CreateSemiTruck();
             SemiTruck.Environment = _environment;
+            SemiTruck.InitializeFuelStrategy();
             EnergyLevel = SemiTruck.EnergyAmount;
             DefaultAccidentsPerYear = SemiTruck.AccidentsPerYear;
 
-            _fuelConsumptionStrategy = FuelStrategy switch
-            {
-                FuelStrategyType.Linear => new LinearFuelConsumptionStrategy(),
-                FuelStrategyType.RoadLoad => new RoadLoadFuelConsumptionStrategy(),
-                _ => throw new InvalidOperationException($"Unknown strategy: {FuelStrategy}")
-            };
 
             //Define SpatialEdge for driveMode 5 as First Outgoing Edge
             ISpatialEdge startingEdge = null;
@@ -748,7 +742,7 @@ namespace SOHModel.SemiTruck.Model
 
                 // Calculate energy usage and reduce level
                 double timeStepSeconds = _layer._tickDuration.TotalSeconds;
-                double energyUsed = _fuelConsumptionStrategy.CalculateEnergyUsed(SemiTruck, distanceDrivenKm, timeStepSeconds, _currentIncline);
+                double energyUsed = SemiTruck.FuelConsumptionStrategy.CalculateEnergyUsed(SemiTruck, distanceDrivenKm, timeStepSeconds, _currentIncline);
                 EnergyLevel -= energyUsed;
 
                 if (EnergyLevel <= 0)
@@ -772,7 +766,7 @@ namespace SOHModel.SemiTruck.Model
             if (_goingToRefuel || _refuelPlanned) return;
 
             // Estimate how far the truck can go with current energy (in km)
-            double availableRangeKm = _fuelConsumptionStrategy.EstimateRemainingRangeKm(SemiTruck, EnergyLevel);
+            double availableRangeKm = SemiTruck.FuelConsumptionStrategy.EstimateRemainingRangeKm(SemiTruck, EnergyLevel);
 
             // If range is too low, prepare refuel plan
             if (availableRangeKm < 100)
@@ -1009,7 +1003,6 @@ namespace SOHModel.SemiTruck.Model
         [PropertyDescription] public double DestLon { get; set; }
         [PropertyDescription] public int DriveMode { get; set; }
         [PropertyDescription] public string TruckType { get; set; }
-        [PropertyDescription] public FuelStrategyType FuelStrategy { get; set; } = FuelStrategyType.Linear; // TODO this should be part of the truck, not the driver of course
 
         public double EnergyLevel { get; set; }
 

@@ -27,7 +27,30 @@ namespace SOHModel.SemiTruck.Model
         {
             ModalityType = SpatialModalityType.CarDriving;
         }
-        
+
+        /// <summary>
+        /// The fuel consumption strategy used by the truck.
+        /// </summary>
+        public IFuelConsumptionStrategy FuelConsumptionStrategy { get; private set; }
+
+        /// <summary>
+        /// The type of fuel strategy to use.
+        /// </summary>
+        [PropertyDescription]
+        public FuelStrategyType FuelStrategy { get; set; } = FuelStrategyType.Linear;
+
+        /// <summary>
+        /// Initializes the fuel consumption strategy based on the FuelStrategy type.
+        /// </summary>
+        public void InitializeFuelStrategy()
+        {
+            FuelConsumptionStrategy = FuelStrategy switch
+            {
+                FuelStrategyType.Linear => new LinearFuelConsumptionStrategy(),
+                FuelStrategyType.RoadLoad => new RoadLoadFuelConsumptionStrategy(),
+                _ => throw new InvalidOperationException($"Unknown strategy: {FuelStrategy}")
+            };
+        }
 
         /// <summary>
         /// The street layer associated with the SemiTruck, annotated for property injection.
