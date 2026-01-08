@@ -24,6 +24,12 @@ namespace SOHModel.SemiTruck.Model
     /// </summary>
     public class SemiTruckDriver : IAgent<SemiTruckLayer>, ISemiTruckSteeringCapable
     {
+        private const double LowFuelTreshhold = 100;
+        private const double RestAreaSearchRadius = 100_000; // 100km
+        private const double RefuelStationSearchRadius = 100_000; // 100km
+        private static readonly TimeSpan DefaultRestDuration = TimeSpan.FromHours(4);
+        private static readonly TimeSpan MaxDrivingTimeLimit = TimeSpan.FromHours(9);
+        
         // Private fields for managing the SemiTruck's steering and its environment
         private SemiTruckSteeringHandle _steeringHandle; // Controls the vehicle's path and motion
         private UnregisterAgent _unregister; // Delegate to remove agent from simulation
@@ -53,7 +59,7 @@ namespace SOHModel.SemiTruck.Model
         private double _currentIncline = 0; // Current road incline in percent
 
         private double _originalMaxSpeed = -1; // Stored value for resetting speed after incline/weather
-        private TimeSpan _maxDrivingTimeWithoutBreak = TimeSpan.FromHours(9); // Legal driving limit
+        private TimeSpan _maxDrivingTimeWithoutBreak = MaxDrivingTimeLimit; // Legal driving limit
 
         private ISpatialNode _restNode; // Target rest location
         private ISpatialNode _refuelNode = null; // Target refueling node
@@ -513,7 +519,7 @@ namespace SOHModel.SemiTruck.Model
 
             // Enforce rest only if max driving time exceeded and significant trip length remains
             if ((_layer._simulationTime - _lastBreakTime) > _maxDrivingTimeWithoutBreak &&
-                Route.RemainingRouteDistanceToGoal > 100_000)
+                Route.RemainingRouteDistanceToGoal > RestAreaSearchRadius)
             {
                 double accumulatedDistance = 0;
 
@@ -522,7 +528,7 @@ namespace SOHModel.SemiTruck.Model
                 {
                     var edge = routeStep.Edge;
                     accumulatedDistance += edge.Length;
-                    if (accumulatedDistance > 100_000)
+                    if (accumulatedDistance > RestAreaSearchRadius)
                         break;
 
                     var nodesToCheck = new[] { edge.From, edge.To };
@@ -581,7 +587,7 @@ namespace SOHModel.SemiTruck.Model
                 IsOnNode(_restNode))
             {
                 Console.WriteLine("Arrived at rest area. Starting pause.");
-                _pausedUntilTime = _layer._simulationTime + TimeSpan.FromHours(4); // Legal pause duration
+                _pausedUntilTime = _layer._simulationTime + DefaultRestDuration; // Legal pause duration
                 _lastBreakTime = _layer._simulationTime;
                 _goingToRestArea = false;
                 _pauseCompleted = true;
@@ -769,10 +775,10 @@ namespace SOHModel.SemiTruck.Model
             double availableRangeKm = SemiTruck.FuelConsumptionStrategy.EstimateRemainingRangeKm(SemiTruck, EnergyLevel);
 
             // If range is too low, prepare refuel plan
-            if (availableRangeKm < 100)
+            if (availableRangeKm < LowFuelTreshhold)
             {
                 // Only search if there's still a long distance to go
-                if (Route.RemainingRouteDistanceToGoal > 100_000)
+                if (Route.RemainingRouteDistanceToGoal > RefuelStationSearchRadius)
                 {
                     double accumulatedDistance = 0;
                     Console.WriteLine($"[Truck {SemiTruck.ID}] Energy low: {availableRangeKm:F1} km remaining – searching for refuel station...");
@@ -781,7 +787,7 @@ namespace SOHModel.SemiTruck.Model
                     {
                         var edge = routeStep.Edge;
                         accumulatedDistance += edge.Length;
-                        if (accumulatedDistance > 100_000)
+                        if (accumulatedDistance > RefuelStationSearchRadius)
                             break;
 
                         var nodesToCheck = new[] { edge.From, edge.To };
