@@ -1,4 +1,9 @@
 .env
 
 resources/streets_hamburg_final_no_el.geojson
+resources/autobahn_und_bundesstrassen_deutschland_elevation_21.geojson
 route_cache.db
+
+output/truck_lines*
+
+my_postgis_storage/

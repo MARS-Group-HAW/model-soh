@@ -2,10 +2,10 @@
   "id": "soh_truck_fuel_alternative",
   "globals": {
     "deltaT": 1,
-    "startPoint": "2025-11-13T06:00:00",
-    "endPoint": "2025-11-13T18:00:00",
+    "startPoint": "2026-01-08T06:00:00",
+    "endPoint": "2026-01-09T06:00:00",
     "deltaTUnit": "seconds",
-    "console": false,
+    "console": true,
     "npgSqlOptions": {
       "host": "127.0.0.1",
       "port": "5432",

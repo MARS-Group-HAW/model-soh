@@ -42,7 +42,14 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="input\" />
+      <Folder Include="output\" />
       <Folder Include="resources\Scripts\GeoJSON\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="route_cache.db" />
+      <None Remove="SemiTruckDriver_trips.geojson" />
     </ItemGroup>
 
 </Project>
