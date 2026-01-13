@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 /// <summary>
 /// PostgreSQL-based database logger for flexible, type-safe logging of simulation data.
@@ -23,16 +25,30 @@ using System.Text;
 /// </summary>
 public class PostgresDbLogger : IDisposable
 {
+    /// <summary>
+    /// Singleton instance for convenient access throughout the application.
+    /// Set this in your main entry point after initialization.
+    /// </summary>
+    public static PostgresDbLogger? Instance { get; set; }
+
     private readonly string _connectionString;
     private readonly ConcurrentDictionary<Type, TypeMapping> _typeMappings = new();
     private readonly object _connectionLock = new();
+    private readonly ConcurrentQueue<LogEntry> _logQueue = new();
+    private readonly SemaphoreSlim _queueSignal = new(0);
+    private readonly Task _backgroundTask;
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
+    private readonly int _batchSize;
+    private readonly TimeSpan _batchTimeout;
     private bool _disposed;
 
     /// <summary>
     /// Initializes a new PostgreSQL logger using connection details from environment variables.
     /// Expects: DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
     /// </summary>
-    public PostgresDbLogger()
+    /// <param name="batchSize">Number of records to batch before writing (default: 100)</param>
+    /// <param name="batchTimeout">Maximum time to wait before flushing batch (default: 1 second)</param>
+    public PostgresDbLogger(int batchSize = 100, TimeSpan? batchTimeout = null)
     {
         var host = Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost";
         var port = Environment.GetEnvironmentVariable("DB_PORT") ?? "5432";
@@ -40,16 +56,27 @@ public class PostgresDbLogger : IDisposable
         var user = Environment.GetEnvironmentVariable("DB_USER") ?? throw new InvalidOperationException("DB_USER environment variable is required");
         var password = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? throw new InvalidOperationException("DB_PASSWORD environment variable is required");
 
-        _connectionString = $"Host={host};Port={port};Database={database};Username={user};Password={password}";
+        _connectionString = $"Host={host};Port={port};Database={database};Username={user};Password={password};SearchPath={database},public";
+        _batchSize = batchSize;
+        _batchTimeout = batchTimeout ?? TimeSpan.FromSeconds(1);
         Console.WriteLine($"Connecting to PostgreSQL database {_connectionString}");
+
+        _backgroundTask = Task.Run(ProcessQueueAsync);
     }
 
     /// <summary>
     /// Initializes a new PostgreSQL logger with an explicit connection string.
     /// </summary>
-    public PostgresDbLogger(string connectionString)
+    /// <param name="connectionString">The PostgreSQL connection string</param>
+    /// <param name="batchSize">Number of records to batch before writing (default: 100)</param>
+    /// <param name="batchTimeout">Maximum time to wait before flushing batch (default: 1 second)</param>
+    public PostgresDbLogger(string connectionString, int batchSize = 100, TimeSpan? batchTimeout = null)
     {
         _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
+        _batchSize = batchSize;
+        _batchTimeout = batchTimeout ?? TimeSpan.FromSeconds(1);
+
+        _backgroundTask = Task.Run(ProcessQueueAsync);
     }
 
     /// <summary>
@@ -85,6 +112,7 @@ public class PostgresDbLogger : IDisposable
 
     /// <summary>
     /// Logs an object to the database. The object's type must be registered first.
+    /// This is a non-blocking operation that queues the object for batched insertion.
     /// </summary>
     public void Log<T>(T obj) where T : class
     {
@@ -95,12 +123,14 @@ public class PostgresDbLogger : IDisposable
         if (!_typeMappings.TryGetValue(type, out var mapping))
             throw new InvalidOperationException($"Type {type.Name} is not registered. Call Register<{type.Name}>() first.");
 
-        InsertObject(mapping, obj);
+        _logQueue.Enqueue(new LogEntry(mapping, obj));
+        _queueSignal.Release();
     }
 
     /// <summary>
     /// Logs an object to the database using runtime type detection.
     /// The object's type must be registered first.
+    /// This is a non-blocking operation that queues the object for batched insertion.
     /// </summary>
     public void Log(object obj)
     {
@@ -111,7 +141,20 @@ public class PostgresDbLogger : IDisposable
         if (!_typeMappings.TryGetValue(type, out var mapping))
             throw new InvalidOperationException($"Type {type.Name} is not registered. Call Register<{type.Name}>() first.");
 
-        InsertObject(mapping, obj);
+        _logQueue.Enqueue(new LogEntry(mapping, obj));
+        _queueSignal.Release();
+    }
+
+    /// <summary>
+    /// Flushes all pending log entries to the database immediately.
+    /// Blocks until all queued entries are written.
+    /// </summary>
+    public async Task FlushAsync()
+    {
+        var tcs = new TaskCompletionSource<bool>();
+        _logQueue.Enqueue(new LogEntry(null!, null!) { FlushCompletionSource = tcs });
+        _queueSignal.Release();
+        await tcs.Task;
     }
 
     /// <summary>
@@ -145,7 +188,7 @@ public class PostgresDbLogger : IDisposable
     private static string BuildCreateTableSql(TypeMapping mapping)
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"CREATE TABLE IF NOT EXISTS {mapping.TableName} (");
+        sb.AppendLine($"CREATE TABLE IF NOT EXISTS \"{mapping.TableName}\" (");
         sb.AppendLine("    id BIGSERIAL PRIMARY KEY,");
 
         var columnDefinitions = mapping.Properties.Select(p =>
@@ -202,25 +245,117 @@ public class PostgresDbLogger : IDisposable
     }
 
     /// <summary>
-    /// Inserts an object into the database.
+    /// Background task that processes the log queue and writes batches to the database.
     /// </summary>
-    private void InsertObject(TypeMapping mapping, object obj)
+    private async Task ProcessQueueAsync()
     {
-        using var connection = new NpgsqlConnection(_connectionString);
-        connection.Open();
+        var batch = new List<LogEntry>();
 
-        var columnNames = string.Join(", ", mapping.Properties.Select(p => p.Name.ToLowerInvariant()));
-        var paramNames = string.Join(", ", mapping.Properties.Select(p => $"@{p.Name}"));
-        var sql = $"INSERT INTO {mapping.TableName} ({columnNames}) VALUES ({paramNames})";
-
-        var parameters = new DynamicParameters();
-        foreach (var prop in mapping.Properties)
+        while (!_cancellationTokenSource.Token.IsCancellationRequested)
         {
-            var value = prop.GetValue(obj);
-            parameters.Add($"@{prop.Name}", value);
+            try
+            {
+                // Wait for items or timeout
+                await _queueSignal.WaitAsync(_batchTimeout, _cancellationTokenSource.Token);
+
+                // Collect batch
+                while (batch.Count < _batchSize && _logQueue.TryDequeue(out var entry))
+                {
+                    // Check for flush marker
+                    if (entry.Mapping == null)
+                    {
+                        // Flush current batch first
+                        if (batch.Count > 0)
+                        {
+                            await WriteBatchAsync(batch);
+                            batch.Clear();
+                        }
+                        entry.FlushCompletionSource?.SetResult(true);
+                        continue;
+                    }
+
+                    batch.Add(entry);
+                }
+
+                // Write batch if we have items
+                if (batch.Count > 0)
+                {
+                    await WriteBatchAsync(batch);
+                    batch.Clear();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error processing log queue: {ex}");
+            }
         }
 
-        connection.Execute(sql, parameters);
+        // Final flush on shutdown
+        while (_logQueue.TryDequeue(out var entry))
+        {
+            if (entry.Mapping != null)
+                batch.Add(entry);
+        }
+
+        if (batch.Count > 0)
+        {
+            await WriteBatchAsync(batch);
+        }
+    }
+
+    /// <summary>
+    /// Writes a batch of log entries to the database in a single transaction.
+    /// </summary>
+    private async Task WriteBatchAsync(List<LogEntry> batch)
+    {
+        if (batch.Count == 0) return;
+
+        await using var connection = new NpgsqlConnection(_connectionString);
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+
+        try
+        {
+            // Group by table for efficient insertion
+            var groupedByTable = batch.GroupBy(e => e.Mapping.TableName);
+
+            foreach (var group in groupedByTable)
+            {
+                var mapping = group.First().Mapping;
+                var objects = group.Select(e => e.Object).ToList();
+
+                var columnNames = string.Join(", ", mapping.Properties.Select(p => p.Name.ToLowerInvariant()));
+                var valuePlaceholders = new List<string>();
+                var parameters = new DynamicParameters();
+
+                for (int i = 0; i < objects.Count; i++)
+                {
+                    var paramNames = string.Join(", ", mapping.Properties.Select(p => $"@{p.Name}{i}"));
+                    valuePlaceholders.Add($"({paramNames})");
+
+                    foreach (var prop in mapping.Properties)
+                    {
+                        var value = prop.GetValue(objects[i]);
+                        parameters.Add($"@{prop.Name}{i}", value);
+                    }
+                }
+
+                var sql = $"INSERT INTO \"{mapping.TableName}\" ({columnNames}) VALUES {string.Join(", ", valuePlaceholders)}";
+                await connection.ExecuteAsync(sql, parameters, transaction);
+            }
+
+            await transaction.CommitAsync();
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            Console.WriteLine($"Error writing batch to database: {ex}");
+            throw;
+        }
     }
 
     /// <summary>
@@ -245,6 +380,20 @@ public class PostgresDbLogger : IDisposable
         if (!_disposed)
         {
             _disposed = true;
+
+            // Signal shutdown and wait for background task
+            _cancellationTokenSource.Cancel();
+            try
+            {
+                _backgroundTask.Wait(TimeSpan.FromSeconds(5));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error waiting for background task to complete: {ex}");
+            }
+
+            _cancellationTokenSource.Dispose();
+            _queueSignal.Dispose();
             GC.SuppressFinalize(this);
         }
     }
@@ -261,6 +410,22 @@ public class PostgresDbLogger : IDisposable
         {
             TableName = tableName;
             Properties = properties;
+        }
+    }
+
+    /// <summary>
+    /// Internal class representing a queued log entry.
+    /// </summary>
+    private class LogEntry
+    {
+        public TypeMapping Mapping { get; }
+        public object Object { get; }
+        public TaskCompletionSource<bool>? FlushCompletionSource { get; init; }
+
+        public LogEntry(TypeMapping mapping, object obj)
+        {
+            Mapping = mapping;
+            Object = obj;
         }
     }
 }

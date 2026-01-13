@@ -10,7 +10,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Dapper" Version="2.1.66" />
         <PackageReference Include="Mars.Life.Simulations" Version="5.3.1"/>
+        <PackageReference Include="Npgsql" Version="9.0.2"/>
     </ItemGroup>
 
     <ItemGroup>
