@@ -109,6 +109,28 @@ public class PostgresDbLogger : IDisposable
 
         return this;
     }
+    
+    
+/// <summary>
+/// Truncates all registered tables in the database.
+/// </summary>
+public PostgresDbLogger ClearAllTables()
+{
+    Console.WriteLine("Clearing all registered debug tables...");
+    lock (_connectionLock)
+    {
+        using var connection = new NpgsqlConnection(_connectionString);
+        connection.Open();
+
+        foreach (var mapping in _typeMappings.Values)
+        {
+            var truncateTableSql = $"TRUNCATE TABLE \"{mapping.TableName}\" RESTART IDENTITY CASCADE;";
+            connection.Execute(truncateTableSql);
+        }
+    }
+
+    return this;
+}
 
     /// <summary>
     /// Logs an object to the database. The object's type must be registered first.
