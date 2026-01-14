@@ -1,5 +1,5 @@
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using Mars.Interfaces.Environments;
 using SOHModel.Database;
 using SOHModel.Domain.Steering.Common;
@@ -8,18 +8,14 @@ using SOHModel.SemiTruck.Steering;
 
 namespace SOHModel.SemiTruck.Model.Driver.State
 {
-    
+
     /// <summary>
     /// Manages rest area related state and logic for a SemiTruckDriver.
     /// </summary>
-    public class RestState
+    public class RestState : StopState
     {
         private DateTime _lastBreakTime;
-        private DateTime _pausedUntilTime = DateTime.MinValue;
-        private bool _restAreaPlanned;
-        private bool _goingToRestArea;
         private bool _pauseCompleted;
-        private ISpatialNode _restNode;
         private readonly TimeSpan _maxDrivingTimeWithoutBreak = SemiTruckDriverConstants.MaxDrivingTimeLimit;
 
         /// <summary>
@@ -30,57 +26,47 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             _lastBreakTime = simulationTime;
         }
 
+        protected override RestStateType GetStopType() => RestStateType.Rest;
+
+        protected override TimeSpan GetPauseDuration(SemiTruckLayer layer, SemiTruck truck) => SemiTruckDriverConstants.DefaultRestDuration;
+
+        protected override string[] GetSearchTags() => new[] { "rest_area", "services" };
+
+        protected override IEnumerable<dynamic> GetFacilityList(SemiTruckLayer layer) => layer.AllRestAreas;
+
+        protected override double GetSearchRadius() => SemiTruckDriverConstants.RestAreaSearchRadius;
+
+        protected override bool ShouldStop(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
+            SemiTruck truck, FuelConsumptionTracker fuelTracker)
+        {
+            return ShouldRest(layer._simulationTime, steeringHandle.Route.RemainingRouteDistanceToGoal);
+        }
+
+        protected override void OnPauseCompleted(SemiTruckLayer layer, SemiTruck truck,
+            FuelConsumptionTracker fuelTracker, SemiTruckDriver driver)
+        {
+            _pauseCompleted = false;
+        }
+
+        protected override void OnArrival(SemiTruckLayer layer)
+        {
+            _lastBreakTime = layer._simulationTime;
+        }
+
+        protected override bool IsPauseCompleted() => _pauseCompleted;
+
+        protected override void MarkPauseCompleted(bool completed)
+        {
+            _pauseCompleted = completed;
+        }
+
         /// <summary>
-        /// Handles the pause logic when the truck is resting.
+        /// Wrapper method to maintain compatibility with SemiTruckDriver.
         /// </summary>
-        /// <returns>True if truck is currently resting and simulation tick should be skipped</returns>
         public bool HandlePause(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
             SemiTruckDriver semiTruckDriver)
         {
-            // Truck is still in rest pause
-            if (_pausedUntilTime > layer._simulationTime)
-                return true;
-
-            // Rest time is over → clean up state and continue driving
-            if (_pauseCompleted && _pausedUntilTime <= layer._simulationTime)
-            {
-                Console.WriteLine("Rest pause completed. Resuming original route.");
-                PostgresDbLogger.Instance.Log(new RestEntity(semiTruckDriver.ID,
-                    layer.Context.CurrentTick,
-                    RestStateType.Rest,
-                    RestEventType.End,
-                    semiTruckDriver.Position.Longitude,
-                    semiTruckDriver.Position.Latitude,
-                    semiTruckDriver.EnergyLevel
-                ));
-                _restAreaPlanned = false;
-                _pauseCompleted = false;
-                _restNode = null;
-            }
-
-            // Truck just arrived at the rest area → begin pause
-            if (_goingToRestArea &&
-                steeringHandle.Position != null &&
-                _restNode != null &&
-                GeometryHelper.IsOnNode(steeringHandle.Position, _restNode))
-            {
-                Console.WriteLine("Arrived at rest area. Starting pause.");
-                PostgresDbLogger.Instance.Log(new RestEntity(semiTruckDriver.ID,
-                    layer.Context.CurrentTick,
-                    RestStateType.Rest,
-                    RestEventType.Start,
-                    semiTruckDriver.Position.Longitude,
-                    semiTruckDriver.Position.Latitude,
-                    semiTruckDriver.EnergyLevel
-                ));
-                _pausedUntilTime = layer._simulationTime + SemiTruckDriverConstants.DefaultRestDuration;
-                _lastBreakTime = layer._simulationTime;
-                _goingToRestArea = false;
-                _pauseCompleted = true;
-                return true;
-            }
-
-            return false;
+            return HandlePause(steeringHandle, layer, semiTruckDriver.SemiTruck, null, semiTruckDriver);
         }
 
         /// <summary>
@@ -93,100 +79,12 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         }
 
         /// <summary>
-        /// Checks and plans route to rest area if needed.
-        /// </summary>
-        public void CheckAndPlanRest(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
-            Action<double, double, ISpatialNode> planStopCallback)
-        {
-            // Skip if a rest area is already being approached or pause is scheduled
-            if (_restAreaPlanned || _goingToRestArea || _pausedUntilTime > layer._simulationTime)
-                return;
-
-            if (!ShouldRest(layer._simulationTime, steeringHandle.Route.RemainingRouteDistanceToGoal))
-                return;
-
-            double accumulatedDistance = 0;
-
-            // Search next 100 km for a rest area directly along the route
-            foreach (var routeStep in steeringHandle.Route)
-            {
-                var edge = routeStep.Edge;
-                accumulatedDistance += edge.Length;
-                if (accumulatedDistance > SemiTruckDriverConstants.RestAreaSearchRadius)
-                    break;
-
-                var nodesToCheck = new[] { edge.From, edge.To };
-
-                foreach (ISpatialNode node in nodesToCheck)
-                {
-                    foreach (var connectedEdge in node.OutgoingEdges.Values)
-                    {
-                        if (connectedEdge.Attributes.TryGetValue("source_tag", out var tag))
-                        {
-                            var tagStr = tag?.ToString()?.ToLowerInvariant();
-                            if (tagStr == "rest_area" || tagStr == "services")
-                            {
-                                var restCoord = connectedEdge.To.Position;
-                                planStopCallback(restCoord.Latitude, restCoord.Longitude, node);
-                                return;
-                            }
-                        }
-                    }
-                }
-            }
-
-            // No nearby OSM rest area found → fallback to predefined list
-            FindNearestFromList(steeringHandle, layer, planStopCallback);
-        }
-
-        /// <summary>
-        /// Finds nearest rest area from external CSV list.
-        /// </summary>
-        private void FindNearestFromList(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
-            Action<double, double, ISpatialNode> planStopCallback)
-        {
-            var currentLat = steeringHandle.Position.Latitude;
-            var currentLon = steeringHandle.Position.Longitude;
-
-            var nearest = layer.AllRestAreas.MinBy(r =>
-                GeometryHelper.GetSquaredDistance(currentLat, currentLon, r.Lat, r.Lon));
-
-            if (nearest != null)
-            {
-                Console.WriteLine($"Using fallback rest area from CSV – ID: {nearest.Id} @ ({nearest.Lat}, {nearest.Lon})");
-                planStopCallback(nearest.Lat, nearest.Lon,
-                    steeringHandle.Route.Stops[steeringHandle.Route.PassedStops].Edge.To);
-            }
-            else
-            {
-                Console.WriteLine("No fallback rest area found in external list.");
-            }
-        }
-
-        /// <summary>
-        /// Marks that a rest stop has been planned.
-        /// </summary>
-        public void MarkPlanned()
-        {
-            _restAreaPlanned = true;
-            _goingToRestArea = true;
-        }
-
-        /// <summary>
-        /// Cancels rest stop planning.
-        /// </summary>
-        public void CancelPlanned()
-        {
-            _goingToRestArea = false;
-            _restAreaPlanned = false;
-        }
-
-        /// <summary>
         /// Sets the target rest node.
+        /// Wrapper for compatibility with existing code.
         /// </summary>
         public void SetRestNode(ISpatialNode node)
         {
-            _restNode = node;
+            SetTargetNode(node);
         }
     }
 }

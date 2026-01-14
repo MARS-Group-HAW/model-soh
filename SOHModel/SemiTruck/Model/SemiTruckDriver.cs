@@ -127,7 +127,7 @@ namespace SOHModel.SemiTruck.Model
 
             // Update fuel and check refueling
             _fuelTracker.UpdateConsumption(_steeringHandle, _layer, SemiTruck);
-            _refuelState.CheckAndPlanRefuel(_steeringHandle, _layer, SemiTruck, _fuelTracker, PlanRefuelStop);
+            _refuelState.CheckAndPlan(_steeringHandle, _layer, SemiTruck, _fuelTracker, PlanRefuelStop);
 
             // Route management
             if (!_layer.notifyTrucks)
@@ -146,11 +146,7 @@ namespace SOHModel.SemiTruck.Model
             }
 
             // Check rest requirements
-            if (_restState.ShouldRest(_layer._simulationTime, Route.RemainingRouteDistanceToGoal))
-            {
-                _restState.CheckAndPlanRest(_steeringHandle, _layer, PlanRestStop);
-                _fuelTracker.MarkRouteChanged();
-            }
+            _restState.CheckAndPlan(_steeringHandle, _layer, SemiTruck, _fuelTracker, PlanRestStop);
 
             // Move and check goal
             _steeringHandle.Move();
@@ -192,6 +188,7 @@ namespace SOHModel.SemiTruck.Model
                 {
                     _restState.MarkPlanned();
                     _restState.SetRestNode(restNode);
+                    _fuelTracker.MarkRouteChanged();
                 },
                 onFailure: () => _restState.CancelPlanned()
             );
@@ -204,6 +201,7 @@ namespace SOHModel.SemiTruck.Model
                 {
                     _refuelState.MarkPlanned();
                     _refuelState.SetRefuelNode(refuelNode);
+                    _fuelTracker.MarkRouteChanged();
                 },
                 onFailure: () => _refuelState.CancelPlanned()
             );

@@ -10,7 +10,7 @@ public record RestEntity(
     long Tick,
     RestStateType StateType, // "Rest" or "Refuel"
     RestEventType EventType, // "Start" or "End"
-    double Longitude,
     double Latitude,
+    double Longitude,
     double? CurrentFuel = null
 );
