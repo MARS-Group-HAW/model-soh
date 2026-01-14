@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Mars.Interfaces.Environments;
+using SOHModel.Database;
 using SOHModel.SemiTruck.Model.Driver.Utils;
 using SOHModel.SemiTruck.Steering;
 
@@ -22,7 +23,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         /// </summary>
         /// <returns>True if refueling is ongoing and tick should pause</returns>
         public bool HandlePause(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer, SemiTruck truck,
-            FuelConsumptionTracker fuelTracker)
+            FuelConsumptionTracker fuelTracker, SemiTruckDriver semiTruckDriver)
         {
             // Truck is currently in refueling phase
             if (_isRefueling && _refuelUntilTime > layer._simulationTime)
@@ -32,6 +33,14 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             if (_isRefueling && _refuelUntilTime <= layer._simulationTime)
             {
                 Console.WriteLine($"[Truck {truck.ID}] Refueling/Recharging completed – continuing trip.");
+                PostgresDbLogger.Instance.Log(new RestEntity(semiTruckDriver.ID,
+                    layer.Context.CurrentTick,
+                    RestStateType.Refuel,
+                    RestEventType.End,
+                    semiTruckDriver.Position.Longitude,
+                    semiTruckDriver.Position.Latitude,
+                    semiTruckDriver.EnergyLevel
+                ));
                 fuelTracker.EnergyLevel = truck.EnergyAmount; // Reset to full
                 _isRefueling = false;
                 _refuelPlanned = false;
@@ -45,6 +54,14 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                 GeometryHelper.IsOnNode(steeringHandle.Position, _refuelNode))
             {
                 Console.WriteLine($"[Truck {truck.ID}] Refuel station reached. Starting pause ({truck.RefuelTimeInMinutes} min).");
+                PostgresDbLogger.Instance.Log(new RestEntity(semiTruckDriver.ID,
+                    layer.Context.CurrentTick,
+                    RestStateType.Refuel,
+                    RestEventType.Start,
+                    semiTruckDriver.Position.Longitude,
+                    semiTruckDriver.Position.Latitude,
+                    semiTruckDriver.EnergyLevel
+                ));
                 _refuelUntilTime = layer._simulationTime + TimeSpan.FromMinutes(truck.RefuelTimeInMinutes);
                 _isRefueling = true;
                 _goingToRefuel = false;

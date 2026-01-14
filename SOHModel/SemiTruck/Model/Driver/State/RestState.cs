@@ -1,12 +1,14 @@
 using System;
 using System.Linq;
 using Mars.Interfaces.Environments;
+using SOHModel.Database;
 using SOHModel.Domain.Steering.Common;
 using SOHModel.SemiTruck.Model.Driver.Utils;
 using SOHModel.SemiTruck.Steering;
 
 namespace SOHModel.SemiTruck.Model.Driver.State
 {
+    
     /// <summary>
     /// Manages rest area related state and logic for a SemiTruckDriver.
     /// </summary>
@@ -32,7 +34,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         /// Handles the pause logic when the truck is resting.
         /// </summary>
         /// <returns>True if truck is currently resting and simulation tick should be skipped</returns>
-        public bool HandlePause(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer)
+        public bool HandlePause(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
+            SemiTruckDriver semiTruckDriver)
         {
             // Truck is still in rest pause
             if (_pausedUntilTime > layer._simulationTime)
@@ -42,6 +45,14 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             if (_pauseCompleted && _pausedUntilTime <= layer._simulationTime)
             {
                 Console.WriteLine("Rest pause completed. Resuming original route.");
+                PostgresDbLogger.Instance.Log(new RestEntity(semiTruckDriver.ID,
+                    layer.Context.CurrentTick,
+                    RestStateType.Rest,
+                    RestEventType.End,
+                    semiTruckDriver.Position.Longitude,
+                    semiTruckDriver.Position.Latitude,
+                    semiTruckDriver.EnergyLevel
+                ));
                 _restAreaPlanned = false;
                 _pauseCompleted = false;
                 _restNode = null;
@@ -54,6 +65,14 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                 GeometryHelper.IsOnNode(steeringHandle.Position, _restNode))
             {
                 Console.WriteLine("Arrived at rest area. Starting pause.");
+                PostgresDbLogger.Instance.Log(new RestEntity(semiTruckDriver.ID,
+                    layer.Context.CurrentTick,
+                    RestStateType.Rest,
+                    RestEventType.Start,
+                    semiTruckDriver.Position.Longitude,
+                    semiTruckDriver.Position.Latitude,
+                    semiTruckDriver.EnergyLevel
+                ));
                 _pausedUntilTime = layer._simulationTime + SemiTruckDriverConstants.DefaultRestDuration;
                 _lastBreakTime = layer._simulationTime;
                 _goingToRestArea = false;

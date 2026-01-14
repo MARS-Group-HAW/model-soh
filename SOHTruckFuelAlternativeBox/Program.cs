@@ -6,6 +6,7 @@ using Mars.Core.Simulation;
 using Mars.Interfaces;
 using Mars.Interfaces.Model;
 using SOHModel.SemiTruck.Model;
+using SOHModel.Database;
 
 namespace TruckFuelAlternativeBox;
 
@@ -14,7 +15,12 @@ internal static class Program
     public static void Main(string[] args)
     {
         DotNetEnv.Env.Load();
-        
+
+        // Example: Initialize PostgreSQL logger for simulation data
+        PostgresDbLogger.Instance = new PostgresDbLogger()
+            .Register<RestEntity>("rests")
+            .ClearAllTables();
+
         var watch = Stopwatch.StartNew();
         Thread.CurrentThread.CurrentCulture = new CultureInfo("EN-US");
         LoggerFactory.SetLogLevel(LogLevel.Info);

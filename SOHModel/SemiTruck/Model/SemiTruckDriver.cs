@@ -118,8 +118,8 @@ namespace SOHModel.SemiTruck.Model
                 return;
 
             // Handle pauses (early returns)
-            if (_restState.HandlePause(_steeringHandle, _layer)) return;
-            if (_refuelState.HandlePause(_steeringHandle, _layer, SemiTruck, _fuelTracker)) return;
+            if (_restState.HandlePause(_steeringHandle, _layer, this)) return;
+            if (_refuelState.HandlePause(_steeringHandle, _layer, SemiTruck, _fuelTracker, this)) return;
 
             // Handle accidents
             if (_accidentState.HandleOngoing(this, _layer, RemoveFromSimulation)) return;
