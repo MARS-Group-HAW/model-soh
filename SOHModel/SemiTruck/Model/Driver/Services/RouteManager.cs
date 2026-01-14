@@ -150,7 +150,7 @@ namespace SOHModel.SemiTruck.Model.Driver.Services
         /// </summary>
         public void PlanRouteWithStop(double targetLat, double targetLon, ISpatialNode insertFromNode,
             SemiTruckSteeringHandle steeringHandle, SemiTruckDriver driver, StopType stopType,
-            Action onSuccess, Action onFailure)
+            Action<ISpatialNode> onSuccess, Action onFailure)
         {
             // Unregister from current route tracking if applicable
             if (_layer.notifyTrucks)
@@ -231,8 +231,7 @@ namespace SOHModel.SemiTruck.Model.Driver.Services
 
             Console.WriteLine($"Truck diverts to stop ({stopType}) at ({targetLat}, {targetLon}) and continues.");
 
-            onSuccess();
-            // Caller should handle setting the destination node via onSuccess callback
+            onSuccess(destinationNode);
         }
     }
 

@@ -188,11 +188,10 @@ namespace SOHModel.SemiTruck.Model
         private void PlanRestStop(double lat, double lon, ISpatialNode insertFromNode)
         {
             _routeManager.PlanRouteWithStop(lat, lon, insertFromNode, _steeringHandle, this, StopType.Rest,
-                onSuccess: () =>
+                onSuccess: (restNode) =>
                 {
                     _restState.MarkPlanned();
-                    var destinationNode = _steeringHandle.Route.Stops[^1].Edge.To;
-                    _restState.SetRestNode(destinationNode);
+                    _restState.SetRestNode(restNode);
                 },
                 onFailure: () => _restState.CancelPlanned()
             );
@@ -201,11 +200,10 @@ namespace SOHModel.SemiTruck.Model
         private void PlanRefuelStop(double lat, double lon, ISpatialNode insertFromNode)
         {
             _routeManager.PlanRouteWithStop(lat, lon, insertFromNode, _steeringHandle, this, StopType.Refuel,
-                onSuccess: () =>
+                onSuccess: (refuelNode) =>
                 {
                     _refuelState.MarkPlanned();
-                    var destinationNode = _steeringHandle.Route.Stops[^1].Edge.To;
-                    _refuelState.SetRefuelNode(destinationNode);
+                    _refuelState.SetRefuelNode(refuelNode);
                 },
                 onFailure: () => _refuelState.CancelPlanned()
             );
