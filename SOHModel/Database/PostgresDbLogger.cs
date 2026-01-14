@@ -231,6 +231,9 @@ public class PostgresDbLogger : IDisposable
             return "BYTEA";
         if (underlyingType == typeof(string))
             return "TEXT";
+        if (underlyingType.IsEnum)
+            return "TEXT";
+        
 
         // Default to JSONB for complex types
         return "JSONB";
@@ -340,7 +343,7 @@ public class PostgresDbLogger : IDisposable
                     foreach (var prop in mapping.Properties)
                     {
                         var value = prop.GetValue(objects[i]);
-                        parameters.Add($"@{prop.Name}{i}", value);
+                        parameters.Add($"@{prop.Name}{i}", prop.PropertyType.IsEnum ? value?.ToString() : value);
                     }
                 }
 
