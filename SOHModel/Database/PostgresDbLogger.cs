@@ -56,7 +56,7 @@ public class PostgresDbLogger : IDisposable
         var user = Environment.GetEnvironmentVariable("DB_USER") ?? throw new InvalidOperationException("DB_USER environment variable is required");
         var password = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? throw new InvalidOperationException("DB_PASSWORD environment variable is required");
 
-        _connectionString = $"Host={host};Port={port};Database={database};Username={user};Password={password};SearchPath={database},public";
+        _connectionString = $"Host={host};Port={port};Database={database};Username={user};Password={password};SearchPath=public";
         _batchSize = batchSize;
         _batchTimeout = batchTimeout ?? TimeSpan.FromSeconds(1);
         Console.WriteLine($"Connecting to PostgreSQL database {_connectionString}");
