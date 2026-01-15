@@ -62,14 +62,5 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         {
             return layer._simulationTime >= _refuelStartTime + GetPauseDuration(layer, truck);
         }
-
-        /// <summary>
-        /// Sets the target refuel node.
-        /// Wrapper for compatibility with existing code.
-        /// </summary>
-        public void SetRefuelNode(ISpatialNode node)
-        {
-            SetTargetNode(node);
-        }
     }
 }

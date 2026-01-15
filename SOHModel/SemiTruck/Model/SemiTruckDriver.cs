@@ -187,7 +187,7 @@ namespace SOHModel.SemiTruck.Model
                 onSuccess: (restNode) =>
                 {
                     _restState.MarkPlanned();
-                    _restState.SetRestNode(restNode);
+                    _restState.SetTargetNode(restNode);
                     _fuelTracker.MarkRouteChanged();
                 },
                 onFailure: () => _restState.CancelPlanned()
@@ -200,7 +200,7 @@ namespace SOHModel.SemiTruck.Model
                 onSuccess: (refuelNode) =>
                 {
                     _refuelState.MarkPlanned();
-                    _refuelState.SetRefuelNode(refuelNode);
+                    _refuelState.SetTargetNode(refuelNode);
                     _fuelTracker.MarkRouteChanged();
                 },
                 onFailure: () => _refuelState.CancelPlanned()

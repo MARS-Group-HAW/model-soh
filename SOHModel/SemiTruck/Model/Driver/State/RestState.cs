@@ -75,14 +75,5 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             return (simulationTime - _lastBreakTime) > _maxDrivingTimeWithoutBreak &&
                    remainingDistance > SemiTruckDriverConstants.RestAreaSearchRadius;
         }
-
-        /// <summary>
-        /// Sets the target rest node.
-        /// Wrapper for compatibility with existing code.
-        /// </summary>
-        public void SetRestNode(ISpatialNode node)
-        {
-            SetTargetNode(node);
-        }
     }
 }
