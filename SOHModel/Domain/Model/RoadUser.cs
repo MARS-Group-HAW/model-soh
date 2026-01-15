@@ -112,6 +112,12 @@ public abstract class RoadUser : ISpatialGraphEntity
     public double EnergyAmount   { get; set; }
     
     /// <summary>
+    /// The maximum amount of Energy a truck can hold
+    /// </summary>
+    [PropertyDescription(Name = "maxEnergyAmount", Ignore = true)]
+    public double MaxEnergyAmount { get; set; }
+    
+    /// <summary>
     /// The average amount of energy a truck uses during 100km
     /// </summary>
     [PropertyDescription(Name = "energyConsumptionPer100km", Ignore = true)]

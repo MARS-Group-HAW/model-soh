@@ -50,7 +50,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         protected override void OnPauseCompleted(SemiTruckLayer layer, SemiTruck truck,
             FuelConsumptionTracker fuelTracker, SemiTruckDriver driver)
         {
-            fuelTracker.EnergyLevel = truck.EnergyAmount; // Reset to full
+            fuelTracker.EnergyLevel = truck.MaxEnergyAmount; // Reset to full
             _isRefueling = false;
         }
 
