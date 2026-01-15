@@ -13,7 +13,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
     /// </summary>
     public class RefuelState : StopState
     {
-        private bool _isRefueling;
+        private DateTime _refuelStartTime = DateTime.MinValue;
 
         protected override RestStateType GetStopType() => RestStateType.Refuel;
 
@@ -51,19 +51,16 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             FuelConsumptionTracker fuelTracker, SemiTruckDriver driver)
         {
             fuelTracker.EnergyLevel = truck.MaxEnergyAmount; // Reset to full
-            _isRefueling = false;
         }
 
         protected override void OnArrival(SemiTruckLayer layer)
         {
-            _isRefueling = true;
+            _refuelStartTime = layer._simulationTime;
         }
 
-        protected override bool IsPauseCompleted() => _isRefueling;
-
-        protected override void MarkPauseCompleted(bool completed)
+        protected override bool IsPauseCompleted(SemiTruckLayer layer, SemiTruck truck)
         {
-            _isRefueling = completed;
+            return layer._simulationTime >= _refuelStartTime + GetPauseDuration(layer, truck);
         }
 
         /// <summary>

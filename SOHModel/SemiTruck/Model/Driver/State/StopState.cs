@@ -15,7 +15,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
     /// </summary>
     public abstract class StopState
     {
-        protected DateTime _pausedUntilTime = DateTime.MinValue;
+        protected bool _isPausing;
         protected bool _planned;
         protected bool _goingToStop;
         protected ISpatialNode _targetNode;
@@ -75,12 +75,25 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         public bool HandlePause(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
             SemiTruck truck, FuelConsumptionTracker fuelTracker, SemiTruckDriver driver)
         {
-            // Truck is still in pause
-            if (_pausedUntilTime > layer._simulationTime)
+            // Truck just arrived at the stop → begin pause
+            if (_goingToStop && HasArrivedAtStop(steeringHandle))
+            {
+                var pauseDuration = GetPauseDuration(layer, truck);
+                Console.WriteLine($"[{GetStopType()}] Arrived at stop. Starting pause ({pauseDuration.TotalMinutes:F0} min).");
+                PostgresDbLogger.Instance.Log(new RestEntity(driver.ID,
+                    layer.Context.CurrentTick,
+                    GetStopType(),
+                    RestEventType.Start,
+                    driver.Position.Latitude,
+                    driver.Position.Longitude, driver.EnergyLevel));
+                OnArrival(layer);
+                _goingToStop = false;
+                _isPausing = true;
                 return true;
+            }
 
-            // Pause time is over → clean up state and continue
-            if (IsPauseCompleted() && _pausedUntilTime <= layer._simulationTime)
+            // Truck is currently pausing - check if pause is completed
+            if (_isPausing && IsPauseCompleted(layer, truck))
             {
                 Console.WriteLine($"[{GetStopType()}] Pause completed. Resuming route.");
                 PostgresDbLogger.Instance.Log(new RestEntity(driver.ID,
@@ -94,28 +107,12 @@ namespace SOHModel.SemiTruck.Model.Driver.State
 
                 _planned = false;
                 _targetNode = null;
-                MarkPauseCompleted(false);
+                _isPausing = false;
+                return false;
             }
 
-            // Truck just arrived at the stop → begin pause
-            if (_goingToStop && HasArrivedAtStop(steeringHandle))
-            {
-                var pauseDuration = GetPauseDuration(layer, truck);
-                Console.WriteLine($"[{GetStopType()}] Arrived at stop. Starting pause ({pauseDuration.TotalMinutes:F0} min).");
-                PostgresDbLogger.Instance.Log(new RestEntity(driver.ID,
-                    layer.Context.CurrentTick,
-                    GetStopType(),
-                    RestEventType.Start,
-                    driver.Position.Latitude,
-                    driver.Position.Longitude, driver.EnergyLevel));
-                _pausedUntilTime = layer._simulationTime + pauseDuration;
-                OnArrival(layer);
-                _goingToStop = false;
-                MarkPauseCompleted(true);
-                return true;
-            }
-
-            return false;
+            // Truck is still pausing
+            return _isPausing;
         }
 
         /// <summary>
@@ -127,21 +124,10 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         }
 
         /// <summary>
-        /// Determines if the pause has been marked as completed.
+        /// Determines if the pause is completed based on subclass-specific logic.
+        /// Called during HandlePause() to check if the pause should end.
         /// </summary>
-        protected virtual bool IsPauseCompleted()
-        {
-            // Default implementation - subclasses can override
-            return _goingToStop == false && _targetNode != null;
-        }
-
-        /// <summary>
-        /// Marks pause completion state.
-        /// </summary>
-        protected virtual void MarkPauseCompleted(bool completed)
-        {
-            // Default: no-op, subclasses can override if they need pause completion tracking
-        }
+        protected abstract bool IsPauseCompleted(SemiTruckLayer layer, SemiTruck truck);
 
         /// <summary>
         /// Checks if a stop is needed and plans route to facility if so.
@@ -150,8 +136,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         public void CheckAndPlan(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
             SemiTruck truck, FuelConsumptionTracker fuelTracker, Action<double, double, ISpatialNode> planStopCallback)
         {
-            // Skip if already planned or paused
-            if (_planned || _goingToStop || _pausedUntilTime > layer._simulationTime)
+            // Skip if already planned or pausing
+            if (_planned || _goingToStop || _isPausing)
                 return;
 
             // Check if stop is needed (subclass-specific logic)
@@ -169,8 +155,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         protected void PlanStop(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
             Action<double, double, ISpatialNode> planStopCallback)
         {
-            // Skip if already planned or paused
-            if (_planned || _goingToStop || _pausedUntilTime > layer._simulationTime)
+            // Skip if already planned or pausing
+            if (_planned || _goingToStop || _isPausing)
                 return;
 
             double accumulatedDistance = 0;

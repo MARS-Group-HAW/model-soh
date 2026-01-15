@@ -15,7 +15,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
     public class RestState : StopState
     {
         private DateTime _lastBreakTime;
-        private bool _pauseCompleted;
+        private DateTime _restStartTime = DateTime.MinValue;
         private readonly TimeSpan _maxDrivingTimeWithoutBreak = SemiTruckDriverConstants.MaxDrivingTimeLimit;
 
         /// <summary>
@@ -45,19 +45,17 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         protected override void OnPauseCompleted(SemiTruckLayer layer, SemiTruck truck,
             FuelConsumptionTracker fuelTracker, SemiTruckDriver driver)
         {
-            _pauseCompleted = false;
+            _lastBreakTime = layer._simulationTime;
         }
 
         protected override void OnArrival(SemiTruckLayer layer)
         {
-            _lastBreakTime = layer._simulationTime;
+            _restStartTime = layer._simulationTime;
         }
 
-        protected override bool IsPauseCompleted() => _pauseCompleted;
-
-        protected override void MarkPauseCompleted(bool completed)
+        protected override bool IsPauseCompleted(SemiTruckLayer layer, SemiTruck truck)
         {
-            _pauseCompleted = completed;
+            return layer._simulationTime >= _restStartTime + GetPauseDuration(layer, truck);
         }
 
         /// <summary>
