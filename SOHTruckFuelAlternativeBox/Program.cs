@@ -19,6 +19,8 @@ internal static class Program
         // Example: Initialize PostgreSQL logger for simulation data
         PostgresDbLogger.Instance = new PostgresDbLogger()
             .Register<RestEntity>("rests")
+            .Register<VehicleSteeringDecisionEntity>("vehicle_steering_decision")
+            .Register<VehicleSteeringPhysicsEntity>("vehicle_steering_physics")
             .ClearAllTables();
 
         var watch = Stopwatch.StartNew();
