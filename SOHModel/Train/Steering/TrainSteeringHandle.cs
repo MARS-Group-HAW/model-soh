@@ -20,7 +20,7 @@ public class TrainSteeringHandle : VehicleSteeringHandle<ITrainSteeringCapable, 
     }
 
     protected override double HandleIntersectionAhead(SpatialGraphExploreResult exploreResult,
-        double biggestDeceleration)
+        double biggestDeceleration, ref DecisionData decisionData)
     {
         var exploreResults = exploreResult.EdgeExplores;
 
@@ -33,11 +33,12 @@ public class TrainSteeringHandle : VehicleSteeringHandle<ITrainSteeringCapable, 
             {
                 var speedChange = CalculateSpeedChange(Vehicle.Velocity, SpeedLimit,
                     distanceToStation, 0, 0);
+                decisionData.IntersectionDeceleration = speedChange;
                 return Math.Min(speedChange, biggestDeceleration);
             }
         }
 
-        return biggestDeceleration;
+        return base.HandleIntersectionAhead(exploreResult, biggestDeceleration, ref decisionData);
     }
 
     protected override double CalculateDrivingDistance(double biggestDeceleration)

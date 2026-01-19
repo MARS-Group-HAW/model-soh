@@ -93,6 +93,8 @@ public class BusDriver : AbstractAgent, IBusSteeringCapable
         set { }
     }
 
+    public long GetCurrentTick() => Layer?.Context.CurrentTick ?? 0;
+
     private void InitializeBus(string type = "CapaCityL")
     {
         Bus = Layer.EntityManager.Create<Bus>("type", type);

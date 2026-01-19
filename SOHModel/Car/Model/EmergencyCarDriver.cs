@@ -138,6 +138,7 @@ namespace SOHModel.Car.Model
 
         public bool OvertakingActivated { get; set; }
         public bool BrakingActivated { get; set; }
+        public long GetCurrentTick() => Layer?.Context.CurrentTick ?? 0;
 
         public bool CurrentlyCarDriving => true;
 
