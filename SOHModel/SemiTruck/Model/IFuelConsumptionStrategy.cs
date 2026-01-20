@@ -16,6 +16,7 @@ namespace SOHModel.SemiTruck.Model
     /// </summary>
     public interface IFuelConsumptionStrategy
     {
+        abstract FuelStrategyType FuelStrategy { get; } 
         /// <summary>
         /// Calculates the amount of energy used during the last tick.
         /// </summary>

@@ -12,6 +12,8 @@ namespace SOHModel.SemiTruck.Model
     /// </summary>
     public class RoadLoadFuelConsumptionStrategy : IFuelConsumptionStrategy
     {
+        public FuelStrategyType FuelStrategy => FuelStrategyType.RoadLoad;
+
         private const double AirDensity = 1.225; // kg/m^3
         private const double Gravity = 9.81; // m/s^2
         
@@ -65,7 +67,8 @@ namespace SOHModel.SemiTruck.Model
             return (currentEnergyLevel / truck.EnergyConsumptionPer100Km) * 100.0;
         }
 
-        private double GetJoulesPerUnit(EnergyType type)
+        // TODO combine with Well-to-Wheel (WTW) and Tank-to-Wheel (TTW) efficiencies for better comparison https://doi.org/10.1016/j.enconman.2022.115412
+        private static double GetJoulesPerUnit(EnergyType type)
         {
             return type switch
             {
