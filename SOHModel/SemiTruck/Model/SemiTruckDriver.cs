@@ -61,7 +61,7 @@ namespace SOHModel.SemiTruck.Model
             SemiTruck = CreateSemiTruck();
             SemiTruck.Environment = _environment;
             SemiTruck.InitializeFuelStrategy();
-            _fuelTracker.EnergyLevel = SemiTruck.EnergyAmount;
+            _fuelTracker.EnergyLevel = SemiTruck.MaxEnergyAmount;
             DefaultAccidentsPerYear = SemiTruck.AccidentsPerYear;
             _accidentState.DefaultAccidentsPerYear = DefaultAccidentsPerYear;
 

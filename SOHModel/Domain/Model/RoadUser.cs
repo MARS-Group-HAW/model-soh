@@ -106,12 +106,6 @@ public abstract class RoadUser : ISpatialGraphEntity
     public EnergyType EnergyType { get; set; } = EnergyType.Fuel;
 
     /// <summary>
-    /// The amount of Energy a truck can fit
-    /// </summary>
-    [PropertyDescription(Name = "energyAmount", Ignore = true)]
-    public double EnergyAmount   { get; set; }
-    
-    /// <summary>
     /// The maximum amount of Energy a truck can hold
     /// </summary>
     [PropertyDescription(Name = "maxEnergyAmount", Ignore = true)]
