@@ -77,7 +77,6 @@ public class FerryDriver : AbstractAgent, IFerrySteeringCapable
 
     public bool OvertakingActivated => false;
     public bool BrakingActivated { get; set; }
-    public long GetCurrentTick() => Layer?.Context.CurrentTick ?? 0;
 
     private void InitializeFerry(string type = "Typ2000")
     {

@@ -254,8 +254,6 @@ namespace SOHModel.SemiTruck.Model
 
         public bool BrakingActivated { get; set; }
 
-        public long GetCurrentTick() => _layer?.Context.CurrentTick ?? 0;
-
         public Route Route => _steeringHandle?.Route;
 
         public string NextTrafficLightPhase => _steeringHandle?.NextTrafficLightPhase.ToString() ?? "unknown";

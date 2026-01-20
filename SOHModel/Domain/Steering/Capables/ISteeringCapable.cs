@@ -15,9 +15,4 @@ public interface ISteeringCapable : IPassengerCapable
     ///     Determines if the driver did a brake. So the Vehicle comes to a stop.
     /// </summary>
     bool BrakingActivated { get; set; }
-
-    /// <summary>
-    ///     Gets the current simulation tick for logging purposes.
-    /// </summary>
-    long GetCurrentTick();
 }

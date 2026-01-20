@@ -568,7 +568,7 @@ public class VehicleSteeringHandle
         {
             var entity = new VehicleSteeringDecisionEntity(
                 AgentId: Vehicle.ID,
-                Tick: Vehicle.Driver?.GetCurrentTick() ?? 0,
+                Tick: -1, // no tick available right now
                 Latitude: positionBefore.Latitude,
                 Longitude: positionBefore.Longitude,
                 SpeedLimit: data.SpeedLimit,
@@ -630,7 +630,7 @@ public class VehicleSteeringHandle
 
             var entity = new VehicleSteeringPhysicsEntity(
                 AgentId: Vehicle.ID,
-                Tick: Vehicle.Driver?.GetCurrentTick() ?? 0,
+                Tick: -1, // no tick available right now
                 Latitude: positionBefore.Latitude,
                 Longitude: positionBefore.Longitude,
                 Bearing: Vehicle.Bearing,

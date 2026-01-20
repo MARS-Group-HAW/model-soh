@@ -527,7 +527,6 @@ public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>,
 
     [PropertyDescription(Ignore = true)] public bool OvertakingActivated { get; set; }
     public bool BrakingActivated { get; set; }
-    public long GetCurrentTick() => MultimodalLayer?.Context.CurrentTick ?? 0;
 
     [PropertyDescription] public bool CurrentlyCarDriving => Car?.Driver?.Equals(this) ?? false;
 

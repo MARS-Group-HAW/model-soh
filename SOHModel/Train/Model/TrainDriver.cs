@@ -89,8 +89,6 @@ public class TrainDriver : AbstractAgent, ITrainSteeringCapable
         set { }
     }
 
-    public long GetCurrentTick() => Layer?.Context.CurrentTick ?? 0;
-
     private void InitializeTrain(string type = "HHA-Typ-DT5")
     {
         Train = Layer.EntityManager.Create<Train>("type", type);
