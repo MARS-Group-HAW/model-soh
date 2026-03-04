@@ -34,7 +34,6 @@
     <ItemGroup>
         <Folder Include="input\"/>
         <Folder Include="output\"/>
-        <Folder Include="visualizations\scripts\" />
     </ItemGroup>
 
     <ItemGroup>
