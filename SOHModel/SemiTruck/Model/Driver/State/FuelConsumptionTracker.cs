@@ -1,4 +1,5 @@
 using System;
+using SOHModel.Database;
 using SOHModel.SemiTruck.Steering;
 
 namespace SOHModel.SemiTruck.Model.Driver.State
@@ -55,6 +56,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                     // Truck has no energy left; will stop moving until refueled
                     //TODO What should happen when a truck runs out of energy?
                 }
+                
+                PostgresDbLogger.Instance?.Log(new FuelConsumptionEntity(truck.ID, truck.Layer?.GetCurrentTick() ?? -1, truck.FuelConsumptionStrategy.FuelStrategy, truck.EnergyType, EnergyLevel, energyUsed));
             }
 
             _lastRemainingDistanceToGoal = currentRemainingDistance;
