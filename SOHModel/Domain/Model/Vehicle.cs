@@ -1,3 +1,4 @@
+using Mars.Components.Layers;
 using Mars.Interfaces.Annotations;
 using Mars.Interfaces.Environments;
 using SOHModel.Domain.Common;
@@ -25,6 +26,8 @@ public abstract partial class Vehicle<TSteeringCapable, TPassengerCapable, TStee
     where TSteeringCapable : ISteeringCapable
 {
     private string _trafficCode;
+    
+    public AbstractLayer Layer { get; set; }
 
     /// <summary>
     ///     Get or sets the intersection behaviour model identified by code when no traffic signals are available
