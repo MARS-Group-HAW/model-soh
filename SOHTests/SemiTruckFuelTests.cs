@@ -32,7 +32,7 @@ namespace SOHTests
                 Height = 4.0,
                 DragCoefficient = 0.6,
                 RollingResistance = 0.01,
-                Efficiency = 0.35,
+                Tank2WheelEfficiency = 0.35,
                 EnergyType = EnergyType.Fuel,
                 Velocity = 22.22, // 80 km/h
                 Acceleration = 0

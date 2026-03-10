@@ -53,8 +53,8 @@ namespace SOHModel.SemiTruck.Model
             // Power = Force * Velocity
             double powerWatts = F_total * v;
             
-            // Energy = Power * Time (scaled by efficiency)
-            double energyJoules = (powerWatts / Math.Max(0.01, truck.Efficiency)) * timeStepSeconds;
+            // Energy = Power * Time (scaled by tank-to-wheel efficiency)
+            double energyJoules = (powerWatts / Math.Max(0.01, truck.Tank2WheelEfficiency)) * timeStepSeconds;
 
             // Convert Joules to Energy units
             return energyJoules / GetJoulesPerUnit(truck.EnergyType);
@@ -66,8 +66,7 @@ namespace SOHModel.SemiTruck.Model
             if (truck.EnergyConsumptionPer100Km <= 0) return double.PositiveInfinity;
             return (currentEnergyLevel / truck.EnergyConsumptionPer100Km) * 100.0;
         }
-
-        // TODO combine with Well-to-Wheel (WTW) and Tank-to-Wheel (TTW) efficiencies for better comparison https://doi.org/10.1016/j.enconman.2022.115412
+        
         private static double GetJoulesPerUnit(EnergyType type)
         {
             return type switch

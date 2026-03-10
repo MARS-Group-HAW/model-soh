@@ -132,10 +132,11 @@ public abstract class RoadUser : ISpatialGraphEntity
     public double RollingResistance { get; set; } = 0.006;
 
     /// <summary>
-    /// Efficiency of the engine/drivetrain (0-1).
+    /// Tank-To-Wheel efficiency of the engine/drivetrain (0-1).
+    /// https://doi.org/10.1016/j.enconman.2022.115412
     /// </summary>
-    [PropertyDescription(Name = "efficiency", Ignore = true)]
-    public double Efficiency { get; set; } = 0.35;
+    [PropertyDescription(Name = "tank2wheel", Ignore = true)]
+    public double Tank2WheelEfficiency { get; set; } = 0.35;
 
     /// <summary>
     /// The time it takes to refuel/recharge the vehicle in minutes.

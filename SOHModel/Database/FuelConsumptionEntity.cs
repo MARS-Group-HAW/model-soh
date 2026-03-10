@@ -10,6 +10,8 @@ public record FuelConsumptionEntity(
     FuelStrategyType StrategyType,
     EnergyType EnergyType,
     
+    double Tank2WheelEfficiency,
+    
     double CurrentEnergyLevel,
     double EnergyUsed
 );
