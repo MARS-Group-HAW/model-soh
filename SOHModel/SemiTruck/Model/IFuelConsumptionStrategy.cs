@@ -24,15 +24,15 @@ namespace SOHModel.SemiTruck.Model
         /// <param name="distanceDrivenKm">The distance driven during the last tick in km.</param>
         /// <param name="timeStepSeconds">The duration of the last tick in seconds.</param>
         /// <param name="incline">The current incline of the road in percent.</param>
-        /// <returns>The amount of energy used (in the same unit as EnergyLevel).</returns>
+        /// <returns>The amount of fuel used (in the same unit as the <see cref="SOHModel.Domain.Model.RoadUser.FuelCarrierType"/>).</returns>
         double CalculateEnergyCarrierAmountUsed(SemiTruck truck, double distanceDrivenKm, double timeStepSeconds, double incline);
 
         /// <summary>
         /// Estimates the remaining range of the truck in km based on the current energy level.
         /// </summary>
         /// <param name="truck">The SemiTruck instance.</param>
-        /// <param name="currentEnergyLevel">The current energy level.</param>
+        /// <param name="currentEnergyCarrierAmount">The current energy level.</param>
         /// <returns>The estimated remaining range in km.</returns>
-        double EstimateRemainingRangeKm(SemiTruck truck, double currentEnergyLevel);
+        double EstimateRemainingRangeKm(SemiTruck truck, double currentEnergyCarrierAmount);
     }
 }

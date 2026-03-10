@@ -12,10 +12,10 @@ namespace SOHModel.SemiTruck.Model
             return (truck.FuelConsumptionPer100Km / 100.0) * distanceDrivenKm;
         }
 
-        public double EstimateRemainingRangeKm(SemiTruck truck, double currentEnergyLevel)
+        public double EstimateRemainingRangeKm(SemiTruck truck, double currentEnergyCarrierAmount)
         {
             if (truck.FuelConsumptionPer100Km <= 0) return double.PositiveInfinity;
-            return (currentEnergyLevel / truck.FuelConsumptionPer100Km) * 100.0;
+            return (currentEnergyCarrierAmount / truck.FuelConsumptionPer100Km) * 100.0;
         }
     }
 }

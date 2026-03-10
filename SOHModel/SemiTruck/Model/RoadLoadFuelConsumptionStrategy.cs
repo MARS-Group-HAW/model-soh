@@ -60,11 +60,11 @@ namespace SOHModel.SemiTruck.Model
             return energyJoules / GetJoulesPerUnit(truck.FuelCarrierType);
         }
 
-        public double EstimateRemainingRangeKm(SemiTruck truck, double currentEnergyLevel)
+        public double EstimateRemainingRangeKm(SemiTruck truck, double currentEnergyCarrierAmount)
         {
             // Fallback to linear estimation using EnergyConsumptionPer100Km for range prediction
             if (truck.FuelConsumptionPer100Km <= 0) return double.PositiveInfinity;
-            return (currentEnergyLevel / truck.FuelConsumptionPer100Km) * 100.0;
+            return (currentEnergyCarrierAmount / truck.FuelConsumptionPer100Km) * 100.0;
         }
         
         private static double GetJoulesPerUnit(FuelCarrierType type)
