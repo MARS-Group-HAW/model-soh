@@ -143,6 +143,8 @@ public abstract class RoadUser : ISpatialGraphEntity
 
     /// <summary>
     /// The time it takes to refuel/recharge the vehicle in minutes.
+    /// Note: During a refuel pause, after this time elapses, the tank is reset to its maximum.
+    /// In the future, refueling could be implemented as a rate, like <c>refuelEnergyAmountPerMinute</c>, and set target refuel tank levels.
     /// </summary>
     [PropertyDescription(Name = "refuelTimeInMinutes", Ignore = true)]
     public double RefuelTimeInMinutes { get; set; } = 5;
