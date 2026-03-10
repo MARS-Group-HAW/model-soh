@@ -110,8 +110,8 @@ public abstract class RoadUser : ISpatialGraphEntity
     /// The maximum amount of its fuel source/energy carrier a truck can hold
     /// Upon initialization, the vehicle starts with a full tank
     /// </summary>
-    [PropertyDescription(Name = "maxEnergyCarrierAmount", Ignore = true)]
-    public double MaxEnergyCarrierAmount { get; set; }
+    [PropertyDescription(Name = "maxFuelCarrierAmount", Ignore = true)]
+    public double MaxFuelCarrierAmount { get; set; }
     
     /// <summary>
     /// The average amount of fuel a truck uses during 100km

@@ -17,7 +17,7 @@ namespace SOHModel.SemiTruck.Model
         private const double AirDensity = 1.225; // kg/m^3
         private const double Gravity = 9.81; // m/s^2
         
-        public double CalculateEnergyCarrierAmountUsed(SemiTruck truck, double distanceDrivenKm, double timeStepSeconds, double incline)
+        public double CalculateFuelCarrierAmountUsed(SemiTruck truck, double distanceDrivenKm, double timeStepSeconds, double incline)
         {
             if (distanceDrivenKm <= 0 || timeStepSeconds <= 0) return 0;
 
@@ -60,11 +60,11 @@ namespace SOHModel.SemiTruck.Model
             return FuelCarrierEnergyConverter.FromJoules(energyJoules, truck.FuelCarrierType);
         }
 
-        public double EstimateRemainingRangeKm(SemiTruck truck, double currentEnergyCarrierAmount)
+        public double EstimateRemainingRangeKm(SemiTruck truck, double currentFuelCarrierAmount)
         {
             // Fallback to linear estimation using EnergyConsumptionPer100Km for range prediction
             if (truck.FuelConsumptionPer100Km <= 0) return double.PositiveInfinity;
-            return (currentEnergyCarrierAmount / truck.FuelConsumptionPer100Km) * 100.0;
+            return (currentFuelCarrierAmount / truck.FuelConsumptionPer100Km) * 100.0;
         }
     }
 }

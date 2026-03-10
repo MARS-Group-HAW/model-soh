@@ -12,9 +12,9 @@ public record FuelConsumptionEntity(
     
     double Tank2WheelEfficiency,
     
-    double CurrentEnergyCarrierAmount,  // in its unit (L, kg, kWh, etc.)
+    double CurrentFuelCarrierAmount,    // in its unit (L, kg, kWh, etc.)
     double ConsumedAmount,              // in its unit (L, kg, kWh, etc.)
-    string EnergyCarrierDisplayUnit,
+    string EnergyFuelDisplayUnit,
     
     double CurrentEnergyPerUnit,        // in J
     double ConsumedEnergyPerUnit        // in J

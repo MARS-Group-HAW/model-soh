@@ -7,15 +7,15 @@ namespace SOHModel.SemiTruck.Model
     {
         public FuelStrategyType FuelStrategy => FuelStrategyType.Linear;
 
-        public double CalculateEnergyCarrierAmountUsed(SemiTruck truck, double distanceDrivenKm, double timeStepSeconds, double incline)
+        public double CalculateFuelCarrierAmountUsed(SemiTruck truck, double distanceDrivenKm, double timeStepSeconds, double incline)
         {
             return (truck.FuelConsumptionPer100Km / 100.0) * distanceDrivenKm;
         }
 
-        public double EstimateRemainingRangeKm(SemiTruck truck, double currentEnergyCarrierAmount)
+        public double EstimateRemainingRangeKm(SemiTruck truck, double currentFuelCarrierAmount)
         {
             if (truck.FuelConsumptionPer100Km <= 0) return double.PositiveInfinity;
-            return (currentEnergyCarrierAmount / truck.FuelConsumptionPer100Km) * 100.0;
+            return (currentFuelCarrierAmount / truck.FuelConsumptionPer100Km) * 100.0;
         }
     }
 }

@@ -14,7 +14,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         private bool _routeChanged;
 
         public double CurrentIncline { get; private set; }
-        public double EnergyCarrierAmount { get; set; }
+        public double FuelCarrierAmount { get; set; }
 
         /// <summary>
         /// Marks that the route has changed, which affects fuel consumption tracking.
@@ -48,26 +48,26 @@ namespace SOHModel.SemiTruck.Model.Driver.State
 
                 // Calculate energy usage and reduce level
                 double timeStepSeconds = layer._tickDuration.TotalSeconds;
-                double consumedAmount = truck.FuelConsumptionStrategy.CalculateEnergyCarrierAmountUsed(truck, distanceDrivenKm, timeStepSeconds, CurrentIncline);
-                EnergyCarrierAmount -= consumedAmount;
+                double consumedAmount = truck.FuelConsumptionStrategy.CalculateFuelCarrierAmountUsed(truck, distanceDrivenKm, timeStepSeconds, CurrentIncline);
+                FuelCarrierAmount -= consumedAmount;
 
-                if (EnergyCarrierAmount <= 0)
+                if (FuelCarrierAmount <= 0)
                 {
-                    EnergyCarrierAmount = 0;
+                    FuelCarrierAmount = 0;
                     // Truck has no energy left; will stop moving until refueled
                     //TODO What should happen when a truck runs out of energy?
                 }
                 
                 PostgresDbLogger.Instance?.Log(new FuelConsumptionEntity(
-                    truck.ID, 
-                    truck.Layer?.GetCurrentTick() ?? -1, 
-                    truck.FuelConsumptionStrategy.FuelStrategy, 
-                    truck.FuelCarrierType, 
-                    truck.Tank2WheelEfficiency, 
-                    EnergyCarrierAmount, 
+                    truck.ID,
+                    truck.Layer?.GetCurrentTick() ?? -1,
+                    truck.FuelConsumptionStrategy.FuelStrategy,
+                    truck.FuelCarrierType,
+                    truck.Tank2WheelEfficiency,
+                    FuelCarrierAmount,
                     consumedAmount,
                     FuelCarrierEnergyConverter.GetDisplayUnit(truck.FuelCarrierType),
-                    FuelCarrierEnergyConverter.ToJoules(EnergyCarrierAmount, truck.FuelCarrierType),
+                    FuelCarrierEnergyConverter.ToJoules(FuelCarrierAmount, truck.FuelCarrierType),
                     FuelCarrierEnergyConverter.ToJoules(consumedAmount, truck.FuelCarrierType)
                     )
                 );

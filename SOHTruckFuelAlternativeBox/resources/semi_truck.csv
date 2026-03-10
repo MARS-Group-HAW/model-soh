@@ -1,4 +1,4 @@
-type,maxAcceleration,maxDeceleration,maxSpeed,length,height,width,trafficCode,passengerCapacity,velocity,mass,maxIncline,accidentsPerYear,power,energyType,maxEnergyAmount,tank2wheel,energyConsumptionPer100km,refuelTimeInMinutes,FuelStrategy
+type,maxAcceleration,maxDeceleration,maxSpeed,length,height,width,trafficCode,passengerCapacity,velocity,mass,maxIncline,accidentsPerYear,power,fuelCarrierType,maxFuelCarrierAmount,tank2wheel,fuelConsumptionPer100km,refuelTimeInMinutes,FuelStrategy
 SmallTruck,1.0,1.2,30.83,6,2.5,2.5,german,2,0,5.0,25,11169,141,Fuel,100,0.35,15,5,RoadLoad
 MediumLoadTruck,1.0,1.2,30.83,8,2.5,2.5,german,2,0,10.0,22,1464,141,Fuel,100,0.35,18,5,Linear
 HeavyLoadTruck,1.0,1.2,30.83,10,2.5,2.5,german,2,0,15.0,18,685,240,Fuel,160,0.35,20,5,Linear

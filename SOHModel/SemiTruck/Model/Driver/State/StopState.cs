@@ -85,7 +85,10 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                     GetStopType(),
                     RestEventType.Start,
                     driver.Position.Latitude,
-                    driver.Position.Longitude, driver.EnergyLevel));
+                    driver.Position.Longitude, 
+                    driver.FuelCarrierAmount
+                    )
+                );
                 OnArrival(layer);
                 _goingToStop = false;
                 _isPausing = true;
@@ -101,7 +104,10 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                     GetStopType(),
                     RestEventType.End,
                     driver.Position.Latitude,
-                    driver.Position.Longitude, driver.EnergyLevel));
+                    driver.Position.Longitude, 
+                    driver.FuelCarrierAmount
+                    )
+                );
 
                 OnPauseCompleted(layer, truck, fuelTracker, driver);
 
