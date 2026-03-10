@@ -57,7 +57,7 @@ namespace SOHModel.SemiTruck.Model
             double energyJoules = (powerWatts / Math.Max(0.01, truck.Tank2WheelEfficiency)) * timeStepSeconds;
 
             // Convert Joules to Energy units
-            return energyJoules / GetJoulesPerUnit(truck.FuelCarrierType);
+            return FuelCarrierEnergyConverter.FromJoules(energyJoules, truck.FuelCarrierType);
         }
 
         public double EstimateRemainingRangeKm(SemiTruck truck, double currentEnergyCarrierAmount)
@@ -65,17 +65,6 @@ namespace SOHModel.SemiTruck.Model
             // Fallback to linear estimation using EnergyConsumptionPer100Km for range prediction
             if (truck.FuelConsumptionPer100Km <= 0) return double.PositiveInfinity;
             return (currentEnergyCarrierAmount / truck.FuelConsumptionPer100Km) * 100.0;
-        }
-        
-        private static double GetJoulesPerUnit(FuelCarrierType type)
-        {
-            return type switch
-            {
-                FuelCarrierType.Fuel => 36_000_000,     // 36 MJ/L (Diesel)
-                FuelCarrierType.Battery => 3_600_000,    // 3.6 MJ/kWh
-                FuelCarrierType.Hydrogen => 120_000_000, // 120 MJ/kg
-                _ => 36_000_000
-            };
         }
     }
 }

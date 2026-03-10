@@ -1,5 +1,6 @@
 using System;
 using SOHModel.Database;
+using SOHModel.Domain.Model;
 using SOHModel.SemiTruck.Steering;
 
 namespace SOHModel.SemiTruck.Model.Driver.State
@@ -57,7 +58,19 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                     //TODO What should happen when a truck runs out of energy?
                 }
                 
-                PostgresDbLogger.Instance?.Log(new FuelConsumptionEntity(truck.ID, truck.Layer?.GetCurrentTick() ?? -1, truck.FuelConsumptionStrategy.FuelStrategy, truck.FuelCarrierType, truck.Tank2WheelEfficiency, EnergyCarrierAmount, consumedAmount));
+                PostgresDbLogger.Instance?.Log(new FuelConsumptionEntity(
+                    truck.ID, 
+                    truck.Layer?.GetCurrentTick() ?? -1, 
+                    truck.FuelConsumptionStrategy.FuelStrategy, 
+                    truck.FuelCarrierType, 
+                    truck.Tank2WheelEfficiency, 
+                    EnergyCarrierAmount, 
+                    consumedAmount,
+                    FuelCarrierEnergyConverter.GetDisplayUnit(truck.FuelCarrierType),
+                    FuelCarrierEnergyConverter.ToJoules(EnergyCarrierAmount, truck.FuelCarrierType),
+                    FuelCarrierEnergyConverter.ToJoules(consumedAmount, truck.FuelCarrierType)
+                    )
+                );
             }
 
             _lastRemainingDistanceToGoal = currentRemainingDistance;
