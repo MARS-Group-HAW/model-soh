@@ -62,7 +62,7 @@ namespace SOHModel.SemiTruck.Model
             SemiTruck.Environment = _environment;
             SemiTruck.Layer = _layer;
             SemiTruck.InitializeFuelStrategy();
-            _fuelTracker.EnergyLevel = SemiTruck.MaxEnergyAmount;
+            _fuelTracker.EnergyCarrierAmount = SemiTruck.MaxEnergyCarrierAmount;
             DefaultAccidentsPerYear = SemiTruck.AccidentsPerYear;
             _accidentState.DefaultAccidentsPerYear = DefaultAccidentsPerYear;
 
@@ -234,11 +234,11 @@ namespace SOHModel.SemiTruck.Model
 
         public double EnergyLevel
         {
-            get => _fuelTracker?.EnergyLevel ?? 0;
-            set { if (_fuelTracker != null) _fuelTracker.EnergyLevel = value; }
+            get => _fuelTracker?.EnergyCarrierAmount ?? 0;
+            set { if (_fuelTracker != null) _fuelTracker.EnergyCarrierAmount = value; }
         }
 
-        public string EnergyType => SemiTruck?.EnergyType.ToString() ?? "Unknown";
+        public string EnergyType => SemiTruck?.FuelCarrierType.ToString() ?? "Unknown";
 
         public double Latitude => Position?.Latitude ?? 0.0;
 

@@ -8,10 +8,10 @@ public record FuelConsumptionEntity(
     long Tick,
     
     FuelStrategyType StrategyType,
-    EnergyType EnergyType,
+    FuelCarrierType FuelCarrierType,
     
     double Tank2WheelEfficiency,
     
-    double CurrentEnergyLevel,
-    double EnergyUsed
+    double CurrentEnergyCarrierAmount,
+    double ConsumedAmount
 );

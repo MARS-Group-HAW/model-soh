@@ -17,7 +17,7 @@ namespace SOHModel.SemiTruck.Model
         private const double AirDensity = 1.225; // kg/m^3
         private const double Gravity = 9.81; // m/s^2
         
-        public double CalculateEnergyUsed(SemiTruck truck, double distanceDrivenKm, double timeStepSeconds, double incline)
+        public double CalculateEnergyCarrierAmountUsed(SemiTruck truck, double distanceDrivenKm, double timeStepSeconds, double incline)
         {
             if (distanceDrivenKm <= 0 || timeStepSeconds <= 0) return 0;
 
@@ -57,7 +57,7 @@ namespace SOHModel.SemiTruck.Model
             double energyJoules = (powerWatts / Math.Max(0.01, truck.Tank2WheelEfficiency)) * timeStepSeconds;
 
             // Convert Joules to Energy units
-            return energyJoules / GetJoulesPerUnit(truck.EnergyType);
+            return energyJoules / GetJoulesPerUnit(truck.FuelCarrierType);
         }
 
         public double EstimateRemainingRangeKm(SemiTruck truck, double currentEnergyLevel)
@@ -67,13 +67,13 @@ namespace SOHModel.SemiTruck.Model
             return (currentEnergyLevel / truck.EnergyConsumptionPer100Km) * 100.0;
         }
         
-        private static double GetJoulesPerUnit(EnergyType type)
+        private static double GetJoulesPerUnit(FuelCarrierType type)
         {
             return type switch
             {
-                EnergyType.Fuel => 36_000_000,     // 36 MJ/L (Diesel)
-                EnergyType.Battery => 3_600_000,    // 3.6 MJ/kWh
-                EnergyType.Hydrogen => 120_000_000, // 120 MJ/kg
+                FuelCarrierType.Fuel => 36_000_000,     // 36 MJ/L (Diesel)
+                FuelCarrierType.Battery => 3_600_000,    // 3.6 MJ/kWh
+                FuelCarrierType.Hydrogen => 120_000_000, // 120 MJ/kg
                 _ => 36_000_000
             };
         }

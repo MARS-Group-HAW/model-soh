@@ -1,6 +1,6 @@
 namespace SOHModel.Domain.Model;
 
-public enum EnergyType
+public enum FuelCarrierType
 {
     Fuel,
     Battery,

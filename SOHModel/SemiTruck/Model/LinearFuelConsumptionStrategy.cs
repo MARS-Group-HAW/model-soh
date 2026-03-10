@@ -7,7 +7,7 @@ namespace SOHModel.SemiTruck.Model
     {
         public FuelStrategyType FuelStrategy => FuelStrategyType.Linear;
 
-        public double CalculateEnergyUsed(SemiTruck truck, double distanceDrivenKm, double timeStepSeconds, double incline)
+        public double CalculateEnergyCarrierAmountUsed(SemiTruck truck, double distanceDrivenKm, double timeStepSeconds, double incline)
         {
             return (truck.EnergyConsumptionPer100Km / 100.0) * distanceDrivenKm;
         }

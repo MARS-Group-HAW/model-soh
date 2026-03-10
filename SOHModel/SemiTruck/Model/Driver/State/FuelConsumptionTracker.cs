@@ -13,7 +13,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         private bool _routeChanged;
 
         public double CurrentIncline { get; private set; }
-        public double EnergyLevel { get; set; }
+        public double EnergyCarrierAmount { get; set; }
 
         /// <summary>
         /// Marks that the route has changed, which affects fuel consumption tracking.
@@ -47,17 +47,17 @@ namespace SOHModel.SemiTruck.Model.Driver.State
 
                 // Calculate energy usage and reduce level
                 double timeStepSeconds = layer._tickDuration.TotalSeconds;
-                double energyUsed = truck.FuelConsumptionStrategy.CalculateEnergyUsed(truck, distanceDrivenKm, timeStepSeconds, CurrentIncline);
-                EnergyLevel -= energyUsed;
+                double consumedAmount = truck.FuelConsumptionStrategy.CalculateEnergyCarrierAmountUsed(truck, distanceDrivenKm, timeStepSeconds, CurrentIncline);
+                EnergyCarrierAmount -= consumedAmount;
 
-                if (EnergyLevel <= 0)
+                if (EnergyCarrierAmount <= 0)
                 {
-                    EnergyLevel = 0;
+                    EnergyCarrierAmount = 0;
                     // Truck has no energy left; will stop moving until refueled
                     //TODO What should happen when a truck runs out of energy?
                 }
                 
-                PostgresDbLogger.Instance?.Log(new FuelConsumptionEntity(truck.ID, truck.Layer?.GetCurrentTick() ?? -1, truck.FuelConsumptionStrategy.FuelStrategy, truck.EnergyType, truck.Tank2WheelEfficiency, EnergyLevel, energyUsed));
+                PostgresDbLogger.Instance?.Log(new FuelConsumptionEntity(truck.ID, truck.Layer?.GetCurrentTick() ?? -1, truck.FuelConsumptionStrategy.FuelStrategy, truck.FuelCarrierType, truck.Tank2WheelEfficiency, EnergyCarrierAmount, consumedAmount));
             }
 
             _lastRemainingDistanceToGoal = currentRemainingDistance;

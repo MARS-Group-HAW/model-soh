@@ -13,7 +13,7 @@ namespace SOHTests
             var truck = new SemiTruck { EnergyConsumptionPer100Km = 20 };
             
             // 10 km should use 2 units
-            double energyUsed = strategy.CalculateEnergyUsed(truck, 10.0, 1.0, 0.0);
+            double energyUsed = strategy.CalculateEnergyCarrierAmountUsed(truck, 10.0, 1.0, 0.0);
             Assert.Equal(2.0, energyUsed, 3);
             
             // Range estimate: 100 units / 20 units/100km = 500 km
@@ -33,20 +33,20 @@ namespace SOHTests
                 DragCoefficient = 0.6,
                 RollingResistance = 0.01,
                 Tank2WheelEfficiency = 0.35,
-                EnergyType = EnergyType.Fuel,
+                FuelCarrierType = FuelCarrierType.Fuel,
                 Velocity = 22.22, // 80 km/h
                 Acceleration = 0
             };
 
             // Energy for 1 second at 80 km/h (approx 22.22 m)
             double distanceKm = (22.22 * 1.0) / 1000.0;
-            double energyUsed = strategy.CalculateEnergyUsed(truck, distanceKm, 1.0, 0.0);
+            double consumedAmount = strategy.CalculateEnergyCarrierAmountUsed(truck, distanceKm, 1.0, 0.0);
             
-            Assert.True(energyUsed > 0);
+            Assert.True(consumedAmount > 0);
             
             // Check if incline increases consumption
-            double energyUsedWithIncline = strategy.CalculateEnergyUsed(truck, distanceKm, 1.0, 5.0);
-            Assert.True(energyUsedWithIncline > energyUsed);
+            double consumedAmountWithIncline = strategy.CalculateEnergyCarrierAmountUsed(truck, distanceKm, 1.0, 5.0);
+            Assert.True(consumedAmountWithIncline > consumedAmount);
         }
     }
 }

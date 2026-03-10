@@ -25,7 +25,7 @@ namespace SOHModel.SemiTruck.Model
         /// <param name="timeStepSeconds">The duration of the last tick in seconds.</param>
         /// <param name="incline">The current incline of the road in percent.</param>
         /// <returns>The amount of energy used (in the same unit as EnergyLevel).</returns>
-        double CalculateEnergyUsed(SemiTruck truck, double distanceDrivenKm, double timeStepSeconds, double incline);
+        double CalculateEnergyCarrierAmountUsed(SemiTruck truck, double distanceDrivenKm, double timeStepSeconds, double incline);
 
         /// <summary>
         /// Estimates the remaining range of the truck in km based on the current energy level.

@@ -32,7 +32,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             SemiTruck truck, FuelConsumptionTracker fuelTracker)
         {
             // Estimate how far the truck can go with current energy (in km)
-            double availableRangeKm = truck.FuelConsumptionStrategy.EstimateRemainingRangeKm(truck, fuelTracker.EnergyLevel);
+            double availableRangeKm = truck.FuelConsumptionStrategy.EstimateRemainingRangeKm(truck, fuelTracker.EnergyCarrierAmount);
 
             // Check condition: If range is too low and there's distance to go
             if (availableRangeKm < SemiTruckDriverConstants.LowFuelThreshold)
@@ -50,7 +50,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         protected override void OnPauseCompleted(SemiTruckLayer layer, SemiTruck truck,
             FuelConsumptionTracker fuelTracker, SemiTruckDriver driver)
         {
-            fuelTracker.EnergyLevel = truck.MaxEnergyAmount; // Reset to full
+            fuelTracker.EnergyCarrierAmount = truck.MaxEnergyCarrierAmount; // Reset to full
         }
 
         protected override void OnArrival(SemiTruckLayer layer)

@@ -100,21 +100,24 @@ public abstract class RoadUser : ISpatialGraphEntity
     public double AccidentsPerYear { get; set; }
     
     /// <summary>
-    /// The type of energy used by the vehicle (Fuel, Battery, Hydrogen, etc.)
+    /// The type of fuel source/energy carrier used by the vehicle (Fuel, Battery, Hydrogen, etc.)
+    /// Note the different units for energy types, such as liters for fuel, kWh for batteries, kg for hydrogen.
     /// </summary>
-    [PropertyDescription(Name = "energyType", Ignore = true)]
-    public EnergyType EnergyType { get; set; } = EnergyType.Fuel;
+    [PropertyDescription(Name = "fuelCarrierType", Ignore = true)]
+    public FuelCarrierType FuelCarrierType { get; set; } = FuelCarrierType.Fuel;
 
     /// <summary>
-    /// The maximum amount of Energy a truck can hold
+    /// The maximum amount of its fuel source/energy carrier a truck can hold
+    /// Upon initialization, the vehicle starts with a full tank
     /// </summary>
-    [PropertyDescription(Name = "maxEnergyAmount", Ignore = true)]
-    public double MaxEnergyAmount { get; set; }
+    [PropertyDescription(Name = "maxEnergyCarrierAmount", Ignore = true)]
+    public double MaxEnergyCarrierAmount { get; set; }
     
     /// <summary>
-    /// The average amount of energy a truck uses during 100km
+    /// The average amount of fuel a truck uses during 100km
+    /// Used for linear interpolation
     /// </summary>
-    [PropertyDescription(Name = "energyConsumptionPer100km", Ignore = true)]
+    [PropertyDescription(Name = "fuelConsumptionPer100km", Ignore = true)]
     public double EnergyConsumptionPer100Km  { get; set; }
 
     /// <summary>
