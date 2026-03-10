@@ -118,7 +118,7 @@ public abstract class RoadUser : ISpatialGraphEntity
     /// Used for linear interpolation
     /// </summary>
     [PropertyDescription(Name = "fuelConsumptionPer100km", Ignore = true)]
-    public double EnergyConsumptionPer100Km  { get; set; }
+    public double FuelConsumptionPer100Km  { get; set; }
 
     /// <summary>
     /// Drag coefficient of the vehicle (unitless).

@@ -10,7 +10,7 @@ namespace SOHTests
         public void TestLinearStrategy()
         {
             var strategy = new LinearFuelConsumptionStrategy();
-            var truck = new SemiTruck { EnergyConsumptionPer100Km = 20 };
+            var truck = new SemiTruck { FuelConsumptionPer100Km = 20 };
             
             // 10 km should use 2 units
             double energyUsed = strategy.CalculateEnergyCarrierAmountUsed(truck, 10.0, 1.0, 0.0);
