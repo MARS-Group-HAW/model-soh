@@ -31,7 +31,7 @@ namespace SOHModel.SemiTruck.Model
         /// Estimates the remaining range of the truck in km based on the current energy level.
         /// </summary>
         /// <param name="truck">The SemiTruck instance.</param>
-        /// <param name="currentFuelCarrierAmount">The current energy level.</param>
+        /// <param name="currentFuelCarrierAmount">The current amount of fuel (in the same unit as the <see cref="SOHModel.Domain.Model.RoadUser.FuelCarrierType"/>.</param>
         /// <returns>The estimated remaining range in km.</returns>
         double EstimateRemainingRangeKm(SemiTruck truck, double currentFuelCarrierAmount);
     }

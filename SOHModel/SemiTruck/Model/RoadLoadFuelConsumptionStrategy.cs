@@ -60,6 +60,12 @@ namespace SOHModel.SemiTruck.Model
             return FuelCarrierEnergyConverter.FromJoules(energyJoules, truck.FuelCarrierType);
         }
 
+        // TODO instead of linear estimation, use more accurate model
+        // some options:
+        // 1. steady state baseline: assume a=0 and theta=0 to get F_steady
+        // 2. exponential moving average: use historical consumption of last few kilometers to project future
+        // 3. horizon prediction: since we know the whole route (not accounting for stops) we can project segments of the whole route
+        // see https://doi.org/10.1504/IJVD.2024.10062758 for example
         public double EstimateRemainingRangeKm(SemiTruck truck, double currentFuelCarrierAmount)
         {
             // Fallback to linear estimation using EnergyConsumptionPer100Km for range prediction
