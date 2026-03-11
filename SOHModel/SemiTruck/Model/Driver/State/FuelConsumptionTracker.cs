@@ -34,8 +34,9 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         {
             double currentRemainingDistance = steeringHandle.Route.RemainingRouteDistanceToGoal;
             double distanceDrivenKm = 0.0;
+            double consumedAmount = 0.0;
 
-            // If the route changed, skip distance calculation to avoid negative values
+            // If the route changed or this is the first tick, skip distance calculation to avoid negative values
             if (_routeChanged || _lastRemainingDistanceToGoal < 0)
             {
                 _routeChanged = false;
@@ -48,7 +49,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
 
                 // Calculate energy usage and reduce level
                 double timeStepSeconds = layer._tickDuration.TotalSeconds;
-                double consumedAmount = truck.FuelConsumptionStrategy.CalculateFuelCarrierAmountUsed(truck, distanceDrivenKm, timeStepSeconds, CurrentIncline);
+                consumedAmount = truck.FuelConsumptionStrategy.CalculateFuelCarrierAmountUsed(truck, distanceDrivenKm, timeStepSeconds, CurrentIncline);
                 FuelCarrierAmount -= consumedAmount;
 
                 if (FuelCarrierAmount <= 0)
@@ -57,22 +58,22 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                     // Truck has no energy left; will stop moving until refueled
                     //TODO What should happen when a truck runs out of energy?
                 }
-                
-                PostgresDbLogger.Instance?.Log(new FuelConsumptionEntity(
-                    truck.ID,
-                    truck.Layer?.GetCurrentTick() ?? -1,
-                    truck.FuelConsumptionStrategy.FuelStrategy,
-                    truck.FuelCarrierType,
-                    truck.Tank2WheelEfficiency,
-                    FuelCarrierAmount,
-                    consumedAmount,
-                    FuelCarrierAmount / truck.MaxFuelCarrierAmount,
-                    FuelCarrierEnergyConverter.GetDisplayUnit(truck.FuelCarrierType),
-                    FuelCarrierEnergyConverter.ToJoules(FuelCarrierAmount, truck.FuelCarrierType),
-                    FuelCarrierEnergyConverter.ToJoules(consumedAmount, truck.FuelCarrierType)
-                    )
-                );
             }
+            
+            PostgresDbLogger.Instance?.Log(new FuelConsumptionEntity(
+                truck.ID,
+                truck.Layer?.GetCurrentTick() ?? -1,
+                truck.FuelConsumptionStrategy.FuelStrategy,
+                truck.FuelCarrierType,
+                truck.Tank2WheelEfficiency,
+                FuelCarrierAmount,
+                consumedAmount,
+                FuelCarrierAmount / truck.MaxFuelCarrierAmount,
+                FuelCarrierEnergyConverter.GetDisplayUnit(truck.FuelCarrierType),
+                FuelCarrierEnergyConverter.ToJoules(FuelCarrierAmount, truck.FuelCarrierType),
+                FuelCarrierEnergyConverter.ToJoules(consumedAmount, truck.FuelCarrierType)
+                )
+            );
 
             _lastRemainingDistanceToGoal = currentRemainingDistance;
         }
