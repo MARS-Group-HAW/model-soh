@@ -59,7 +59,16 @@ public class VehicleSteeringHandle
     public double Velocity => Vehicle.Velocity;
     public bool GoalReached => Route?.GoalReached ?? true;
 
-    public virtual void Move()
+    public void Move()
+    {
+        Move(performMovement: true);
+    }
+
+    /// <summary>
+    /// Executes the vehicle movement logic, including decision-making and logging.
+    /// </summary>
+    /// <param name="performMovement">Whether to actually move the vehicle. Set to false for logging.</param>
+    public virtual void Move(bool performMovement)
     {
         if (GoalReached || (Vehicle.CurrentEdge == null && !MoveFromNodeSuccessfully())) return;
 
@@ -94,7 +103,10 @@ public class VehicleSteeringHandle
         var drivingDistance = CalculateDrivingDistance(deceleration);
         decisionData.CalculatedDrivingDistance = drivingDistance;
 
-        PerformMoveAction(drivingDistance);
+        if (performMovement)
+        {
+            PerformMoveAction(drivingDistance);
+        }
 
         // Log decision data
         LogDecisionData(decisionData, positionBefore);
@@ -111,6 +123,15 @@ public class VehicleSteeringHandle
     {
         Vehicle.Velocity = 0;
         Vehicle.Acceleration = 0;
+    }
+
+    /// <summary>
+    /// logs the initial state of the vehicle at tick 0 without actually moving.
+    /// this ensures the first tick of data is logged to match when the agent itself is registered.
+    /// </summary>
+    public void LogInitialState()
+    {
+        Move(performMovement: false);
     }
 
     private double HandleBraking(double deceleration, ref DecisionData decisionData)

@@ -108,6 +108,10 @@ namespace SOHModel.SemiTruck.Model
 
             // Initialize rest state
             _restState.Initialize(_layer._simulationTime);
+
+            // log initial state at tick 0 (fuel consumption, physics, and decision data)
+            _steeringHandle.LogInitialState();
+            _fuelTracker.UpdateConsumption(_steeringHandle, _layer, SemiTruck);
         }
 
         /// <summary>
