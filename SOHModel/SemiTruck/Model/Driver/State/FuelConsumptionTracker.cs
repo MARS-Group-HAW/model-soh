@@ -66,6 +66,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                     truck.Tank2WheelEfficiency,
                     FuelCarrierAmount,
                     consumedAmount,
+                    FuelCarrierAmount / truck.MaxFuelCarrierAmount,
                     FuelCarrierEnergyConverter.GetDisplayUnit(truck.FuelCarrierType),
                     FuelCarrierEnergyConverter.ToJoules(FuelCarrierAmount, truck.FuelCarrierType),
                     FuelCarrierEnergyConverter.ToJoules(consumedAmount, truck.FuelCarrierType)
