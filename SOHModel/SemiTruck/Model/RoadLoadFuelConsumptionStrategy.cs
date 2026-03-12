@@ -17,6 +17,12 @@ namespace SOHModel.SemiTruck.Model
         private const double AirDensity = 1.225; // kg/m^3
         private const double Gravity = 9.81; // m/s^2
         
+        // recuperation blending (alpha) changes can change with a bunch of factors:
+        // in many cases, like downhill with mild braking and moderate SoC (State of Charge), alpha is around 1.
+        // a full battery: alpha << 1. very low speed: alpha -> 0.
+        // right now, we assume alpha = 0.9 for simplicity.
+        private const double RecuperationFactor = 0.9; 
+        
         public double CalculateFuelCarrierAmountUsed(SemiTruck truck, double distanceDrivenKm, double timeStepSeconds, double incline)
         {
             if (distanceDrivenKm <= 0 || timeStepSeconds <= 0) return 0;
@@ -46,18 +52,46 @@ namespace SOHModel.SemiTruck.Model
 
             // Total force
             double F_total = F_rolling + F_drag + F_gradient + F_accel;
-            
-            // Engines usually don't recover energy when braking (unless electric, handled simply here)
-            if (F_total < 0) F_total = 0;
 
             // Power = Force * Velocity
             double powerWatts = F_total * v;
-            
-            // Energy = Power * Time (scaled by tank-to-wheel efficiency)
-            double energyJoules = (powerWatts / Math.Max(0.01, truck.Tank2WheelEfficiency)) * timeStepSeconds;
+
+            double efficiency = Math.Max(0.01, truck.Tank2WheelEfficiency);
+
+            double energyJoules = CalculateEnergyTransfer(truck, powerWatts, efficiency, timeStepSeconds);
 
             // Convert Joules to Energy units
             return FuelCarrierEnergyConverter.FromJoules(energyJoules, truck.FuelCarrierType);
+        }
+
+        /// <summary>
+        /// calculates the energy transfer from a power source to a fuel carrier, or the other way around (recuperation).
+        /// </summary>
+        /// <returns>energy which transferred from power source to fuel carrier (consumption) or the other way around (recuperation)</returns>
+        private static double CalculateEnergyTransfer(SemiTruck truck, double powerWatts, double tank2WheelEfficiency,
+            double timeStepSeconds)
+        {
+            double energyJoules;
+
+            if (powerWatts >= 0)
+            {
+                // propulsion: stored energy -> wheel energy
+                energyJoules = (powerWatts / tank2WheelEfficiency) * timeStepSeconds;
+            }
+            else if (truck.FuelCarrierType == FuelCarrierType.Battery)
+            {
+                // recuperation for battery-electric trucks:
+                // wheel/braking energy -> stored battery energy
+                // negative result means battery charge is increased.
+                energyJoules = powerWatts * tank2WheelEfficiency * RecuperationFactor * timeStepSeconds;
+            }
+            else
+            {
+                // non-battery trucks do not recuperate
+                energyJoules = 0;
+            }
+
+            return energyJoules;
         }
 
         // TODO instead of linear estimation, use more accurate model

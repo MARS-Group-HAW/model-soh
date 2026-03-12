@@ -52,6 +52,12 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                 consumedAmount = truck.FuelConsumptionStrategy.CalculateFuelCarrierAmountUsed(truck, distanceDrivenKm, timeStepSeconds, CurrentIncline);
                 FuelCarrierAmount -= consumedAmount;
 
+                // clamp to max energy level
+                if (FuelCarrierAmount > truck.MaxFuelCarrierAmount)
+                {
+                    FuelCarrierAmount = truck.MaxFuelCarrierAmount;
+                }
+
                 if (FuelCarrierAmount <= 0)
                 {
                     FuelCarrierAmount = 0;
