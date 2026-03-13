@@ -1,0 +1,116 @@
+{
+  "id": "rathausmarkt_2024",
+  "globals": {
+    "deltaT": 1,
+    "startPoint": "2024-12-10T18:00:00",
+    "endPoint": "2024-12-10T18:04:00",
+    "deltaTUnit": "seconds",
+    "console": true,
+    "npgSqlOptions": {
+      "host": "localhost",
+      "user": "mars",
+      "password": "anomaly",
+      "overrideByConflict": false
+    }
+  },
+  "agents": [
+    {
+      "name": "MarketAnalyticsAgent",
+      "count": 1,
+      "output": "postgres",
+      "outputFrequency": 60
+    },
+    {
+      "name": "DesireMarketTraveler",
+      "individual": [
+        {
+          "parameter": "PreferredSpeed",
+          "value": 1.4
+        },
+        {
+          "parameter": "hunger",
+          "distribution": "UniformDistribution",
+          "values": [
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "parameter": "thirst",
+          "distribution": "UniformDistribution",
+          "values": [
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "parameter": "budget",
+          "distribution": "UniformDistribution",
+          "values": [
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "value": true,
+          "parameter": "ResultTrajectoryEnabled"
+        }
+      ],
+      "output": "postgres",
+      "outputs": [
+        {
+          "kind": "trips"
+        }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "name": "SpatialGraphMediatorLayer",
+      "inputs": [
+        {
+          "file": "Resources/walk_graph_rathausmarkt.geojson",
+          "inputConfiguration": {
+            "modalities": [
+              "Walking"
+            ],
+            "isBidirectedGraph": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "MarketLayer",
+      "inputs": [
+        {
+          "file": "Resources/market_stalls.geojson"
+        }
+      ],
+      "individual": [
+        {
+          "parameter": "topLeftCorner",
+          "value": "9.992230367450674,53.550967416608785"
+        },
+        {
+          "parameter": "topRightCorner",
+          "value": "9.993077605872003,53.55039694865533"
+        },
+        {
+          "parameter": "bottomRightCorner",
+          "value": "9.993672555518117,53.55069672493096"
+        },
+        {
+          "parameter": "bottomLeftCorner",
+          "value": "9.992893096170604,53.55126495174483"
+        }
+      ]
+    },
+    {
+      "name": "MarketTravelerLayer"
+    },
+    {
+      "name": "MarketTravelerSchedulerLayer",
+      "file": "Resources/human_traveler_rathausmarkt.csv"
+    }
+  ]
+}
