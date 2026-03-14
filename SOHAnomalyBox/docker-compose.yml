@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgis/postgis:18-3.6
+    container_name: mars-postgis-anomaly
+    environment:
+      POSTGRES_USER: mars
+      POSTGRES_PASSWORD: anomaly
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./.postgres-data:/var/lib/postgresql
+      - ./init_mars_schema.sql:/docker-entrypoint-initdb.d/init_mars_schema.sql
+    restart: unless-stopped

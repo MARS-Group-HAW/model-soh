@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
+using Mars.Components.Services;
 using Mars.Interfaces.Agents;
+using Mars.Interfaces.Annotations;
 using Mars.Interfaces.Data;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Layers;
@@ -15,9 +17,14 @@ public class MarketTravelerLayer : AbstractMultimodalLayer, IMarketTravelerLayer
 {
     private RegisterAgent _registerAgent;
     private UnregisterAgent _unregisterAgent;
+ 
+    protected static readonly ConcurrentQueue<ITickClient> PendingRegistrations = new();
+    protected readonly List<MarketTraveler> _activeTravelers = new();
 
-    private static readonly ConcurrentQueue<ITickClient> PendingRegistrations = new();
-    private readonly List<MarketTraveler> _activeTravelers = new();
+    /// <summary>
+    /// Gets the unregister handle to deactivate agents.
+    /// </summary>
+    public UnregisterAgent? UnregisterAgent => _unregisterAgent;
 
     /// <summary>
     /// Initializes the layer.
@@ -26,12 +33,19 @@ public class MarketTravelerLayer : AbstractMultimodalLayer, IMarketTravelerLayer
     /// <param name="registerAgentHandle">The delegate to register agents.</param>
     /// <param name="unregisterAgentHandle">The delegate to unregister agents.</param>
     /// <returns>True when the initialization is successful.</returns>
-    public new bool InitLayer(LayerInitData layerInitData, RegisterAgent registerAgentHandle,
+    public new virtual bool InitLayer(LayerInitData layerInitData, RegisterAgent registerAgentHandle,
         UnregisterAgent unregisterAgentHandle)
     {
         _registerAgent = registerAgentHandle;
         _unregisterAgent = unregisterAgentHandle;
-        return base.InitLayer(layerInitData, registerAgentHandle, unregisterAgentHandle);
+        var result = base.InitLayer(layerInitData, registerAgentHandle, unregisterAgentHandle);
+
+        foreach (var config in layerInitData.AgentInitConfigs)
+        {
+            AgentManager.SpawnAgents(config, registerAgentHandle, unregisterAgentHandle, [this]);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -48,7 +62,7 @@ public class MarketTravelerLayer : AbstractMultimodalLayer, IMarketTravelerLayer
     /// Unregisters an agent from the simulation and removes it from the internal tracking list.
     /// </summary>
     /// <param name="agent">The agent to be unregistered.</param>
-    public void Unregister(ITickClient agent)
+    public virtual void Unregister(ITickClient agent)
     {
         if (agent is MarketTraveler traveler)
         {
@@ -84,7 +98,7 @@ public class MarketTravelerLayer : AbstractMultimodalLayer, IMarketTravelerLayer
     /// <param name="position">The center of the search area.</param>
     /// <param name="radius">The search radius in meters.</param>
     /// <returns>An enumeration of nearby MarketTraveler agents.</returns>
-    public IEnumerable<MarketTraveler> GetNearest(Position position, double radius)
+    public virtual IEnumerable<MarketTraveler> GetNearest(Position position, double radius)
     {
         if (position == null)
         {

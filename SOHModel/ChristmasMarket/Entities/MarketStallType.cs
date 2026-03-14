@@ -8,5 +8,9 @@ public enum MarketStallType
 {
     Glühwein,
     Gastronomie,
-    Verkaufsstand
+    Verkaufsstand,
+    Toilette,
+    Feuertonne,
+    Geldautomat,
+    Bühne
 }

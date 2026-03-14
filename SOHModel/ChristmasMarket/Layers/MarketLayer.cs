@@ -37,12 +37,22 @@ public class MarketLayer : VectorLayer, ILayer
     private RegisterAgent _registerAgent;
     private UnregisterAgent _unregisterAgent;
 
-    private readonly HashSet<MarketTraveler> _activeTravelers = new();
+    private readonly ConcurrentDictionary<MarketTraveler, byte> _activeTravelers = new();
     private static readonly ConcurrentQueue<ITickClient> PendingRegistrations = new();
 
     public ISimulationContext Context { get; private set; }
     private readonly List<MarketStall> _stalls = new();
     public IReadOnlyList<MarketStall> Stalls => _stalls;
+
+    [PropertyDescription]
+    public int ActiveVisitors => _activeTravelers.Count;
+
+    [PropertyDescription]
+    public string MarketStallsJson => System.Text.Json.JsonSerializer.Serialize(_stalls.Select(s => new {
+        Name = s.StallName,
+        X = s.Position?.X,
+        Y = s.Position?.Y
+    }));
 
     private List<(double lon, double lat)> _marketPolygon;
     private bool _polygonParsed;
@@ -89,14 +99,52 @@ public class MarketLayer : VectorLayer, ILayer
             }
 
             stall.ID = Guid.NewGuid();
+            
+            // Set capacity and service time based on type
+            switch (stall.Type)
+            {
+                case MarketStallType.Glühwein:
+                    stall.Capacity = 4;
+                    stall.ServiceTime = 15; // ~15 seconds
+                    break;
+                case MarketStallType.Gastronomie:
+                    stall.Capacity = 2;
+                    stall.ServiceTime = 30; // ~30 seconds
+                    break;
+                case MarketStallType.Verkaufsstand:
+                    stall.Capacity = 1;
+                    stall.ServiceTime = 20;
+                    break;
+                case MarketStallType.Toilette:
+                    stall.Capacity = 2;
+                    stall.ServiceTime = 45;
+                    break;
+                case MarketStallType.Geldautomat:
+                    stall.Capacity = 1;
+                    stall.ServiceTime = 30;
+                    break;
+                case MarketStallType.Feuertonne:
+                    stall.Capacity = 6;
+                    stall.ServiceTime = 60; // Stay for ~1 minute
+                    break;
+                case MarketStallType.Bühne:
+                    stall.Capacity = 10000; // Infinite
+                    stall.ServiceTime = 0; // Continuous
+                    break;
+                default:
+                    stall.Capacity = 1;
+                    stall.ServiceTime = 10;
+                    break;
+            }
+            
             _stalls.Add(stall);
         }
 
-        Console.WriteLine($"[INFO] Loaded and initialized {_stalls.Count} market stalls");
+        // Console.WriteLine($"[INFO] Loaded and initialized {_stalls.Count} market stalls");
         foreach (var stall in _stalls)
         {
-            Console.WriteLine(
-                $"[INFO] Stall '{stall.StallName}' of type '{stall.Type}' at ({stall.Position.X:F6}, {stall.Position.Y:F6})");
+            // Console.WriteLine(
+            //     $"[INFO] Stall '{stall.StallName}' of type '{stall.Type}' at ({stall.Position.X:F6}, {stall.Position.Y:F6})");
         }
 
         return true;
@@ -115,7 +163,7 @@ public class MarketLayer : VectorLayer, ILayer
             return new List<MarketTraveler>();
         }
 
-        return _activeTravelers
+        return _activeTravelers.Keys
             .Where(traveler => traveler.Position != null && position.DistanceInMTo(traveler.Position) < radius)
             .ToList();
     }
@@ -182,6 +230,12 @@ public class MarketLayer : VectorLayer, ILayer
         _currentTick = currentStep;
         base.SetCurrentTick(currentStep);
 
+        // Tick all stalls to process queues
+        foreach (var stall in _stalls)
+        {
+            stall.Tick();
+        }
+
         while (PendingRegistrations.TryDequeue(out var agent))
         {
             _registerAgent?.Invoke(this, agent);
@@ -196,7 +250,7 @@ public class MarketLayer : VectorLayer, ILayer
     {
         if (agent is MarketTraveler traveler)
         {
-            _activeTravelers.Add(traveler);
+            _activeTravelers.TryAdd(traveler, 0);
         }
 
         _registerAgent?.Invoke(this, agent);
@@ -210,7 +264,7 @@ public class MarketLayer : VectorLayer, ILayer
     {
         if (agent is MarketTraveler traveler)
         {
-            _activeTravelers.Remove(traveler);
+            _activeTravelers.TryRemove(traveler, out _);
         }
 
         _unregisterAgent?.Invoke(this, agent);
