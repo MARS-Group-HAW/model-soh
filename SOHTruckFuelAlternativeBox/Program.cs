@@ -22,6 +22,7 @@ internal static class Program
             .Register<VehicleSteeringDecisionEntity>("vehicle_steering_decision")
             .Register<VehicleSteeringPhysicsEntity>("vehicle_steering_physics")
             .Register<FuelConsumptionEntity>("fuel_consumption")
+            .Register<RoadLoadEntity>("road_load")
             .ClearAllTables();
 
         var watch = Stopwatch.StartNew();

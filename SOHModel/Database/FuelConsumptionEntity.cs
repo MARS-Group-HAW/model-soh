@@ -21,3 +21,24 @@ public record FuelConsumptionEntity(
     double CurrentEnergyPerUnit,              // in J
     double ConsumedEnergyPerUnit              // in J
 );
+
+public record RoadLoadEntity(
+    Guid AgentId,
+    long Tick,
+    
+    double Velocity,
+    double Acceleration, 
+    double Mass, 
+    double Area,
+    double Incline,
+    double Efficiency,
+    
+    double FRolling,
+    double FDrag,
+    double FGradient,
+    double FAccel,
+    double FTotal,
+    
+    double PowerWatts,
+    double EnergyJoules
+);
