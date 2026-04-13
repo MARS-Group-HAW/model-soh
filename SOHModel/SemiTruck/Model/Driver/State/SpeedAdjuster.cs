@@ -64,7 +64,9 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         {
             if (currentEdge.Attributes.TryGetValue("incline", out var inclineValue))
             {
-                double incline = ParseIncline(inclineValue?.ToString());
+                double inclineMagnitude = ParseIncline(inclineValue?.ToString());
+                double sign = DetermineElevationSign(currentEdge);
+                double incline = inclineMagnitude * sign;
                 fuelTracker.UpdateIncline(incline);
                 double adjustedSpeed = CalculateMaxSpeedOnIncline(incline, truck, driver.MaxSpeed);
 
@@ -127,23 +129,56 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         }
 
         /// <summary>
-        /// Parses an incline string attribute from OSM format.
+        /// Parses the magnitude of an incline string attribute from OSM/GeoJSON format.
+        /// Sign is determined separately via <see cref="DetermineElevationSign"/>.
         /// </summary>
-        private double ParseIncline(string inclineStr)
+        private static double ParseIncline(string inclineStr)
         {
             if (string.IsNullOrWhiteSpace(inclineStr))
                 return 0.0;
 
             inclineStr = inclineStr.Trim().ToLower();
 
-            if (inclineStr.EndsWith("%") && double.TryParse(inclineStr.TrimEnd('%'), out double percent))
+            if (inclineStr.EndsWith('%') && double.TryParse(inclineStr.TrimEnd('%'), out double percent))
                 return Math.Abs(percent);
 
             if (inclineStr == "up") return 5.0;
-            if (inclineStr == "down") return 0.0;
+            if (inclineStr == "down") return 5.0;
             if (double.TryParse(inclineStr, out double value)) return Math.Abs(value);
 
             return 0.0;
+        }
+
+        /// <summary>
+        /// Determines the sign of an edge's incline (+1 uphill, -1 downhill) by comparing the
+        /// first and last values of the edge's elevation array attribute.
+        /// Travel always proceeds from <c>edge.From</c> to <c>edge.To</c>, which corresponds to
+        /// the first and last entries in the elevation profile.
+        /// Returns +1 when elevation data is unavailable or flat.
+        /// </summary>
+        private static double DetermineElevationSign(ISpatialEdge edge)
+        {
+            if (!edge.Attributes.TryGetValue("elevation", out var elevationValue) || elevationValue == null)
+                return 1.0;
+
+            var elevationStr = elevationValue.ToString()?.Trim();
+            if (string.IsNullOrEmpty(elevationStr))
+                return 1.0;
+
+            // elevation is stored as a JSON array string: "[724.5,723.1,...]"
+            if (elevationStr.StartsWith('[') && elevationStr.EndsWith(']'))
+            {
+                var inner = elevationStr.Substring(1, elevationStr.Length - 2);
+                var parts = inner.Split(',');
+                if (parts.Length >= 2
+                    && double.TryParse(parts[0].Trim(), out double first)
+                    && double.TryParse(parts[^1].Trim(), out double last))
+                {
+                    return last >= first ? 1.0 : -1.0;
+                }
+            }
+            
+            return 1.0;
         }
     }
 }
