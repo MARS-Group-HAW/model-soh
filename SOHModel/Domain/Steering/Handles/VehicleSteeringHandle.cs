@@ -429,7 +429,7 @@ public class VehicleSteeringHandle
         return Vehicle.Velocity + speedChange;
     }
 
-    private void PerformMoveAction(double distance)
+    protected virtual void PerformMoveAction(double distance)
     {
         if (distance > 0)
         {
@@ -532,7 +532,7 @@ public class VehicleSteeringHandle
         return Environment.Move(Vehicle, Route, 0.001);
     }
 
-    private void PlanDesiredLanesForNextMoves(int desiredLane = -1)
+    protected void PlanDesiredLanesForNextMoves(int desiredLane = -1)
     {
         if (desiredLane >= 0) Route.First().DesiredLane = desiredLane;
 
