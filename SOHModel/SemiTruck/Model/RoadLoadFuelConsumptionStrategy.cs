@@ -30,7 +30,7 @@ namespace SOHModel.SemiTruck.Model
 
             double v = truck.Velocity; // m/s
             double a = truck.Acceleration; // m/s^2
-            double m = truck.Mass; // kg
+            double m = truck.Mass * 1000; // kg, note truck initializer being in tonnes right now!
             double A = truck.Width * truck.Height; // Frontal area (m^2)
             
             if (A <= 0) A = 6.25; // Default for 2.5x2.5 truck
