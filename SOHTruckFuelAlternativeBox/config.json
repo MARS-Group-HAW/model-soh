@@ -38,7 +38,7 @@
       "name": "SemiTruckLayer",
       "inputs": [
         {
-          "file": "resources/streets_hamburg_final_no_el.geojson",
+          "file": "resources/autobahn_und_bundesstrassen_deutschland_elevation_21.geojson",
           "inputConfiguration": {
             "modalities": ["CarDriving"],
             "isBidirectedGraph": false

@@ -23,7 +23,7 @@ echo "Timestamp: $(date)"
 # Step 1: Drop table semitruckdriver
 echo ""
 echo "Step 1: Dropping table '${DB_TABLE}'..."
-podman exec -e PGPASSWORD=$DB_PASSWORD $CONTAINER_NAME psql -U $DB_USER -d $DB_NAME -c "DROP TABLE IF EXISTS ${DB_NAME}.${DB_TABLE} CASCADE;" || {
+docker exec -e PGPASSWORD=$DB_PASSWORD $CONTAINER_NAME psql -U $DB_USER -d $DB_NAME -c "DROP TABLE IF EXISTS ${DB_NAME}.${DB_TABLE} CASCADE;" || {
      echo "Warning: Failed to drop table. It may not exist yet."
 }
 
@@ -36,14 +36,14 @@ dotnet run --configuration Debug --framework net9.0 || {
     exit 1
 }
 
-# Step 3 & 4: Create truck_lines.geo.json directly using COPY and podman exec
+# Step 3 & 4: Create truck_lines.geo.json directly using COPY and docker exec
 echo ""
 echo "Step 3 & 4: Exporting '${DB_TABLE}' data directly to ${WORKING_DIR}/${OUTPUT_FILE_GEOJSON}..."
 
 # We use COPY with a subquery to generate a single FeatureCollection JSON object
 # and write it directly to the output file via STDOUT redirection.
 
-podman exec -e PGPASSWORD=$DB_PASSWORD $CONTAINER_NAME psql -U $DB_USER -d $DB_NAME -t -A -c "
+docker exec -e PGPASSWORD=$DB_PASSWORD $CONTAINER_NAME psql -U $DB_USER -d $DB_NAME -t -A -c "
     COPY (
         SELECT jsonb_build_object(
             'type', 'FeatureCollection',

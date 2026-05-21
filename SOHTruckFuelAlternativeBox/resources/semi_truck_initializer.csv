@@ -1,2 +1,2 @@
 TruckType,StartLat,StartLon,DestLat,DestLon,DriveMode
-SmallTruck,53.537079,10.030239,48.963052,8.469665,3
+SmallElectricTruck,53.537079,10.030239,52.375258,13.307587,3
