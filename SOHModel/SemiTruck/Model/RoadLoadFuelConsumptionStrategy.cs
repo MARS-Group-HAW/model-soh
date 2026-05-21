@@ -61,7 +61,7 @@ namespace SOHModel.SemiTruck.Model
 
             double energyJoules = CalculateEnergyTransfer(truck, powerWatts, efficiency, timeStepSeconds);
 
-            PostgresDbLogger.Instance.Log(new RoadLoadEntity(truck.ID, truck.Layer.GetCurrentTick(), v, a, m, A,
+            PostgresDbLogger.Instance?.Log(new RoadLoadEntity(truck.ID, truck.Layer?.GetCurrentTick() ?? 0, v, a, m, A,
                 incline, efficiency, F_rolling, F_drag, F_gradient, F_accel, F_total, powerWatts, energyJoules));
             
             // Convert Joules to Energy units

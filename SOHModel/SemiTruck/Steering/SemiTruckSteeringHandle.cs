@@ -54,7 +54,9 @@ namespace SOHModel.SemiTruck.Steering
             var v0      = Vehicle.Velocity;
             var vTarget = ResolveTargetVelocity(biggestDeceleration);
             var vNew    = ApplyPhysicsConstraints(v0, vTarget);
-            return KinematicDistance(v0, vNew);
+            // Cap to remaining route distance: with large deltaT the trapezoidal distance can
+            // exceed the route length, causing the MARS framework to overshoot the route end.
+            return Math.Min(KinematicDistance(v0, vNew), Route.RemainingRouteDistanceToGoal);
         }
 
         /// <summary>
