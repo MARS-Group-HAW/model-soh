@@ -385,3 +385,13 @@ tools/
 # Ignore all local history of files
 .history
 .ionide
+
+# Backup GeoJSON files
+*.old.geojson
+
+# Large road network GeoJSON files (not committed, too large)
+SOHLogisticsBox/resources/*.geojson
+SOHTruckFuelAlternativeBox/resources/*.geojson
+
+# Route cache databases (local cache, not committed)
+**/route_cache.db
