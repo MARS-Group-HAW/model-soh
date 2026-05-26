@@ -102,13 +102,16 @@ The current final output is a file named:
 
 `autobahn_und_bundesstrassen_deutschland_elevation_21.geojson`
 
-However, due to its large size, it is **not directly stored in the repository**. Instead, it is **compressed as a `.rar`
-file**:
+However, due to its large size (~220 MB), it is **not tracked in the repository** (excluded via `.gitignore`).
 
-> ⚠️ **Important**  
-> The file `autobahn_und_bundesstrassen_deutschland_elevation_21.geojson` is stored as  
-> **`autobahn_und_bundesstrassen_deutschland.rar`** in the repository.  
-> Please extract it **before running the simulation**.
+> ⚠️ **Important**
+> The file `autobahn_und_bundesstrassen_deutschland_elevation_21.geojson` must be present in
+> `SOHLogisticsBox/resources/` before running the simulation.
+> It is shared with `SOHTruckFuelAlternativeBox` — you can either copy it or create a symlink:
+> ```bash
+> ln -s ../../SOHTruckFuelAlternativeBox/resources/autobahn_und_bundesstrassen_deutschland_elevation_21.geojson \
+>       SOHLogisticsBox/resources/autobahn_und_bundesstrassen_deutschland_elevation_21.geojson
+> ```
 
 ___
 
@@ -387,21 +390,33 @@ ___
 
 ## SemiTruck Initialization
 
-The **`semi_truck.csv`** defines different types of **`SemiTrucks`** like the following:
+The **`semi_truck.csv`** defines different types of **`SemiTrucks`**.
 
+Each truck row now includes fuel carrier configuration columns alongside the physical properties:
 
-| Type               | Max Acceleration | Max Deceleration | Max Speed (m/s) | Length (m) | Height (m) | Width (m) | Traffic Code | Passenger Capacity | Velocity | Mass (tons) | Max Incline (%) | Accidents/Year | Power (kW) | Fuel Size (L) | Fuel Consumption (L/100km) |
-| ------------------ | ---------------- | ---------------- | --------------- | ---------- | ---------- | --------- | ------------ | ------------------ | -------- | ----------- |-----------------| -------------- | ---------- | ------------- | -------------------------- |
-| SmallTruck         | 0.5              | 1.2              | 30.83           | 6          | 2.5        | 2.5       | German       | 2                  | 0        | 5.0         | 25              | 11169          | 141        | 100           | 15                         |
-| MediumLoadTruck    | 0.5              | 1.2              | 30.83           | 8          | 2.5        | 2.5       | German       | 2                  | 0        | 10.0        | 22              | 1464           | 141        | 100           | 18                         |
-| HeavyLoadTruck     | 0.5              | 1.2              | 30.83           | 10         | 2.5        | 2.5       | German       | 2                  | 0        | 15.0        | 18              | 685            | 240        | 160           | 20                         |
-| ExtendedLoadTruck  | 0.5              | 1.2              | 30.83           | 12         | 2.5        | 2.5       | German       | 2                  | 0        | 20.0        | 15              | 257            | 240        | 180           | 25                         |
-| LargeCapacityTruck | 0.5              | 1.2              | 30.83           | 12         | 2.5        | 2.5       | German       | 2                  | 0        | 25.0        | 13              | 504            | 317        | 200           | 30                         |
-| ExtraCapacityTruck | 0.5              | 1.2              | 30.83           | 14         | 2.5        | 2.5       | German       | 2                  | 0        | 30.0        | 12              | 504            | 336        | 250           | 33                         |
-| HighVolumeTruck    | 0.5              | 1.2              | 30.83           | 14         | 2.5        | 2.5       | German       | 2                  | 0        | 35.0        | 10              | 504            | 336        | 250           | 35                         |
-| MaximumLoadTruck   | 0.5              | 1.2              | 30.83           | 16         | 2.5        | 2.5       | German       | 2                  | 0        | 40.0        | 8               | 504            | 336        | 300           | 40                         |
-| OverloadTruck      | 0.5              | 1.2              | 30.83           | 16         | 2.5        | 2.5       | German       | 2                  | 0        | 50.0        | 6               | 504            | 400        | 300           | 40                         |
-| UnlimitedTruck     | 0.5              | 1.2              | 30.83           | 1          | 1.0        | 1.0       | German       | 2                  | 0        | 2.0         | 100             | 1              | 1000       | 10000         | 1                          |
+| Column                   | Description                                                                 |
+|--------------------------|-----------------------------------------------------------------------------|
+| `fuelCarrierType`        | Energy source: `Fuel` (diesel, L), `Battery` (kWh), or `Hydrogen` (kg)     |
+| `maxFuelCarrierAmount`   | Tank/battery capacity in the unit of `fuelCarrierType`                      |
+| `tank2wheel`             | Drivetrain efficiency (0–1); diesel ≈ 0.35, BEV ≈ 0.85, FCEV ≈ 0.50        |
+| `fuelConsumptionPer100km`| Nominal consumption per 100 km in the native unit (used by `Linear` strategy and range estimates) |
+| `refuelTimeInMinutes`    | Minutes spent at a refuel/recharge stop before resuming (full-tank model)   |
+| `FuelStrategy`           | Consumption model: `Linear` (distance-proportional) or `RoadLoad` (physics-based) |
+
+The current values for all truck types:
+
+| Type               | Max Acc. | Max Dec. | Max Speed (m/s) | Length | Height | Width | Mass (t) | Max Incline | Accidents/yr | Power (kW) | Fuel Carrier | Capacity | η (tank2wheel) | Cons./100km | Refuel (min) | Strategy |
+|--------------------|----------|----------|-----------------|--------|--------|-------|----------|-------------|--------------|------------|--------------|----------|----------------|-------------|--------------|----------|
+| SmallTruck         | 1.0      | 1.2      | 30.83           | 6      | 2.5    | 2.5   | 5.0      | 25          | 11169        | 141        | Fuel         | 100 L    | 0.35           | 15 L        | 5            | Linear   |
+| MediumLoadTruck    | 1.0      | 1.2      | 30.83           | 8      | 2.5    | 2.5   | 10.0     | 22          | 1464         | 141        | Fuel         | 100 L    | 0.35           | 18 L        | 5            | Linear   |
+| HeavyLoadTruck     | 1.0      | 1.2      | 30.83           | 10     | 2.5    | 2.5   | 15.0     | 18          | 685          | 240        | Fuel         | 160 L    | 0.35           | 20 L        | 5            | Linear   |
+| ExtendedLoadTruck  | 1.0      | 1.2      | 30.83           | 12     | 2.5    | 2.5   | 20.0     | 15          | 257          | 240        | Fuel         | 180 L    | 0.35           | 25 L        | 5            | Linear   |
+| LargeCapacityTruck | 1.0      | 1.2      | 30.83           | 12     | 2.5    | 2.5   | 25.0     | 13          | 504          | 317        | Fuel         | 200 L    | 0.35           | 30 L        | 5            | Linear   |
+| ExtraCapacityTruck | 1.0      | 1.2      | 30.83           | 14     | 2.5    | 2.5   | 30.0     | 12          | 504          | 336        | Fuel         | 250 L    | 0.35           | 33 L        | 5            | Linear   |
+| HighVolumeTruck    | 1.0      | 1.2      | 30.83           | 14     | 2.5    | 2.5   | 35.0     | 10          | 504          | 336        | Fuel         | 250 L    | 0.35           | 35 L        | 5            | Linear   |
+| MaximumLoadTruck   | 1.0      | 1.2      | 30.83           | 16     | 2.5    | 2.5   | 40.0     | 8           | 504          | 336        | Fuel         | 300 L    | 0.35           | 40 L        | 5            | Linear   |
+| OverloadTruck      | 1.0      | 1.2      | 30.83           | 16     | 2.5    | 2.5   | 50.0     | 6           | 504          | 400        | Fuel         | 300 L    | 0.35           | 40 L        | 5            | Linear   |
+| UnlimitedTruck     | 1.0      | 1.2      | 30.83           | 1      | 1.0    | 1.0   | 2.0      | 100         | 1            | 1000       | Fuel         | 10000 L  | 0.35           | 1 L         | 5            | Linear   |
 
 ___
 
@@ -473,7 +488,7 @@ management within large-scale logistics and mobility simulations.
 ### Update Fuel Consumption & Check for Refueling
 In each tick, the driver estimates how far the truck has moved since the last step and calculates the corresponding fuel consumption. The tank level is reduced based on the truck's fuel efficiency.
 If the remaining range drops below a critical threshold (100 km), the driver scans the upcoming 100 km of the planned route for nearby fuel stations (tagged as `"fuel"` or `"services"`).
-If a suitable station is found, a refueling detour is planned automatically. If not, the driver falls back to an external station list (`"gas_stations.csv"`) to find the nearest refueling option
+If a suitable station is found, a refueling detour is planned automatically. If not, the driver falls back to an external station list (`"refuel_stations.csv"`) to find the nearest refueling option
 while still considering the direction of the detour is as small as possible.
 
 ### Check Driving Time and Schedule Rest
