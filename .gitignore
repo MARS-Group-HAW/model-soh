@@ -1,4 +1,4 @@
-# OS junk files.
+﻿# OS junk files.
 ################
 [Tt]humbs.db
 *.DS_Store
@@ -385,13 +385,14 @@ tools/
 # Ignore all local history of files
 .history
 .ionide
+**/.postgres-data/
 
-# Backup GeoJSON files
-*.old.geojson
 
 # Large road network GeoJSON files (not committed, too large)
 SOHLogisticsBox/resources/*.geojson
 SOHTruckFuelAlternativeBox/resources/*.geojson
+# Backup GeoJSON files
+*.old.geojson
 
 # Route cache databases (local cache, not committed)
 **/route_cache.db
