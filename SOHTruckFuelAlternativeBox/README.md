@@ -79,14 +79,14 @@ type,maxAcceleration,maxDeceleration,maxSpeed,length,height,width,trafficCode,
   refuelTimeInMinutes,FuelStrategy
 ```
 
-| Column                    | Description                                                                 |
-|---------------------------|-----------------------------------------------------------------------------|
-| `fuelCarrierType`         | `Fuel`, `Battery`, or `Hydrogen`                                            |
-| `maxFuelCarrierAmount`    | Tank/battery capacity in the native unit (L / kWh / kg)                    |
-| `tank2wheel`              | Drivetrain efficiency (0–1); diesel ≈ 0.35, BEV ≈ 0.85, FCEV ≈ 0.50       |
-| `fuelConsumptionPer100km` | Nominal consumption per 100 km in the native unit (linear baseline)         |
-| `refuelTimeInMinutes`     | Stop duration at a refuel/recharge station (full-tank model)                |
-| `FuelStrategy`            | `Linear` or `RoadLoad`                                                      |
+| Column                    | Description                                                         |
+|---------------------------|---------------------------------------------------------------------|
+| `fuelCarrierType`         | `Fuel`, `Battery`, or `Hydrogen`                                    |
+| `maxFuelCarrierAmount`    | Tank/battery capacity in the native unit (L / kWh / kg)             |
+| `tank2wheel`              | Drivetrain efficiency (0–1); diesel ≈ 0.35, BEV ≈ 0.85, FCEV ≈ 0.50 |
+| `fuelConsumptionPer100km` | Nominal consumption per 100 km in the native unit (linear baseline) |
+| `refuelTimeInMinutes`     | Stop duration at a refuel/recharge station (full-tank model)        |
+| `FuelStrategy`            | `Linear` or `RoadLoad`                                              |
 
 ### Example truck types (from `resources/semi_truck.csv`)
 
@@ -112,12 +112,12 @@ TruckType,StartLat,StartLon,DestLat,DestLon,DriveMode
 SmallElectricTruck,53.537079,10.030239,52.375258,13.307587,3
 ```
 
-| Column      | Description                                             |
-|-------------|---------------------------------------------------------|
-| `TruckType` | Must match a `type` value in `semi_truck.csv`           |
-| `StartLat/Lon` | Departure coordinate                                 |
-| `DestLat/Lon`  | Destination coordinate                               |
-| `DriveMode` | 2 = shortest path, 3 = OSM-based route                 |
+| Column         | Description                                   |
+|----------------|-----------------------------------------------|
+| `TruckType`    | Must match a `type` value in `semi_truck.csv` |
+| `StartLat/Lon` | Departure coordinate                          |
+| `DestLat/Lon`  | Destination coordinate                        |
+| `DriveMode`    | 2 = shortest path, 3 = OSM-based route        |
 
 The default scenario sends a `SmallElectricTruck` from Hamburg (Rothenburgsort) to Berlin (Marzahn), roughly 290 km,
 demonstrating automatic recharging stops along the way.
@@ -137,11 +137,6 @@ ___
   }
 }
 ```
-
-`deltaT=1` is intentional: the physics-based `RoadLoad` strategy integrates force × velocity × Δt, so a 1-second
-timestep gives accurate per-tick energy figures. (The LogisticsBox uses `deltaT=30` for throughput; this is safe with
-the `Linear` strategy but can produce large per-tick distances with physics-based movement — see note in
-`SemiTruckSteeringHandle`.)
 
 ___
 
