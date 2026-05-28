@@ -163,7 +163,9 @@ docker exec -e PGPASSWORD=admin mars_postgis \
   psql -U mars_soh_logistics -c "CREATE DATABASE soh_truck_fuel_alternative;"
 ```
 
-Connection parameters are read from `SOHTruckFuelAlternativeBox/.env` (or override via `MARS_CONFIG_PATH`).
+Connection parameters used for logging are read from `SOHTruckFuelAlternativeBox/.env`.
+This can be set to the same values as found in the respective `config.json` file.
+See `SOHTruckFuelAlternativeBox/.env.example` for more details.
 
 ### 2. Road network file
 
