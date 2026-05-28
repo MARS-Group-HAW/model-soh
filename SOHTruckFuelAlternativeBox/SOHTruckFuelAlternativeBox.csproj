@@ -20,7 +20,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include=".env">
+        <None Include=".env" Condition="Exists('.env')">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <Content Include="config.json">
