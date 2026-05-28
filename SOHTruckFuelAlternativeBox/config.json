@@ -1,0 +1,60 @@
+{
+  "id": "soh_truck_fuel_alternative",
+  "globals": {
+    "deltaT": 1,
+    "startPoint": "2026-01-08T06:00:00",
+    "endPoint": "2026-01-09T06:00:00",
+    "deltaTUnit": "seconds",
+    "console": true,
+    "npgSqlOptions": {
+      "host": "127.0.0.1",
+      "port": "5432",
+      "user": "mars_soh_logistics",
+      "password": "admin",
+      "databaseName": "soh_truck_fuel_alternative",
+      "overrideByConflict": true
+    }
+  },
+  "agents": [
+    {
+      "name": "SemiTruckDriver",
+      "count": 10,
+      "file": "resources/semi_truck_initializer.csv",
+      "outputs": [
+        {
+          "kind": "postgres"
+        }
+      ],
+      "individual": [
+        {
+          "name": "ResultTrajectoryEnabled",
+          "value": true
+        }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "name": "SemiTruckLayer",
+      "inputs": [
+        {
+          "file": "resources/autobahn_und_bundesstrassen_deutschland_elevation_21.geojson",
+          "inputConfiguration": {
+            "modalities": ["CarDriving"],
+            "isBidirectedGraph": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "SemiTruckSchedulerLayer",
+      "file": "resources/semi_truck_scheduler.csv"
+    }
+  ],
+  "entities": [
+    {
+      "name": "SemiTruck",
+      "file": "resources/semi_truck.csv"
+    }
+  ]
+}

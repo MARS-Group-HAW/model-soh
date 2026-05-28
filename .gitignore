@@ -386,3 +386,13 @@ tools/
 .history
 .ionide
 **/.postgres-data/
+
+
+# Large road network GeoJSON files (not committed, too large)
+SOHLogisticsBox/resources/*.geojson
+SOHTruckFuelAlternativeBox/resources/*.geojson
+# Backup GeoJSON files
+*.old.geojson
+
+# Route cache databases (local cache, not committed)
+**/route_cache.db

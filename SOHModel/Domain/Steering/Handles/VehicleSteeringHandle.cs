@@ -3,6 +3,7 @@ using Mars.Components.Environments;
 using Mars.Interfaces.Agents;
 using Mars.Interfaces.Environments;
 using SOHModel.Car.Model;
+using SOHModel.Database;
 using SOHModel.Domain.Model;
 using SOHModel.Domain.Steering.Acceleration;
 using SOHModel.Domain.Steering.Capables;
@@ -58,29 +59,90 @@ public class VehicleSteeringHandle
     public double Velocity => Vehicle.Velocity;
     public bool GoalReached => Route?.GoalReached ?? true;
 
-    public virtual void Move()
+    public void Move()
+    {
+        Move(performMovement: true);
+    }
+
+    /// <summary>
+    /// Executes the vehicle movement logic, including decision-making and logging.
+    /// </summary>
+    /// <param name="performMovement">Whether to actually move the vehicle. Set to false for logging.</param>
+    public virtual void Move(bool performMovement)
     {
         if (GoalReached || (Vehicle.CurrentEdge == null && !MoveFromNodeSuccessfully())) return;
 
         //TODO stay on lane when going on next edge?? going right left, before turning on intersection?
 
-        var exploreResult = ExploreEnvironment();
-        var deceleration = MaximalDeceleration;
-        deceleration = HandleBraking(deceleration);
-        deceleration = HandleIntersectionAhead(exploreResult, deceleration);
-        deceleration = HandleVehiclesAhead(exploreResult, deceleration);
+        // Capture initial state for physics logging
+        var velocityBefore = Vehicle.Velocity;
+        var positionBefore = Vehicle.Position;
+        var positionOnEdgeBefore = Vehicle.PositionOnCurrentEdge;
 
+        // Initialize decision tracking variables
+        var decisionData = new DecisionData
+        {
+            BrakingActivated = Vehicle.Driver.BrakingActivated,
+            CurrentVelocity = velocityBefore,
+            SpeedLimit = SpeedLimit,
+            MaxSpeed = MaxSpeed,
+            RemainingRouteDistance = Route.RemainingRouteDistanceToGoal,
+            CurrentLane = Vehicle.LaneOnCurrentEdge,
+            CurrentEdgeId = Vehicle.CurrentEdge?.GetHashCode().ToString()
+        };
+
+        var exploreResult = ExploreEnvironment();
+        var exploreDistance = Math.Max(MinimalExploreDistance, Vehicle.ExploreDistanceFactor * Vehicle.Velocity);
+
+        var deceleration = MaximalDeceleration;
+        deceleration = HandleBraking(deceleration, ref decisionData);
+        deceleration = HandleIntersectionAhead(exploreResult, deceleration, ref decisionData);
+        deceleration = HandleVehiclesAhead(exploreResult, deceleration, ref decisionData);
+
+        decisionData.BiggestDeceleration = deceleration;
         var drivingDistance = CalculateDrivingDistance(deceleration);
-        PerformMoveAction(drivingDistance);
+        decisionData.CalculatedDrivingDistance = drivingDistance;
+
+        if (performMovement)
+        {
+            PerformMoveAction(drivingDistance);
+        }
+
+        // Log decision data
+        LogDecisionData(decisionData, positionBefore);
+
+        // Log physics data
+        LogPhysicsData(velocityBefore, positionBefore, positionOnEdgeBefore, drivingDistance, exploreDistance);
+    }
+    
+    /// <summary>
+    /// Immediately stops the vehicle by setting both its velocity and acceleration to zero.
+    /// Used to simulate a full halt in movement, e.g., during a pause, breakdown, or arrival.
+    /// </summary>
+    public void Stop()
+    {
+        Vehicle.Velocity = 0;
+        Vehicle.Acceleration = 0;
     }
 
-    private double HandleBraking(double deceleration)
+    /// <summary>
+    /// logs the initial state of the vehicle at tick 0 without actually moving.
+    /// this ensures the first tick of data is logged to match when the agent itself is registered.
+    /// </summary>
+    public void LogInitialState()
+    {
+        Move(performMovement: false);
+    }
+
+    private double HandleBraking(double deceleration, ref DecisionData decisionData)
     {
         if (!Vehicle.Driver.BrakingActivated)
             return deceleration;
 
         var distance = Math.Pow(Velocity * 3.6 / 10, 2) * 2;
-        return CalculateSpeedChange(Velocity, MaxSpeed, distance, 0, 0);
+        var brakingDeceleration = CalculateSpeedChange(Velocity, MaxSpeed, distance, 0, 0);
+        decisionData.BrakingDeceleration = brakingDeceleration;
+        return brakingDeceleration;
     }
 
     public void SetIntersectionTrafficCode(string trafficCode)
@@ -103,7 +165,7 @@ public class VehicleSteeringHandle
     }
 
     protected virtual double HandleIntersectionAhead(SpatialGraphExploreResult exploreResult,
-        double biggestDeceleration)
+        double biggestDeceleration, ref DecisionData decisionData)
     {
         NextTrafficLightPhase = exploreResult.EdgeExplores.FirstOrDefault()?.LightPhase ?? TrafficLightPhase.None;
 
@@ -113,10 +175,19 @@ public class VehicleSteeringHandle
         var exploreResults = exploreResult.EdgeExplores;
         var approachingEndOfRoute =
             Route.RemainingRouteDistanceToGoal < UrbanSafetyDistanceInM && exploreResults.Count == 1;
+
+        if (exploreResults.Count > 0)
+        {
+            decisionData.IntersectionDistance = exploreResults.First().IntersectionDistance;
+            decisionData.TrafficLightPhase = exploreResults.First().LightPhase.ToString();
+        }
+
         if (approachingEndOfRoute)
         {
+            decisionData.ApproachingEndOfRoute = true;
             var speedChange = CalculateSpeedChange(Vehicle.Velocity, MaxSpeed,
                 exploreResults.First().IntersectionDistance, 0, 0);
+            decisionData.IntersectionDeceleration = speedChange;
             return Math.Min(speedChange, biggestDeceleration);
         }
 
@@ -134,6 +205,9 @@ public class VehicleSteeringHandle
                     exploreResults[index + 1].Edge);
                 var turningSpeed = Vehicle.TurningSpeedFor(nextDirection);
 
+                decisionData.IntersectionDirection = nextDirection.ToString();
+                decisionData.TurningSpeedRequired = turningSpeed;
+
                 if (turningSpeed > 0)
                 {
                     if (Vehicle.Velocity > turningSpeed)
@@ -146,12 +220,18 @@ public class VehicleSteeringHandle
                         {
                             var a = turningSpeed - Vehicle.Velocity;
                             if (a < biggestDeceleration)
+                            {
                                 biggestDeceleration = a;
+                                decisionData.IntersectionDeceleration = a;
+                            }
                             continue;
                         }
 
                         if (speedChange < biggestDeceleration)
+                        {
                             biggestDeceleration = speedChange;
+                            decisionData.IntersectionDeceleration = speedChange;
+                        }
                     }
                     else
                     {
@@ -159,7 +239,10 @@ public class VehicleSteeringHandle
                             turningSpeed, FreeDrivingClearanceInM, turningSpeed, 0);
 
                         if (speedChange < biggestDeceleration)
+                        {
                             biggestDeceleration = speedChange;
+                            decisionData.IntersectionDeceleration = speedChange;
+                        }
                     }
                 }
             }
@@ -174,6 +257,8 @@ public class VehicleSteeringHandle
                 if (intersectionWithMultipleEdges)
                 {
                     var deceleration = _intersectionTrafficCode.Evaluate(edgeExploreResult, nextDirection);
+                    decisionData.TrafficCodeType = _intersectionTrafficCode.GetType().Name;
+                    decisionData.TrafficCodeDeceleration = deceleration;
                     if (deceleration < biggestDeceleration)
                         biggestDeceleration = deceleration;
                 }
@@ -184,7 +269,10 @@ public class VehicleSteeringHandle
                     edgeExploreResult.IntersectionDistance, 0, 0);
 
                 if (speedChange <= Vehicle.MaxDeceleration && speedChange < biggestDeceleration)
+                {
                     biggestDeceleration = speedChange;
+                    decisionData.IntersectionDeceleration = speedChange;
+                }
             }
             else if (edgeExploreResult.LightPhase == TrafficLightPhase.Red) //TODO check for emergency vehicles in action
             {
@@ -192,7 +280,7 @@ public class VehicleSteeringHandle
                 if (Vehicle.Driver is EmergencyCarDriver emergencyCarDriver)
                 {
                     //Console.WriteLine("Emergency vehicle detected");
-                    
+
                     if (edgeExploreResult.Edge.To.NodeGuard is TrafficLightController trafficLightController)
                     {
                         //Console.WriteLine("Traffic light controller detected");
@@ -204,11 +292,14 @@ public class VehicleSteeringHandle
 
                     return biggestDeceleration;
                 }
-                
+
                 var speedChange = CalculateSpeedChange(Vehicle.Velocity, MaxSpeed,
                     edgeExploreResult.IntersectionDistance, 0, 0);
                 if (speedChange < biggestDeceleration)
+                {
                     biggestDeceleration = speedChange;
+                    decisionData.IntersectionDeceleration = speedChange;
+                }
             }
         }
 
@@ -223,20 +314,34 @@ public class VehicleSteeringHandle
             speedVehicleAhead);
     }
 
-    private double HandleVehiclesAhead(SpatialGraphExploreResult exploreResult, double biggestDeceleration)
+    private double HandleVehiclesAhead(SpatialGraphExploreResult exploreResult, double biggestDeceleration, ref DecisionData decisionData)
     {
         if (!Vehicle.IsCollidingEntity) return biggestDeceleration;
 
         //TODO nicht Spurwechsel, wenn Abbiegevorgang ansteht
         var (entityAhead, distanceToEntityAhead) = FindEntityAhead(exploreResult, Route);
-        if (entityAhead == null) return biggestDeceleration;
+        if (entityAhead == null)
+        {
+            decisionData.HasVehicleAhead = false;
+            return biggestDeceleration;
+        }
 
         var vehicleAhead = entityAhead is RoadUser vehicle ? vehicle : new RoadBlocker(entityAhead);
 
+        decisionData.HasVehicleAhead = true;
+        decisionData.DistanceToVehicleAhead = distanceToEntityAhead;
+        decisionData.VehicleAheadSpeed = vehicleAhead.Velocity;
+        decisionData.VehicleAheadAcceleration = vehicleAhead.Acceleration;
+        decisionData.IsVehicleAheadRoadBlocker = vehicleAhead is RoadBlocker;
+
         var speedChange = CalculateSpeedChange(Vehicle.Velocity, MaxSpeed, distanceToEntityAhead,
             vehicleAhead.Velocity, vehicleAhead.Acceleration);
+        decisionData.VehicleAheadDeceleration = speedChange;
 
-        if (!DesireToOvertake(speedChange)) return Math.Min(speedChange, biggestDeceleration);
+        var desireToOvertake = DesireToOvertake(speedChange);
+        decisionData.DesireToOvertake = desireToOvertake;
+
+        if (!desireToOvertake) return Math.Min(speedChange, biggestDeceleration);
 
         var leftIndex = Vehicle.LaneOnCurrentEdge - 1;
         var rightIndex = Vehicle.LaneOnCurrentEdge + 1;
@@ -248,28 +353,43 @@ public class VehicleSteeringHandle
         var hasRightLane = edgeExploreResult.LaneExplores.ContainsKey(rightIndex) && rightIndex >= minLane &&
                            rightIndex <= maxLane;
 
+        var (minLaneForCheck, maxLaneForCheck) = Vehicle.CurrentEdge.ModalityLaneRanges[Vehicle.ModalityType];
+        decisionData.MultiLaneRoad = maxLaneForCheck - minLaneForCheck >= 1;
+        decisionData.HasLeftLane = hasLeftLane;
+        decisionData.HasRightLane = hasRightLane;
+
         var (entityAheadLeft, distanceAheadLeft) = FindEntityOnSameEdge(exploreResult, leftIndex, true);
         var (entityAheadRight, distanceAheadRight) = FindEntityOnSameEdge(exploreResult, rightIndex, true);
 
         var (entityBehindLeft, distanceBehindLeft) = FindEntityOnSameEdge(exploreResult, leftIndex, false);
         var (entityBehindRight, distanceBehindRight) = FindEntityOnSameEdge(exploreResult, rightIndex, false);
 
+        decisionData.DistanceToVehicleAheadLeft = entityAheadLeft != null ? distanceAheadLeft : null;
+        decisionData.DistanceToVehicleAheadRight = entityAheadRight != null ? distanceAheadRight : null;
+        decisionData.DistanceToBehindLeft = entityBehindLeft != null ? distanceBehindLeft : null;
+        decisionData.DistanceToBehindRight = entityBehindRight != null ? distanceBehindRight : null;
+
+        var leftLaneSafe = OvertakingIsSafelyPossible(entityBehindLeft, distanceBehindLeft);
+        var rightLaneSafe = OvertakingIsSafelyPossible(entityBehindRight, distanceBehindRight);
+        decisionData.LeftLaneSafe = leftLaneSafe;
+        decisionData.RightLaneSafe = rightLaneSafe;
+
         var nextLaneRelative = 0;
-        if (hasLeftLane && (entityAheadLeft == null || distanceAheadLeft > distanceToEntityAhead) &&
-            OvertakingIsSafelyPossible(entityBehindLeft, distanceBehindLeft))
+        if (hasLeftLane && (entityAheadLeft == null || distanceAheadLeft > distanceToEntityAhead) && leftLaneSafe)
             nextLaneRelative = -1;
 
-        if (hasRightLane && (entityAheadRight == null || distanceAheadRight > distanceToEntityAhead) &&
-            OvertakingIsSafelyPossible(entityBehindRight, distanceBehindRight))
+        if (hasRightLane && (entityAheadRight == null || distanceAheadRight > distanceToEntityAhead) && rightLaneSafe)
         {
             var switchingLeftNotPossible = nextLaneRelative == 0;
             if (switchingLeftNotPossible || distanceAheadRight > distanceAheadLeft)
                 nextLaneRelative = 1;
         }
 
+        decisionData.SelectedLaneChange = nextLaneRelative;
+
         if (nextLaneRelative != 0) PlanDesiredLanesForNextMoves(Vehicle.LaneOnCurrentEdge + nextLaneRelative);
 
-        return biggestDeceleration;
+        return Math.Min(speedChange, biggestDeceleration);
     }
 
     private bool OvertakingIsSafelyPossible(ISpatialGraphEntity entityBehind, double distanceToEntityBehind)
@@ -309,7 +429,7 @@ public class VehicleSteeringHandle
         return Vehicle.Velocity + speedChange;
     }
 
-    private void PerformMoveAction(double distance)
+    protected virtual void PerformMoveAction(double distance)
     {
         if (distance > 0)
         {
@@ -412,7 +532,7 @@ public class VehicleSteeringHandle
         return Environment.Move(Vehicle, Route, 0.001);
     }
 
-    private void PlanDesiredLanesForNextMoves(int desiredLane = -1)
+    protected void PlanDesiredLanesForNextMoves(int desiredLane = -1)
     {
         if (desiredLane >= 0) Route.First().DesiredLane = desiredLane;
 
@@ -456,6 +576,151 @@ public class VehicleSteeringHandle
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Logs all decision data collected during the Move() execution.
+    /// </summary>
+    private void LogDecisionData(DecisionData data, Position positionBefore)
+    {
+        if (PostgresDbLogger.Instance == null) return;
+
+        try
+        {
+            var entity = new VehicleSteeringDecisionEntity(
+                AgentId: Vehicle.ID,
+                Tick: Vehicle.Layer.GetCurrentTick(),
+                Latitude: positionBefore.Latitude,
+                Longitude: positionBefore.Longitude,
+                SpeedLimit: data.SpeedLimit,
+                MaxSpeed: data.MaxSpeed,
+                CurrentVelocity: data.CurrentVelocity,
+                BrakingActivated: data.BrakingActivated,
+                BrakingDeceleration: data.BrakingDeceleration,
+                IntersectionDistance: data.IntersectionDistance,
+                IntersectionDirection: data.IntersectionDirection,
+                TrafficLightPhase: data.TrafficLightPhase,
+                TurningSpeedRequired: data.TurningSpeedRequired,
+                IntersectionDeceleration: data.IntersectionDeceleration,
+                ApproachingEndOfRoute: data.ApproachingEndOfRoute,
+                TrafficCodeType: data.TrafficCodeType,
+                TrafficCodeDeceleration: data.TrafficCodeDeceleration,
+                HasVehicleAhead: data.HasVehicleAhead,
+                DistanceToVehicleAhead: data.DistanceToVehicleAhead,
+                VehicleAheadSpeed: data.VehicleAheadSpeed,
+                VehicleAheadAcceleration: data.VehicleAheadAcceleration,
+                VehicleAheadDeceleration: data.VehicleAheadDeceleration,
+                IsVehicleAheadRoadBlocker: data.IsVehicleAheadRoadBlocker,
+                DesireToOvertake: data.DesireToOvertake,
+                MultiLaneRoad: data.MultiLaneRoad,
+                HasLeftLane: data.HasLeftLane,
+                HasRightLane: data.HasRightLane,
+                DistanceToVehicleAheadLeft: data.DistanceToVehicleAheadLeft,
+                DistanceToVehicleAheadRight: data.DistanceToVehicleAheadRight,
+                DistanceToBehindLeft: data.DistanceToBehindLeft,
+                DistanceToBehindRight: data.DistanceToBehindRight,
+                LeftLaneSafe: data.LeftLaneSafe,
+                RightLaneSafe: data.RightLaneSafe,
+                SelectedLaneChange: data.SelectedLaneChange,
+                BiggestDeceleration: data.BiggestDeceleration,
+                CalculatedDrivingDistance: data.CalculatedDrivingDistance,
+                RemainingRouteDistance: data.RemainingRouteDistance,
+                CurrentLane: data.CurrentLane,
+                CurrentEdgeId: data.CurrentEdgeId
+            );
+
+            PostgresDbLogger.Instance.Log(entity);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error logging decision data: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Logs all physics data collected during the Move() execution.
+    /// </summary>
+    void LogPhysicsData(double velocityBefore, Position positionBefore, double positionOnEdgeBefore,
+        double drivingDistance, double exploreDistance)
+    {
+        if (PostgresDbLogger.Instance == null) return;
+
+        try
+        {
+            var actualDistanceMoved = Vehicle.PositionOnCurrentEdge - positionOnEdgeBefore;
+
+            var entity = new VehicleSteeringPhysicsEntity(
+                AgentId: Vehicle.ID,
+                Tick: Vehicle.Layer.GetCurrentTick(),
+                Latitude: positionBefore.Latitude,
+                Longitude: positionBefore.Longitude,
+                Bearing: Vehicle.Bearing,
+                CurrentEdgeId: Vehicle.CurrentEdge?.GetHashCode().ToString(),
+                CurrentLane: Vehicle.LaneOnCurrentEdge,
+                PositionOnEdge: positionOnEdgeBefore,
+                RemainingDistanceOnEdge: Vehicle.RemainingDistanceOnEdge,
+                VelocityBefore: velocityBefore,
+                VelocityAfter: Vehicle.Velocity,
+                Acceleration: Vehicle.Acceleration,
+                AccelerationApplied: Vehicle.Velocity - velocityBefore,
+                CalculatedDrivingDistance: drivingDistance,
+                ActualDistanceMoved: actualDistanceMoved,
+                RemainingRouteDistance: Route.RemainingRouteDistanceToGoal,
+                GoalReached: GoalReached,
+                MaxSpeed: Vehicle.MaxSpeed,
+                MaxAcceleration: Vehicle.MaxAcceleration,
+                MaxDeceleration: Vehicle.MaxDeceleration,
+                ExploreDistance: exploreDistance
+            );
+
+            PostgresDbLogger.Instance.Log(entity);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error logging physics data: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Internal class to hold all decision data collected during Move() execution.
+    /// </summary>
+    protected class DecisionData
+    {
+        public bool BrakingActivated { get; set; }
+        public double? BrakingDeceleration { get; set; }
+        public double CurrentVelocity { get; set; }
+        public double SpeedLimit { get; set; }
+        public double MaxSpeed { get; set; }
+        public double? IntersectionDistance { get; set; }
+        public string? IntersectionDirection { get; set; }
+        public string? TrafficLightPhase { get; set; }
+        public double? TurningSpeedRequired { get; set; }
+        public double? IntersectionDeceleration { get; set; }
+        public bool? ApproachingEndOfRoute { get; set; }
+        public string? TrafficCodeType { get; set; }
+        public double? TrafficCodeDeceleration { get; set; }
+        public bool HasVehicleAhead { get; set; }
+        public double? DistanceToVehicleAhead { get; set; }
+        public double? VehicleAheadSpeed { get; set; }
+        public double? VehicleAheadAcceleration { get; set; }
+        public double? VehicleAheadDeceleration { get; set; }
+        public bool? IsVehicleAheadRoadBlocker { get; set; }
+        public bool DesireToOvertake { get; set; }
+        public bool? MultiLaneRoad { get; set; }
+        public bool? HasLeftLane { get; set; }
+        public bool? HasRightLane { get; set; }
+        public double? DistanceToVehicleAheadLeft { get; set; }
+        public double? DistanceToVehicleAheadRight { get; set; }
+        public double? DistanceToBehindLeft { get; set; }
+        public double? DistanceToBehindRight { get; set; }
+        public bool? LeftLaneSafe { get; set; }
+        public bool? RightLaneSafe { get; set; }
+        public int? SelectedLaneChange { get; set; }
+        public double BiggestDeceleration { get; set; }
+        public double CalculatedDrivingDistance { get; set; }
+        public double RemainingRouteDistance { get; set; }
+        public int? CurrentLane { get; set; }
+        public string? CurrentEdgeId { get; set; }
     }
 }
 

@@ -1,0 +1,28 @@
+{
+  "id": "autobahn_simulation",
+  "globals": {
+    "deltaT": 10,
+    "startPoint": "2025-05-19T06:00:00",
+    "endPoint": "2025-05-19T18:00:00",
+    "deltaTUnit": "seconds",
+    "console": false
+  },
+
+  "layers": [
+    {
+      "name": "PreComputeRoutesLayer",
+      "inputs": [
+        {
+          "file": "resources/autobahn_und_bundesstrassen_deutschland_elevation_08.geojson",
+          "inputConfiguration": {
+            "modalities": ["CarDriving"],
+            "isBidirectedGraph": true
+          }
+        },
+        {
+          "file": "resources/entry_exit_nodes.json"
+        }
+      ]
+    }
+  ]
+}

@@ -88,6 +88,77 @@ public abstract class RoadUser : ISpatialGraphEntity
     public double Length { get; set; }
 
     /// <summary>
+    ///     Gets or sets the maxIncline of this entity in <c>percentage (%)</c>.
+    /// </summary>
+    [PropertyDescription(Name = "maxIncline", Ignore = true)]
+    public virtual int MaxIncline { get; set; }
+    
+    /// <summary>
+    /// Statistical probability of a truck accident per kilometer (or per tick, depending on usage).
+    /// </summary>
+    [PropertyDescription(Name = "accidentsPerYear", Ignore = true)]
+    public double AccidentsPerYear { get; set; }
+    
+    /// <summary>
+    /// The type of fuel source/energy carrier used by the vehicle (Fuel, Battery, Hydrogen, etc.)
+    /// Note the different units for energy types, such as liters for fuel, kWh for batteries, kg for hydrogen.
+    /// </summary>
+    [PropertyDescription(Name = "fuelCarrierType", Ignore = true)]
+    public FuelCarrierType FuelCarrierType { get; set; } = FuelCarrierType.Fuel;
+
+    /// <summary>
+    /// The maximum amount of its fuel source/energy carrier a truck can hold
+    /// Upon initialization, the vehicle starts with a full tank
+    /// </summary>
+    [PropertyDescription(Name = "maxFuelCarrierAmount", Ignore = true)]
+    public double MaxFuelCarrierAmount { get; set; }
+    
+    /// <summary>
+    /// The average amount of fuel a truck uses during 100km
+    /// Used for linear interpolation
+    /// </summary>
+    [PropertyDescription(Name = "fuelConsumptionPer100km", Ignore = true)]
+    public double FuelConsumptionPer100Km  { get; set; }
+
+    /// <summary>
+    /// Drag coefficient of the vehicle (unitless).
+    /// TODO: example value, consult drag coefficient table
+    /// </summary>
+    [PropertyDescription(Name = "dragCoefficient", Ignore = true)]
+    public double DragCoefficient { get; set; } = 0.6;
+
+    /// <summary>
+    /// Rolling resistance coefficient (unitless).
+    /// TODO: not constant, see https://doi.org/10.1109/TVT.2022.3220157 
+    /// </summary>
+    [PropertyDescription(Name = "rollingResistance", Ignore = true)]
+    public double RollingResistance { get; set; } = 0.006;
+
+    /// <summary>
+    /// Tank-To-Wheel efficiency of the engine/drivetrain (0-1).
+    /// https://doi.org/10.1016/j.enconman.2022.115412
+    /// </summary>
+    [PropertyDescription(Name = "tank2wheel", Ignore = true)]
+    public double Tank2WheelEfficiency { get; set; } = 0.35;
+
+    /// <summary>
+    /// The time it takes to refuel/recharge the vehicle in minutes.
+    /// Note: During a refuel pause, after this time elapses, the tank is reset to its maximum.
+    /// In the future, refueling could be implemented as a rate, like <c>refuelEnergyAmountPerMinute</c>, and set target refuel tank levels.
+    /// </summary>
+    [PropertyDescription(Name = "refuelTimeInMinutes", Ignore = true)]
+    public double RefuelTimeInMinutes { get; set; } = 5;
+
+    
+    
+    /// <summary>
+    /// Amount of Power that a truck has in KW
+    /// </summary>
+    [PropertyDescription(Name = "power", Ignore = true)]
+    public double Power { get; set; }
+
+    
+    /// <summary>
     ///     Gets or sets the position of this entity with (lon/x, lat/y) coordinate.
     /// </summary>
     public virtual Position Position { get; set; }

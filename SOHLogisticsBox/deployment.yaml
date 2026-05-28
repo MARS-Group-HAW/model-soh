@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: soh-logistics-job
+  namespace: Username-default
+spec:
+  template:
+    metadata:
+      labels:
+        job-name: soh-logistics-job
+    spec:
+      containers:
+        - name: soh-logistics
+          image: git.haw-hamburg.de:5000/infwwr434/soh_logistics/soh-logistics:databank
+          imagePullPolicy: Always
+          env:
+            - name: MARS_CONFIG_PATH
+              value: /config/config.json
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config/config.json
+              subPath: config.json 
+          resources:
+            requests:
+              memory: "30Gi"
+              cpu: "7"
+            limits:
+              memory: "30Gi"
+              cpu: "7"
+      restartPolicy: Never
+      volumes:
+        - name: config-volume
+          configMap:
+            name: soh-config
+      imagePullSecrets:
+        - name: gitlab-registry-secret

@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: soh-config
+  namespace: Username-default
+data:
+  config.json: |
+    {
+      "simulation": {
+        "iterations": 43200,
+        "randomSeed": 42,
+        "npgSqlOptions": {
+          "port": "5432",
+          "host": "postgres-service",
+          "user": "mars_user",
+          "password": "Your-Password",
+          "databaseName": "mars_user",
+          "overrideByConflict": true
+        }
+      },    
+      "initialization": {
+        "initializers": [
+          {
+            "name": "SemiTruckDriver",
+            "file": "resources/semi_truck_initializer.csv",
+            "count": 6500
+          }
+        ]
+      },
+      "outputs": [
+        {
+          "kind": "postgres"
+        }
+      ]
+    }
+    

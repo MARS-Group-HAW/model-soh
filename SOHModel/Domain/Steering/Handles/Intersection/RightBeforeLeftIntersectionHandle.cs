@@ -47,8 +47,39 @@ public class RightBeforeLeftIntersectionHandle<TSteeringCapable, TPassengerCapab
             _orderOfArrival = new List<Guid>();
         }
 
-        //reduce speed for intersection
-        if (_vehicle.Velocity >= VehicleConstants.IntersectionSpeed)
+        // First, check if there are actually any vehicles that we need to yield to
+        bool hasConflictingTraffic = false;
+        foreach (var incomingEdge in edgeExplore.Edge.To.IncomingEdges.Values)
+        {
+            if (incomingEdge == _vehicle.CurrentEdge) continue;
+
+            var currentEdgeBearing =
+                _vehicle.CurrentEdge.From.Position.GetBearing(_vehicle.CurrentEdge.To.Position);
+            var incomingBearing =
+                incomingEdge.From.Position.GetBearing(incomingEdge.To.Position);
+            var otherEdgeDirection = PositionHelper.GetDirectionType(incomingBearing, currentEdgeBearing);
+
+            if (!GiveRightOfWayConstellation(otherEdgeDirection, vehicleDirection)) continue;
+            foreach (var roadUser in ExploreIncomingEdge(incomingEdge))
+            {
+                var remainingDistanceOnEdge = Math.Max(0,
+                    roadUser.CurrentEdge.Length - roadUser.PositionOnCurrentEdge);
+                if (remainingDistanceOnEdge < GiveRightOfWayDistanceInM && remainingDistanceOnEdge > 0)
+                {
+                    hasConflictingTraffic = true;
+                    break;
+                }
+            }
+            if (hasConflictingTraffic) break;
+        }
+
+        // Only reduce speed for intersection if:
+        // 1. There is conflicting traffic that requires yielding, OR
+        // 2. Vehicle is turning (not going straight)
+        bool needsSpeedReduction = hasConflictingTraffic || vehicleDirection != DirectionType.Up;
+
+        //reduce speed for intersection only when necessary
+        if (needsSpeedReduction && _vehicle.Velocity >= VehicleConstants.IntersectionSpeed)
         {
             var speedChange = _vehicleAccelerator.CalculateSpeedChange(_vehicle.Velocity,
                 edgeExplore.Edge.MaxSpeed, edgeExplore.IntersectionDistance,
@@ -66,7 +97,7 @@ public class RightBeforeLeftIntersectionHandle<TSteeringCapable, TPassengerCapab
                     biggestDeceleration = speedChange;
             }
         }
-        else
+        else if (needsSpeedReduction)
         {
             var speedChange = _vehicleAccelerator.CalculateSpeedChange(_vehicle.Velocity,
                 VehicleConstants.IntersectionSpeed, 1000, VehicleConstants.IntersectionSpeed);

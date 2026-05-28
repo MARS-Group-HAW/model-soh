@@ -21,7 +21,7 @@ public class FerrySteeringHandle : VehicleSteeringHandle<IFerrySteeringCapable, 
     }
 
     protected override double HandleIntersectionAhead(SpatialGraphExploreResult exploreResult,
-        double biggestDeceleration)
+        double biggestDeceleration, ref DecisionData decisionData)
     {
         var exploreResults = exploreResult.EdgeExplores;
 
@@ -34,11 +34,12 @@ public class FerrySteeringHandle : VehicleSteeringHandle<IFerrySteeringCapable, 
             {
                 var speedChange = CalculateSpeedChange(Vehicle.Velocity, SpeedLimit,
                     distanceToStation, 0, 0);
+                decisionData.IntersectionDeceleration = speedChange;
                 return Math.Min(speedChange, biggestDeceleration);
             }
         }
 
-        return biggestDeceleration;
+        return base.HandleIntersectionAhead(exploreResult, biggestDeceleration, ref decisionData);
     }
 
     protected override double CalculateDrivingDistance(double biggestDeceleration)

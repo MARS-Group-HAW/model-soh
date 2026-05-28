@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <RootNamespace>SOHLogisticsBox</RootNamespace>
+        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <Content Include="config.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="config_GeoJSON.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="config_PreComputeRoutes.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="resources\*.*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Update="resources\Scripts\SemiTruckData\NUTS_RG_01M_2024_4326.shp">
+          <Link>resources\Scripts\SemiTruckData\resources\NUTS_RG_01M_2024_4326.shp</Link>
+        </Content>
+        <Content Update="resources\Scripts\SemiTruckData\referenzhandbuch_VD_1a.pdf">
+          <Link>resources\Scripts\SemiTruckData\resources\referenzhandbuch_VD_1a.pdf</Link>
+        </Content>
+        <Content Update="resources\Scripts\SemiTruckData\referenzhandbuch_VD_2V.pdf">
+          <Link>resources\Scripts\SemiTruckData\resources\referenzhandbuch_VD_2V.pdf</Link>
+        </Content>
+        <Content Update="resources\Scripts\SemiTruckData\puf_vd_1a_2023.csv">
+          <Link>resources\Scripts\SemiTruckData\resources\puf_vd_1a_2023.csv</Link>
+        </Content>
+        <Content Update="resources\Scripts\SemiTruckData\puf_vd_2-V_2023.csv">
+          <Link>resources\Scripts\SemiTruckData\resources\puf_vd_2-V_2023.csv</Link>
+        </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\SOHModel\SOHModel.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="input\" />
+      <Folder Include="output\" />
+      <Folder Include="resources\Scripts\GeoJSON\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="route_cache.db" />
+      <None Remove="SemiTruckDriver_trips.geojson" />
+    </ItemGroup>
+
+</Project>
