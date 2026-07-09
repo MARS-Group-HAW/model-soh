@@ -1,0 +1,248 @@
+#!/usr/bin/env python3
+"""
+Plot one PNG per completed agent trip from CarDriver_trips.geojson.
+
+Use this to visually verify each car routes from lot (entrance) to campus exit.
+Trips geojson = finished drives only (one LineString per agent).
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import math
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
+from matplotlib.lines import Line2D
+
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_TRIPS = ROOT / "CarDriver_trips.geojson"
+DEFAULT_GRAPH = ROOT / "resources" / "campus_drive_graph.geojson"
+DEFAULT_OUT = ROOT / "results" / "agent_routes"
+
+COLONEL_BY = (45.3792575, -75.7004525)
+BRONSON = (45.3896198, -75.694494)
+EXIT_TOL_M = 80.0
+
+LOTS = {
+    "P1": {"spawn": (45.3813098, -75.7006879), "exit": COLONEL_BY, "color": "#e41a1c"},
+    "P2": {"spawn": (45.3836355, -75.6962699), "exit": COLONEL_BY, "color": "#377eb8"},
+    "P3": {"spawn": (45.384003, -75.694052), "exit": COLONEL_BY, "color": "#4daf4a"},
+    "P4": {"spawn": (45.3857089, -75.6950736), "exit": COLONEL_BY, "color": "#984ea3"},
+    "P5": {"spawn": (45.3879759, -75.6932794), "exit": BRONSON, "color": "#ff7f00"},
+    "P6": {"spawn": (45.3885825, -75.6970087), "exit": BRONSON, "color": "#a65628"},
+    "P7": {"spawn": (45.3888841, -75.6962336), "exit": BRONSON, "color": "#f781bf"},
+}
+
+
+def dist_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    return math.hypot((lat2 - lat1) * 111_000, (lon2 - lon1) * 85_000)
+
+
+def nearest_lot(lat: float, lon: float) -> str:
+    return min(LOTS, key=lambda k: dist_m(lat, lon, *LOTS[k]["spawn"]))
+
+
+def flatten_coords(geom: dict) -> list[tuple[float, float]]:
+    t = geom["type"]
+    raw = geom["coordinates"]
+    if t == "LineString":
+        lines = [raw]
+    elif t == "MultiLineString":
+        lines = raw
+    else:
+        return []
+    out: list[tuple[float, float]] = []
+    for line in lines:
+        for pt in line:
+            out.append((pt[1], pt[0]))  # lat, lon
+    return out
+
+
+def path_metrics(coords: list[tuple[float, float]]) -> tuple[float, float, float]:
+    if len(coords) < 2:
+        return 0.0, 0.0, 1.0
+    path = sum(dist_m(coords[i][0], coords[i][1], coords[i + 1][0], coords[i + 1][1]) for i in range(len(coords) - 1))
+    chord = dist_m(coords[0][0], coords[0][1], coords[-1][0], coords[-1][1])
+    ratio = path / max(chord, 1.0)
+    return path, chord, ratio
+
+
+def load_graph_segments(graph_path: Path) -> list[list[tuple[float, float]]]:
+    if not graph_path.is_file():
+        return []
+    with graph_path.open(encoding="utf-8") as f:
+        feats = json.load(f)["features"]
+    segments = []
+    for feat in feats:
+        geom = feat["geometry"]
+        if geom["type"] != "LineString":
+            continue
+        segments.append([(c[1], c[0]) for c in geom["coordinates"]])
+    return segments
+
+
+def safe_name(value: str) -> str:
+    return "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in value)[:40]
+
+
+def plot_trip(
+    coords: list[tuple[float, float]],
+    lot: str,
+    agent_id: str,
+    exit_ok: bool,
+    path_m: float,
+    ratio: float,
+    graph_segments: list[list[tuple[float, float]]],
+    out_path: Path,
+    dpi: int,
+):
+    lats = [c[0] for c in coords]
+    lons = [c[1] for c in coords]
+    spawn = LOTS[lot]["spawn"]
+    expected_exit = LOTS[lot]["exit"]
+    lot_color = LOTS[lot]["color"]
+    route_color = "#1b9e77" if exit_ok and ratio >= 1.05 else "#d95f02"
+
+    pad_lat = max(0.0015, (max(lats) - min(lats)) * 0.15 + 0.0008)
+    pad_lon = max(0.0020, (max(lons) - min(lons)) * 0.15 + 0.0010)
+
+    fig, ax = plt.subplots(figsize=(7, 7))
+
+    if graph_segments:
+        bg = LineCollection([[(lon, lat) for lat, lon in seg] for seg in graph_segments], colors="#dddddd", linewidths=0.4, zorder=1)
+        ax.add_collection(bg)
+
+    ax.plot(lons, lats, color=route_color, linewidth=2.2, zorder=3)
+    ax.scatter([spawn[1]], [spawn[0]], c=lot_color, s=80, marker="o", zorder=4, edgecolors="black", linewidths=0.5)
+    ax.scatter([expected_exit[1]], [expected_exit[0]], c="none", s=120, marker="*", zorder=4, edgecolors="#333333", linewidths=1.2)
+    ax.scatter([lons[0]], [lats[0]], c="white", s=40, marker="o", zorder=5, edgecolors="black", linewidths=0.8)
+    ax.scatter([lons[-1]], [lats[-1]], c=route_color, s=50, marker="s", zorder=5, edgecolors="black", linewidths=0.8)
+
+    ax.set_xlim(min(lons + [spawn[1], expected_exit[1]]) - pad_lon, max(lons + [spawn[1], expected_exit[1]]) + pad_lon)
+    ax.set_ylim(min(lats + [spawn[0], expected_exit[0]]) - pad_lat, max(lats + [spawn[0], expected_exit[0]]) + pad_lat)
+    ax.set_aspect("equal", adjustable="box")
+    ax.set_xlabel("Longitude")
+    ax.set_ylabel("Latitude")
+
+    status = "OK" if exit_ok else "WRONG EXIT"
+    ax.set_title(f"{lot}  {agent_id[:8]}…  {status}\npath {path_m:.0f} m  ratio {ratio:.2f}", fontsize=10)
+
+    legend = [
+        Line2D([0], [0], marker="o", color="w", markerfacecolor=lot_color, markersize=8, label=f"Lot {lot} spawn"),
+        Line2D([0], [0], marker="*", color="w", markeredgecolor="#333", markersize=12, label="Expected exit"),
+        Line2D([0], [0], color=route_color, linewidth=2, label="Agent route"),
+    ]
+    ax.legend(handles=legend, loc="upper right", fontsize=8)
+    ax.grid(True, alpha=0.25)
+
+    fig.tight_layout()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=dpi)
+    plt.close(fig)
+
+
+def main():
+    ap = argparse.ArgumentParser(description="Export one route PNG per completed agent trip")
+    ap.add_argument("--trips", type=Path, default=DEFAULT_TRIPS, help="CarDriver_trips.geojson")
+    ap.add_argument("--graph", type=Path, default=DEFAULT_GRAPH, help="Background drive graph")
+    ap.add_argument("--out", type=Path, default=DEFAULT_OUT, help="Output folder for PNGs")
+    ap.add_argument("--limit", type=int, default=0, help="Max trips to plot (0 = all)")
+    ap.add_argument("--lot", type=str, default="", help="Only plot this lot, e.g. P5")
+    ap.add_argument("--suspicious-only", action="store_true", help="Only wrong exit or nearly straight routes")
+    ap.add_argument("--no-graph", action="store_true", help="Skip background road network")
+    ap.add_argument("--dpi", type=int, default=120)
+    args = ap.parse_args()
+
+    if not args.trips.is_file():
+        raise SystemExit(f"Missing trips file: {args.trips}\nRun the sim first — use CarDriver_trips.geojson (completed routes).")
+
+    print(f"Loading {args.trips} …")
+    with args.trips.open(encoding="utf-8") as f:
+        data = json.load(f)
+    features = data.get("features", [])
+    print(f"Trips loaded: {len(features)}")
+
+    graph_segments = [] if args.no_graph else load_graph_segments(args.graph)
+    if graph_segments:
+        print(f"Background graph segments: {len(graph_segments)}")
+
+    summary_rows = []
+    plotted = 0
+    skipped = 0
+
+    for idx, feat in enumerate(features):
+        if args.limit and plotted >= args.limit:
+            break
+
+        props = feat.get("properties") or {}
+        agent_id = str(props.get("creation_id") or props.get("ID") or props.get("StableId") or f"trip_{idx}")
+        coords = flatten_coords(feat["geometry"])
+        if len(coords) < 2:
+            skipped += 1
+            continue
+
+        lot = nearest_lot(coords[0][0], coords[0][1])
+        if args.lot and lot != args.lot.upper():
+            continue
+
+        expected_exit = LOTS[lot]["exit"]
+        end_lat, end_lon = coords[-1]
+        exit_dist = dist_m(end_lat, end_lon, expected_exit[0], expected_exit[1])
+        exit_ok = exit_dist <= EXIT_TOL_M
+        path_m, chord_m, ratio = path_metrics(coords)
+        suspicious = (not exit_ok) or ratio < 1.05
+
+        if args.suspicious_only and not suspicious:
+            continue
+
+        fname = f"{plotted + 1:04d}_{lot}_{safe_name(agent_id)}.png"
+        out_path = args.out / fname
+        plot_trip(coords, lot, agent_id, exit_ok, path_m, ratio, graph_segments, out_path, args.dpi)
+
+        summary_rows.append(
+            {
+                "file": fname,
+                "agent_id": agent_id,
+                "lot": lot,
+                "exit_ok": exit_ok,
+                "exit_dist_m": round(exit_dist, 1),
+                "spawn_dist_m": round(dist_m(coords[0][0], coords[0][1], *LOTS[lot]["spawn"]), 1),
+                "path_m": round(path_m, 1),
+                "chord_m": round(chord_m, 1),
+                "path_chord_ratio": round(ratio, 3),
+                "n_points": len(coords),
+            }
+        )
+        plotted += 1
+        if plotted % 100 == 0:
+            print(f"  plotted {plotted} …")
+
+    summary_path = args.out / "route_summary.csv"
+    args.out.mkdir(parents=True, exist_ok=True)
+    with summary_path.open("w", encoding="utf-8", newline="") as f:
+        if summary_rows:
+            writer = csv.DictWriter(f, fieldnames=list(summary_rows[0].keys()))
+            writer.writeheader()
+            writer.writerows(summary_rows)
+
+    ok = sum(1 for r in summary_rows if r["exit_ok"])
+    bad = len(summary_rows) - ok
+    straight = sum(1 for r in summary_rows if r["path_chord_ratio"] < 1.05)
+
+    print()
+    print(f"PNG folder     : {args.out}")
+    print(f"Summary CSV    : {summary_path}")
+    print(f"Plotted        : {plotted}")
+    print(f"Skipped (empty): {skipped}")
+    print(f"Exit OK        : {ok}")
+    print(f"Wrong exit     : {bad}")
+    print(f"Nearly straight (ratio<1.05): {straight}")
+    print()
+    print("Legend: circle=lot spawn, star=expected exit, white dot=route start, square=route end.")
+
+
+if __name__ == "__main__":
+    main()

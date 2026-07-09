@@ -1,0 +1,28 @@
+ROAD,FROM_PLACE,TO_PLACE,FROM_NODE,TO_NODE,LENGTH_M,SPEED_KPH
+Library Rd & P1 to Library Rd & University Dr,Library Rd & P1,Library Rd & University Dr,12,0,204.28275117509776,40.0
+Library Rd & P1 to Campus Ave & Library Rd,Library Rd & P1,Campus Ave & Library Rd,12,3,699.8538925091029,40.0
+Library Rd & University Dr to Library Rd & P1,Library Rd & University Dr,Library Rd & P1,0,12,204.28275117509776,40.0
+Campus Ave & Library Rd to Library Rd & P1,Campus Ave & Library Rd,Library Rd & P1,3,12,699.8538925091029,40.0
+Campus Ave & Library Rd to Campus Ave & P2,Campus Ave & Library Rd,Campus Ave & P2,3,13,179.53497079893017,40.0
+Campus Ave & P2 to Campus Ave & University Dr,Campus Ave & P2,Campus Ave & University Dr,13,2,166.12447506995477,40.0
+Campus Ave & University Dr to Library Rd & University Dr,Campus Ave & University Dr,Library Rd & University Dr,2,0,516.8643572871388,30.0
+Library Rd & University Dr to Campus Ave & University Dr,Library Rd & University Dr,Campus Ave & University Dr,0,2,516.8643572871388,30.0
+Campus Ave & University Dr to Raven Rd & University Dr,Campus Ave & University Dr,Raven Rd & University Dr,2,9,310.0614685024211,40.0
+Raven Rd & University Dr to Campus Ave & University Dr,Raven Rd & University Dr,Campus Ave & University Dr,9,2,310.0614685024211,40.0
+Raven Rd & University Dr to P3 & Raven Rd,Raven Rd & University Dr,P3 & Raven Rd,9,15,185.43623106048696,40.0
+P3 & Raven Rd to Raven Rd & University Dr,P3 & Raven Rd,Raven Rd & University Dr,15,9,185.43623106048696,40.0
+P3 & Raven Rd to Bronson Ave & Raven Rd,P3 & Raven Rd,Bronson Ave & Raven Rd,15,16,132.91124268961752,40.0
+Library Rd & University Dr to Colonel By Dr & University Dr,Library Rd & University Dr,Colonel By Dr & University Dr,0,1,34.35862074825044,30.0
+Raven Rd & University Dr to P4 & University Dr,Raven Rd & University Dr,P4 & University Dr,9,14,202.60135867271447,40.0
+P4 & University Dr to Raven Rd & University Dr,P4 & University Dr,Raven Rd & University Dr,14,9,202.60135867271447,40.0
+P4 & University Dr to Stadium Way & University Dr,P4 & University Dr,Stadium Way & University Dr,14,7,218.6909991240668,40.0
+Stadium Way & University Dr to P4 & University Dr,Stadium Way & University Dr,P4 & University Dr,7,14,218.6909991240668,40.0
+Stadium Way & University Dr to P5 & Stadium Way,Stadium Way & University Dr,P5 & Stadium Way,7,10,58.63907908145324,40.0
+P5 & Stadium Way to Stadium Way & University Dr,P5 & Stadium Way,Stadium Way & University Dr,10,7,58.63907908145324,40.0
+P5 & Stadium Way to Bronson Ave & Stadium Way,P5 & Stadium Way,Bronson Ave & Stadium Way,10,17,189.63227180597204,40.0
+Stadium Way & University Dr to Roundabout,Stadium Way & University Dr,Roundabout,7,5,152.94161309827078,40.0
+Roundabout to Stadium Way & University Dr,Roundabout,Stadium Way & University Dr,5,7,151.1041890411076,40.0
+Roundabout to Bronson Ave & University Dr,Roundabout,Bronson Ave & University Dr,5,11,141.29128428829313,40.0
+Roundabout to Campus Ave & P6,Roundabout,Campus Ave & P6,5,8,92.22344564432396,40.0
+Campus Ave & P6 to Roundabout,Campus Ave & P6,Roundabout,8,5,92.22344564432396,40.0
+Campus Ave & P6 to Campus Ave & Library Rd,Campus Ave & P6,Campus Ave & Library Rd,8,3,347.1959979732969,40.0

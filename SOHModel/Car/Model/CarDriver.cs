@@ -18,6 +18,7 @@ public sealed class CarDriver : AbstractAgent, ICarSteeringCapable
         double startLat = 0, double startLon = 0, double destLat = 0, double destLon = 0,
         ISpatialEdge startingEdge = null, string osmRoute = "", string trafficCode = "german")
     {
+        ID = Guid.NewGuid();
         Layer = layer;
         _environment = layer.Environment;
         _unregister = unregister;
@@ -130,8 +131,21 @@ public sealed class CarDriver : AbstractAgent, ICarSteeringCapable
         {
             if (Car.CurrentEdge == null || !Car.CurrentEdge.Attributes.ContainsKey("osmid"))
                 return "-1";
-            var osmId = Car.CurrentEdge.Attributes["osmid"].ToString();
-            return osmId[0] == '[' ? "-1" : osmId;
+            var raw = Car.CurrentEdge.Attributes["osmid"];
+            if (raw is System.Collections.IEnumerable enumerable and not string)
+            {
+                foreach (var item in enumerable)
+                    return item?.ToString() ?? "-1";
+                return "-1";
+            }
+            var osmId = raw.ToString();
+            if (osmId.Length > 0 && osmId[0] == '[')
+            {
+                var inner = osmId.Trim('[', ']');
+                var first = inner.Split(',')[0].Trim();
+                return string.IsNullOrEmpty(first) ? "-1" : first;
+            }
+            return osmId;
         }
     }
 

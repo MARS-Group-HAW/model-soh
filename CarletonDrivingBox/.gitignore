@@ -1,0 +1,10 @@
+bin/
+obj/
+.venv/
+.cache/
+CarDriver_trips.geojson
+CarDriver.csv
+logs/
+results/
+scheduler_spawn.log
+*.docx
