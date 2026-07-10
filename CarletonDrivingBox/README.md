@@ -47,6 +47,46 @@ Stock `CarDriverSchedulerLayer` in SOHModel is **not** patched. Lat/lon schedule
 
 Schedule CSV on **scheduler layer only** — not on the `CarDriver` agent.
 
+### Scenarios 01–06 (DEVS delay parity)
+
+Scenarios differ **only in parking-lot start delays** — same graph, ODs, and car counts as DEVS.
+
+| Layer | Role |
+|-------|------|
+| `resources/parking_lot_schedules/scenario_XX.csv` | **Source of truth** — same 7-line format as DEVS (`initEventInSec` per lot) |
+| `resources/schedule_base.csv` | Scenario-01 deploy windows + lat/lon (one row per lot) |
+| `resources/schedules/scenario_XX_schedule.csv` | Generated MARS scheduler CSV (shifted `startTime`/`endTime`) |
+| `configs/config_scenario_XX.json` | Run config — points at schedule file + per-scenario `endPoint` / `results/scenario_XX/` |
+
+Regenerate schedules + configs after editing delays:
+
+```bash
+python3 scripts/build_mars_schedules.py
+```
+
+Run one scenario:
+
+```powershell
+dotnet run --project SOHCarletonDrivingBox.csproj -- configs/config_scenario_03.json
+```
+
+Run all six (WSL):
+
+```bash
+bash scripts/run_scenarios.sh
+```
+
+`config.json` at project root remains a shortcut for **scenario_01** (`resources/car_driver_schedule.csv`).
+
+| Scenario | Delayed lots (`initEventInSec`) |
+|----------|----------------------------------|
+| 01 | none |
+| 02 | P6 +3600s |
+| 03 | P6 +7200s |
+| 04 | P3 +3600s, P6 +7200s |
+| 05 | P3 +3600s, P4 +3600s, P6 +7200s |
+| 06 | P3 +3600s, P4 +3600s, P6 +5400s |
+
 ### Run environment
 
 | Task | Where |
@@ -72,7 +112,7 @@ dotnet run --project SOHCarletonDrivingBox.csproj -- config.json
 | Empty trips geojson | Scheduler `file` missing on layer, or sim window too short |
 | Only 1 completed trip | Missing `Guid.NewGuid()` on `CarDriver` |
 | Startup `Sequence contains no elements` | Schedule CSV still on `CarDriver` agent `file` (remove it) |
-| OOM on full run | `endPoint` too late or CSV + trips both enabled — use `08:59:30` max |
+| OOM on full run | `endPoint` too late or CSV + trips both enabled — use `deltaT: 2` (2s ticks) and/or shorter `endPoint` |
 
 ---
 

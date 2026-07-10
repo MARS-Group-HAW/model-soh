@@ -1,7 +1,7 @@
 {
   "id": "carleton_scenario_01",
   "globals": {
-    "deltaT": 1,
+    "deltaT": 2,
     "startPoint": "2021-10-11T06:00:00",
     "endPoint": "2021-10-11T08:59:30",
     "deltaTUnit": "seconds",
