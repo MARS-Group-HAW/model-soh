@@ -24,23 +24,28 @@ internal static class Program
         description.AddAgent<CarDriver, CarletonCarLayer>();
         description.AddEntity<Car>();
 
+        SimulationConfig simConfig;
         ISimulationContainer application;
-        Directory.CreateDirectory("results");
         if (args is { Length: > 0 })
         {
             var configPath = args[0];
             var configText = File.ReadAllText(configPath);
-            var simConfig = SimulationConfig.Deserialize(configText);
+            simConfig = SimulationConfig.Deserialize(configText);
             if (configText.Contains("CarletonCarDriverSchedulerLayer", StringComparison.Ordinal))
                 description.AddLayer<CarletonCarDriverSchedulerLayer>();
             application = SimulationStarter.BuildApplication(description, simConfig);
         }
         else
         {
-            var simConfig = SimulationConfig.Deserialize(File.ReadAllText("config.json"));
+            simConfig = SimulationConfig.Deserialize(File.ReadAllText("config.json"));
             description.AddLayer<CarletonCarDriverSchedulerLayer>();
             application = SimulationStarter.BuildApplication(description, simConfig);
         }
+
+        var outputDir = simConfig.Globals.CsvOptions?.OutputPath;
+        if (string.IsNullOrWhiteSpace(outputDir))
+            outputDir = "results";
+        Directory.CreateDirectory(outputDir);
 
         var simulation = application.Resolve<ISimulation>();
 
@@ -48,20 +53,30 @@ internal static class Program
         var state = simulation.StartSimulation();
         watch.Stop();
 
-        MoveTripsGeojsonToProjectRoot();
-
-        Console.WriteLine($"Executed iterations {state.Iterations} lasted {watch.Elapsed}");
         application.Dispose();
+
+        MoveTripsGeojson(outputDir);
+
+        Console.WriteLine($"Output folder: {Path.GetFullPath(outputDir)}");
+        Console.WriteLine($"Executed iterations {state.Iterations} lasted {watch.Elapsed}");
     }
 
-    private static void MoveTripsGeojsonToProjectRoot()
+    /// <summary>MARS writes trips on dispose; move into the same folder as CarDriver.csv.</summary>
+    private static void MoveTripsGeojson(string outputDir)
     {
         const string fileName = "CarDriver_trips.geojson";
-        var inResults = Path.Combine("results", fileName);
-        if (!File.Exists(inResults))
+        var dest = Path.Combine(outputDir, fileName);
+        foreach (var src in new[] { fileName, Path.Combine("results", fileName) })
+        {
+            if (!File.Exists(src))
+                continue;
+            if (Path.GetFullPath(src) == Path.GetFullPath(dest))
+                return;
+            Directory.CreateDirectory(outputDir);
+            if (File.Exists(dest))
+                File.Delete(dest);
+            File.Move(src, dest);
             return;
-        if (File.Exists(fileName))
-            File.Delete(fileName);
-        File.Move(inResults, fileName);
+        }
     }
 }
