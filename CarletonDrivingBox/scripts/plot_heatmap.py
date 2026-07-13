@@ -26,12 +26,16 @@ def read_heatmap(path: Path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--heat", type=Path, default=DEFAULT_HEAT)
-    ap.add_argument("--out", type=Path, default=DEFAULT_PNG)
+    ap.add_argument("heat", nargs="?", type=Path, default=DEFAULT_HEAT, help="heatmap_matrix.csv path")
+    ap.add_argument("--heat", dest="heat_flag", type=Path, help=argparse.SUPPRESS)
+    ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--vmax", type=float, default=20.0)
     args = ap.parse_args()
 
-    times, roads, m = read_heatmap(args.heat)
+    heat_path = args.heat_flag or args.heat
+    out_path = args.out or (heat_path.parent / "heatmap_matrix.png")
+
+    times, roads, m = read_heatmap(heat_path)
     plt.figure(figsize=(12, 6))
     plt.imshow(m.T, aspect="auto", origin="lower", cmap="plasma", vmax=args.vmax)
     plt.xlabel("Time (s)")
@@ -43,10 +47,10 @@ def main():
     else:
         plt.yticks([])
     plt.tight_layout()
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(args.out, dpi=200)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(out_path, dpi=200)
     plt.close()
-    print(f"Wrote {args.out}")
+    print(f"Wrote {out_path}")
 
 
 if __name__ == "__main__":

@@ -387,10 +387,11 @@ def build_heatmap(
 
 def main():
     ap = argparse.ArgumentParser(description="Build DEVS-format heatmap_matrix.csv from MARS CarDriver.csv")
-    ap.add_argument("--csv", type=Path, default=DEFAULT_CSV)
+    ap.add_argument("csv", nargs="?", type=Path, default=DEFAULT_CSV, help="CarDriver.csv path")
+    ap.add_argument("--csv", dest="csv_flag", type=Path, help=argparse.SUPPRESS)
     ap.add_argument("--graph", type=Path, default=DEFAULT_GRAPH)
     ap.add_argument("--lengths", type=Path, default=DEFAULT_LENGTHS)
-    ap.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--dt", type=float, default=1.0)
     ap.add_argument(
         "--max-time",
@@ -405,8 +406,10 @@ def main():
         help="Max distance (m) to snap lat/lon to sim-road when CurrentEdgeId is missing",
     )
     args = ap.parse_args()
+    csv_path = args.csv_flag or args.csv
+    out_path = args.out or (csv_path.parent / "heatmap_matrix.csv")
     build_heatmap(
-        args.csv, args.graph, args.lengths, args.out, args.dt, args.max_time, args.snap_m
+        csv_path, args.graph, args.lengths, out_path, args.dt, args.max_time, args.snap_m
     )
 
 

@@ -91,10 +91,99 @@ bash scripts/run_scenarios.sh
 
 | Task | Where |
 |------|--------|
-| `dotnet build` / `dotnet run` | **Windows PowerShell** or WSL with `"/mnt/c/Program Files/dotnet/dotnet.exe"` |
-| Python analysis scripts | WSL + `.venv` |
+| `dotnet build` / `dotnet run` | **Windows PowerShell** (recommended) or WSL with Windows `dotnet.exe` |
+| Python analysis scripts | **WSL Ubuntu** + project `.venv` |
 
-WSL does **not** have `dotnet` installed by default — do not use `sudo snap install dotnet` unless you want a separate Linux toolchain.
+WSL does **not** have `dotnet` installed by default — do not use `sudo snap install dotnet` unless you want a separate Linux toolchain. Windows PowerShell does **not** have `python` on PATH by default — use WSL for analysis.
+
+---
+
+## Quick start (scenario 01)
+
+Replace `01` with `02` … `06` for other scenarios. All run outputs for a scenario live in **`results/scenario_XX/`**:
+
+| File | Purpose |
+|------|---------|
+| `CarDriver.csv` | Per-tick agent state |
+| `CarDriver_trips.geojson` | Completed trips |
+| `summary.csv`, `evac_curve.png`, … | Analysis outputs (after step 2) |
+| `heatmap_matrix.csv`, `heatmap_matrix.png` | Heatmap outputs (after step 3) |
+
+### One-time Python setup (WSL Ubuntu)
+
+```bash
+cd /mnt/c/Users/doria/Documents/model-soh/CarletonDrivingBox
+python3 -m venv .venv
+source .venv/bin/activate
+pip install matplotlib
+```
+
+### 1. Run simulation
+
+**PowerShell (recommended):**
+
+```powershell
+cd C:\Users\doria\Documents\model-soh\CarletonDrivingBox
+dotnet build SOHCarletonDrivingBox.csproj
+dotnet run --project SOHCarletonDrivingBox.csproj -- configs\config_scenario_01.json
+```
+
+**WSL Ubuntu** (uses Windows .NET):
+
+```bash
+cd /mnt/c/Users/doria/Documents/model-soh/CarletonDrivingBox
+"/mnt/c/Program Files/dotnet/dotnet.exe" build SOHCarletonDrivingBox.csproj
+"/mnt/c/Program Files/dotnet/dotnet.exe" run --project SOHCarletonDrivingBox.csproj -- configs/config_scenario_01.json
+```
+
+If a previous run is stuck, kill dotnet in PowerShell first: `taskkill /F /IM dotnet.exe`
+
+### 2. Analyze run
+
+**WSL Ubuntu** (activate venv first):
+
+```bash
+cd /mnt/c/Users/doria/Documents/model-soh/CarletonDrivingBox
+source .venv/bin/activate
+python3 scripts/analyze_run.py results/scenario_01/CarDriver.csv
+```
+
+Trips geojson is read automatically from the same folder (`CarDriver_trips.geojson`). Analysis writes `summary.csv`, `evac_curve.csv`, `evac_curve.png`, and `summary.png` into **`results/scenario_01/`**.
+
+**From PowerShell** (one-liner into WSL):
+
+```powershell
+wsl -d Ubuntu-24.04 bash -lc "cd /mnt/c/Users/doria/Documents/model-soh/CarletonDrivingBox && source .venv/bin/activate && python3 scripts/analyze_run.py results/scenario_01/CarDriver.csv"
+```
+
+### 3. Heatmap (optional)
+
+Still in WSL with venv active. Outputs go to the **same folder as the CSV** (`results/scenario_01/`):
+
+```bash
+python3 scripts/build_heatmap_matrix.py results/scenario_01/CarDriver.csv
+python3 scripts/plot_heatmap.py results/scenario_01/heatmap_matrix.csv
+```
+
+Or all analysis + heatmap in one step:
+
+```bash
+bash scripts/analyze_and_heatmap.sh results/scenario_01/CarDriver.csv results/scenario_01/CarDriver_trips.geojson
+```
+
+Writes `heatmap_matrix.csv` and `heatmap_matrix.png` into `results/scenario_01/`.
+
+### Run all scenarios 01–06
+
+**PowerShell:** run each config in turn, or use WSL:
+
+```bash
+bash scripts/run_scenarios.sh
+```
+
+(`run_scenarios.sh` uses Windows `dotnet.exe` from WSL.)
+
+---
 
 ## Troubleshooting
 
@@ -108,6 +197,7 @@ dotnet run --project SOHCarletonDrivingBox.csproj -- config.json
 
 | Symptom | Likely cause |
 |---------|----------------|
+| `Python was not found` in PowerShell | Use WSL for `python3` (see Quick start); sim stays on PowerShell `dotnet run` |
 | `geometry` null on spawn | Using stock `CarDriverSchedulerLayer` instead of `CarletonCarDriverSchedulerLayer` |
 | Empty trips geojson | Scheduler `file` missing on layer, or sim window too short |
 | Only 1 completed trip | Missing `Guid.NewGuid()` on `CarDriver` |
@@ -116,58 +206,30 @@ dotnet run --project SOHCarletonDrivingBox.csproj -- config.json
 
 ---
 
+## Detailed workflow
+
 ### 1. Run simulation
 
-From this folder:
-
-```powershell
-dotnet build SOHCarletonDrivingBox.csproj
-dotnet run --project SOHCarletonDrivingBox.csproj
-```
-
-Or explicitly:
+See **Quick start** above. Legacy root config:
 
 ```powershell
 dotnet run --project SOHCarletonDrivingBox.csproj -- config.json
 ```
 
-Uses `config.json` (~3200 cars, `endPoint` `08:59:30`). All outputs go to **`results/`**:
-
-| File | Purpose |
-|------|---------|
-| `results/CarDriver.csv` | Per-tick agent state (large on full runs) |
-| `CarDriver_trips.geojson` | Completed trips (project root) |
+Writes to `results/` (no scenario subfolder).
 
 ---
 
-### 2. Analyze run (all-in-one)
+### 2. Analyze run
+
+See **Quick start** above. Default (no args) reads `results/CarDriver.csv`:
 
 ```bash
-cd CarletonDrivingBox
 source .venv/bin/activate
-bash scripts/analyze_and_heatmap.sh
-```
-
-Or step by step (defaults read from `results/`):
-
-```bash
 python3 scripts/analyze_run.py
 ```
 
-Writes to **`results/`**:
-
-| File | Content |
-|------|---------|
-| `summary.csv` | Expected vs completed, completion rate |
-| `evac_curve.csv` | Time (s) vs cars on campus |
-| `evac_curve.png` | Evacuation curve plot |
-| `summary.png` | Deployed vs completed bar chart |
-| `lot_deploy_plan.csv` | Per-lot schedule counts |
-| `heatmap_matrix.csv` | DEVS-format congestion matrix (from step 3) |
-| `heatmap_matrix.png` | Heatmap plot (from step 4) |
-| `agent_routes/` | Per-trip route PNGs (optional) |
-
-**Note:** For scheduler runs, trust **`CarDriver_trips.geojson`** (project root) for completions, not unique IDs in the CSV.
+**Note:** For scheduler runs, trust **`CarDriver_trips.geojson`** for completion counts.
 
 Optional route maps per lot:
 
@@ -184,34 +246,34 @@ Same format as DEVS `heatmap_matrix.csv` (20 sim-road columns, vehicles per 100 
 **End time is automatic by default:** scans `CarDriver.csv` for the last second any car is still driving (`CurrentlyCarDriving=true`, `GoalReached=false`) — i.e. when the last car leaves campus. Use `--max-time 6000` only if you want to match the DEVS plot window for side-by-side comparison.
 
 ```bash
-python3 scripts/build_heatmap_matrix.py
+python3 scripts/build_heatmap_matrix.py results/scenario_01/CarDriver.csv
 ```
 
 Optional fixed cap (DEVS comparison window):
 
 ```bash
-python3 scripts/build_heatmap_matrix.py --max-time 6000
+python3 scripts/build_heatmap_matrix.py results/scenario_01/CarDriver.csv --max-time 6000
 ```
 
-Reads (defaults):
+Reads:
 
-- `results/CarDriver.csv` — active drivers per second
+- `results/scenario_XX/CarDriver.csv` — active drivers per second (or pass path as first argument)
 - `resources/campus_drive_graph.geojson` — blueprint graph for edge → sim-road mapping
 - `resources/sim_road_lengths.csv` — DEVS segment lengths (normalization)
 
-Writes:
+Writes to the **same folder as the CSV**:
 
-- **`results/heatmap_matrix.csv`**
+- **`results/scenario_XX/heatmap_matrix.csv`**
 
 ---
 
 ### 4. Visualize heatmap
 
 ```bash
-python3 scripts/plot_heatmap.py
+python3 scripts/plot_heatmap.py results/scenario_01/heatmap_matrix.csv
 ```
 
-Writes **`results/heatmap_matrix.png`** (same style as DEVS: plasma, vmax=20).
+Writes **`results/scenario_XX/heatmap_matrix.png`** (same style as DEVS: plasma, vmax=20).
 
 ---
 
@@ -246,10 +308,10 @@ Do **not** use the DEVS `carleton_campus_car_roads.geojson` here — that is a s
 
 | DEVS | MARS equivalent |
 |------|-----------------|
-| Scenario log CSV | `CarDriver.csv` |
-| `output_data/processed/evac_curve.csv` | `results/evac_curve.csv` |
-| `output_data/processed/heatmap_matrix.csv` | `results/heatmap_matrix.csv` |
+| Scenario log CSV | `results/scenario_XX/CarDriver.csv` |
+| Trips / completions | `results/scenario_XX/CarDriver_trips.geojson` |
+| `output_data/processed/evac_curve.csv` | `results/scenario_XX/evac_curve.csv` |
+| `output_data/processed/heatmap_matrix.csv` | `results/scenario_XX/heatmap_matrix.csv` |
 | `analysis/visualize_processed.py` | `analyze_run.py` + `plot_heatmap.py` |
-| Completion count | `CarDriver_trips.geojson` feature count |
 
 Heatmap **values** differ (different engine and graph detail); **columns, units, and plot layout** match DEVS.

@@ -200,6 +200,7 @@ def analyze_csv(path: Path):
 
 
 def write_outputs(
+    output_dir: Path,
     expected,
     per_lot,
     completed_csv,
@@ -211,9 +212,9 @@ def write_outputs(
     csv_rows,
     evac_end_s=0,
 ):
-    RESULTS.mkdir(exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    with (RESULTS / "summary.csv").open("w", newline="", encoding="utf-8") as f:
+    with (output_dir / "summary.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(
             f,
             fieldnames=[
@@ -242,7 +243,7 @@ def write_outputs(
             }
         )
 
-    with (RESULTS / "lot_deploy_plan.csv").open("w", newline="", encoding="utf-8") as f:
+    with (output_dir / "lot_deploy_plan.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=["lot", "schedule_spawns", "devs_target"])
         w.writeheader()
         for lot in LOT_ORDER:
@@ -254,7 +255,7 @@ def write_outputs(
                 }
             )
 
-    with (RESULTS / "evac_curve.csv").open("w", newline="", encoding="utf-8") as f:
+    with (output_dir / "evac_curve.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(
             [
@@ -290,7 +291,7 @@ def write_outputs(
     if completed == 0:
         plt.text(2, max(int(expected), int(DEVS_TARGET)) * 0.05, "0 — check trips geojson path", ha="center", fontsize=8)
     plt.tight_layout()
-    plt.savefig(RESULTS / "summary.png", dpi=200)
+    plt.savefig(output_dir / "summary.png", dpi=200)
     plt.close()
 
     if on_campus_curve:
@@ -313,17 +314,20 @@ def write_outputs(
         plt.legend(loc="upper left")
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
-        plt.savefig(RESULTS / "evac_curve.png", dpi=200)
+        plt.savefig(output_dir / "evac_curve.png", dpi=200)
         plt.close()
 
 
 def main():
     csv_path = resolve_path(sys.argv[1] if len(sys.argv) > 1 else None, RESULTS / "CarDriver.csv")
+    output_dir = csv_path.parent
     trips_path = resolve_path(
-        sys.argv[2] if len(sys.argv) > 2 else None, ROOT / "CarDriver_trips.geojson"
+        sys.argv[2] if len(sys.argv) > 2 else None,
+        output_dir / "CarDriver_trips.geojson",
     )
 
     print(f"Project root : {ROOT}")
+    print(f"Output dir   : {output_dir}")
     print(f"Trips file   : {trips_path} ({'found' if trips_path.is_file() else 'MISSING'})")
     print(f"CSV file     : {csv_path} ({'found' if csv_path.is_file() else 'not used'})")
 
@@ -378,6 +382,7 @@ def main():
             )
 
     write_outputs(
+        output_dir,
         expected,
         per_lot,
         completed_csv,
@@ -398,7 +403,7 @@ def main():
     print(f"CSV tick rows                : {csv_rows}")
     if evac_end_s:
         print(f"Evac end (last car on campus): t={evac_end_s}s")
-    print(f"Output folder                : {RESULTS}")
+    print(f"Output folder                : {output_dir}")
     print()
     print("Note: trips geojson = finished drives only.")
     print("      Red line = cumulative cars exited; blue = on campus.")
