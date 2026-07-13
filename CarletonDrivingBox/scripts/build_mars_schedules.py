@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Build MARS car_driver schedule CSVs from DEVS-style parking_lot_schedules delays.
 
-Each scenario differs only in when lots start spawning. Delayed lots shift both
-startTime and endTime by initEventInSec so deploy-window length stays the same.
+Each lot spawns exactly totalEvents cars at 12/minute (DEVS 1 car / 5 s).
+A final partial minute uses spawningAmount < 12 when totalEvents is not divisible by 12.
 """
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ BASE_CONFIG = ROOT / "config.json"
 LOT_ORDER = ["P1", "P2", "P3", "P4", "P5", "P6", "P7"]
 SIM_START = datetime(2021, 10, 11, 6, 0, 0)
 EVAC_BUFFER = timedelta(hours=2, minutes=30)
+CARS_PER_MINUTE = 12
 
 
 def parse_clock(value: str) -> datetime:
@@ -49,28 +50,63 @@ def load_base_rows() -> dict[str, dict[str, str]]:
     return rows
 
 
-def load_delays(path: Path) -> dict[str, int]:
+def load_parking_lot(path: Path) -> tuple[dict[str, int], dict[str, int]]:
     delays: dict[str, int] = {}
+    totals: dict[str, int] = {}
     with path.open(encoding="utf-8") as f:
         for row in csv.DictReader(f):
             delays[row["id"]] = int(row["initEventInSec"])
-    return delays
+            totals[row["id"]] = int(row["totalEvents"])
+    return delays, totals
 
 
-def build_schedule_rows(base: dict[str, dict[str, str]], delays: dict[str, int]) -> tuple[list[dict[str, str]], datetime]:
+def make_row(template: dict[str, str], start: datetime, end: datetime, amount: int) -> dict[str, str]:
+    row = {k: v for k, v in template.items() if k != "lot"}
+    row["startTime"] = format_clock(start)
+    row["endTime"] = format_clock(end)
+    row["spawningIntervalInMinutes"] = "1"
+    row["spawningAmount"] = str(amount)
+    return row
+
+
+def lot_schedule_rows(
+    template: dict[str, str], lot_open: datetime, total_events: int
+) -> tuple[list[dict[str, str]], datetime]:
+    """12 cars/minute. MARS endTime is exclusive (see SOHTrainBox README)."""
+    rows: list[dict[str, str]] = []
+    latest = lot_open
+    cursor = lot_open
+    full_minutes = total_events // CARS_PER_MINUTE
+    remainder = total_events % CARS_PER_MINUTE
+
+    if full_minutes:
+        end = cursor + timedelta(minutes=full_minutes)
+        rows.append(make_row(template, cursor, end, CARS_PER_MINUTE))
+        latest = max(latest, end - timedelta(minutes=1))
+        cursor = end
+
+    if remainder:
+        end = cursor + timedelta(minutes=1)
+        rows.append(make_row(template, cursor, end, remainder))
+        latest = max(latest, cursor)
+
+    return rows, latest
+
+
+def build_schedule_rows(
+    base: dict[str, dict[str, str]], delays: dict[str, int], totals: dict[str, int]
+) -> tuple[list[dict[str, str]], datetime, int]:
     out: list[dict[str, str]] = []
     latest_end = SIM_START
+    spawn_total = 0
     for lot in LOT_ORDER:
         src = base[lot]
-        delay = timedelta(seconds=delays.get(lot, 0))
-        start = parse_clock(src["startTime"]) + delay
-        end = parse_clock(src["endTime"]) + delay
-        latest_end = max(latest_end, end)
-        row = {k: v for k, v in src.items() if k != "lot"}
-        row["startTime"] = format_clock(start)
-        row["endTime"] = format_clock(end)
-        out.append(row)
-    return out, latest_end
+        lot_open = SIM_START + timedelta(seconds=delays.get(lot, 0))
+        lot_rows, lot_end = lot_schedule_rows(src, lot_open, totals[lot])
+        out.extend(lot_rows)
+        latest_end = max(latest_end, lot_end)
+        spawn_total += totals[lot]
+    return out, latest_end, spawn_total
 
 
 def write_schedule(path: Path, rows: list[dict[str, str]]) -> None:
@@ -87,18 +123,26 @@ def write_schedule(path: Path, rows: list[dict[str, str]]) -> None:
         w.writerows(rows)
 
 
-def write_config(scenario_id: str, schedule_rel: str, end_dt: datetime) -> None:
+def write_config(scenario_id: str, schedule_rel: str, end_dt: datetime, agent_count: int) -> None:
     if BASE_CONFIG.is_file():
         cfg = json.loads(BASE_CONFIG.read_text(encoding="utf-8"))
     else:
         raise FileNotFoundError(f"Missing base config: {BASE_CONFIG}")
 
     cfg["id"] = f"scenario_{scenario_id}"
+    cfg["globals"]["deltaT"] = 1
     cfg["globals"]["endPoint"] = (SIM_START + (end_dt - SIM_START) + EVAC_BUFFER).isoformat(timespec="seconds")
+    if "csvOptions" not in cfg["globals"]:
+        cfg["globals"]["csvOptions"] = {}
+    cfg["globals"]["csvOptions"]["outputPath"] = f"results/scenario_{scenario_id}"
 
     for layer in cfg.get("layers", []):
-        if layer.get("type") == "CarletonCarDriverSchedulerLayer":
+        if layer.get("name") == "CarletonCarDriverSchedulerLayer":
             layer["file"] = schedule_rel.replace("\\", "/")
+
+    for agent in cfg.get("agents", []):
+        if agent.get("name") == "CarDriver":
+            agent["count"] = agent_count
 
     CONFIGS_DIR.mkdir(parents=True, exist_ok=True)
     out = CONFIGS_DIR / f"config_scenario_{scenario_id}.json"
@@ -111,16 +155,19 @@ def main() -> None:
 
     for delay_file in sorted(DELAYS_DIR.glob("scenario_*.csv")):
         scenario_id = delay_file.stem.replace("scenario_", "")
-        delays = load_delays(delay_file)
-        rows, latest_end = build_schedule_rows(base, delays)
+        delays, totals = load_parking_lot(delay_file)
+        rows, latest_end, spawn_total = build_schedule_rows(base, delays, totals)
         schedule_path = OUT_DIR / f"scenario_{scenario_id}_schedule.csv"
         write_schedule(schedule_path, rows)
         rel = f"resources/schedules/scenario_{scenario_id}_schedule.csv"
-        write_config(scenario_id, rel, latest_end)
-        print(f"scenario_{scenario_id}: deploy ends ~{format_clock(latest_end)}, wrote {schedule_path.name}")
+        write_config(scenario_id, rel, latest_end, spawn_total)
+        print(
+            f"scenario_{scenario_id}: {spawn_total} spawns, deploy ends ~{format_clock(latest_end)}, "
+            f"wrote {schedule_path.name}"
+        )
 
-    # Keep legacy default in sync with scenario_01
-    rows01, _ = build_schedule_rows(base, load_delays(DELAYS_DIR / "scenario_01.csv"))
+    delays01, totals01 = load_parking_lot(DELAYS_DIR / "scenario_01.csv")
+    rows01, _, _ = build_schedule_rows(base, delays01, totals01)
     legacy = ROOT / "resources" / "car_driver_schedule.csv"
     write_schedule(legacy, rows01)
     print(f"Updated legacy {legacy.name}")

@@ -12,19 +12,58 @@ import matplotlib.pyplot as plt
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results"
-SCHEDULE = ROOT / "resources" / "car_driver_schedule.csv"
-CONFIG = ROOT / "config.json"
+DEFAULT_SCHEDULE = ROOT / "resources" / "car_driver_schedule.csv"
+DEFAULT_CONFIG = ROOT / "config.json"
+SCHEDULES_DIR = ROOT / "resources" / "schedules"
+CONFIGS_DIR = ROOT / "configs"
+SCHEDULE_BASE = ROOT / "resources" / "schedule_base.csv"
 DEVS_TARGET = 3200
 LOT_COUNTS = {"P1": 100, "P2": 100, "P3": 200, "P4": 100, "P5": 700, "P6": 900, "P7": 1100}
 LOT_ORDER = ["P1", "P2", "P3", "P4", "P5", "P6", "P7"]
 
 
-def read_sim_times() -> tuple[datetime, int | None]:
+def load_lot_coords() -> dict[str, tuple[float, float]]:
+    coords: dict[str, tuple[float, float]] = {}
+    if not SCHEDULE_BASE.is_file():
+        return coords
+    lines = [
+        line
+        for line in SCHEDULE_BASE.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    ]
+    for row in csv.DictReader(lines):
+        coords[row["lot"]] = (float(row["startLat"]), float(row["startLon"]))
+    return coords
+
+
+LOT_COORDS = load_lot_coords()
+
+
+def scenario_id_from_path(path: Path) -> str | None:
+    for part in reversed(path.parts):
+        m = re.fullmatch(r"scenario_(\d+)", part)
+        if m:
+            return m.group(1)
+    return None
+
+
+def resolve_scenario_paths(csv_path: Path) -> tuple[Path, Path]:
+    """Pick schedule + config for results/scenario_XX/ runs."""
+    sid = scenario_id_from_path(csv_path)
+    if sid:
+        schedule = SCHEDULES_DIR / f"scenario_{sid}_schedule.csv"
+        config = CONFIGS_DIR / f"config_scenario_{sid}.json"
+        if schedule.is_file() and config.is_file():
+            return schedule, config
+    return DEFAULT_SCHEDULE, DEFAULT_CONFIG
+
+
+def read_sim_times(config_path: Path) -> tuple[datetime, int | None]:
     """Return simulation start time and optional end offset in seconds."""
-    if not CONFIG.is_file():
+    if not config_path.is_file():
         start = datetime(2021, 10, 11, 6, 0, 0)
         return start, None
-    cfg = json.loads(CONFIG.read_text(encoding="utf-8"))
+    cfg = json.loads(config_path.read_text(encoding="utf-8"))
     start = datetime.fromisoformat(cfg["globals"]["startPoint"])
     end = datetime.fromisoformat(cfg["globals"]["endPoint"])
     return start, int((end - start).total_seconds())
@@ -40,6 +79,7 @@ def parse_clock(value: str) -> datetime:
 
 
 def spawns_for_row(row) -> int:
+    """MARS endTime is exclusive (SOHTrainBox README)."""
     start = parse_clock(row["startTime"])
     end = parse_clock(row["endTime"])
     interval = float(row["spawningIntervalInMinutes"])
@@ -49,10 +89,19 @@ def spawns_for_row(row) -> int:
     total = 0
     t = start
     step = timedelta(minutes=interval)
-    while t <= end:
+    while t < end:
         total += amount
         t += step
     return total
+
+
+def lot_for_row(row) -> str:
+    slat = float(row["startLat"])
+    slon = float(row["startLon"])
+    for lot, (lat, lon) in LOT_COORDS.items():
+        if abs(slat - lat) < 1e-4 and abs(slon - lon) < 1e-4:
+            return lot
+    return "unknown"
 
 
 def read_schedule(path: Path):
@@ -60,8 +109,15 @@ def read_schedule(path: Path):
     with path.open(encoding="utf-8-sig") as f:
         for row in csv.DictReader(f):
             rows.append(row)
-    per_lot = {lot: spawns_for_row(rows[i]) for i, lot in enumerate(LOT_ORDER[: len(rows)])}
-    return sum(per_lot.values()), per_lot
+    per_lot = {lot: 0 for lot in LOT_ORDER}
+    total = 0
+    for row in rows:
+        n = spawns_for_row(row)
+        total += n
+        lot = lot_for_row(row)
+        if lot in per_lot:
+            per_lot[lot] += n
+    return total, per_lot
 
 
 def spawn_event_times(schedule_path: Path, sim_start: datetime) -> list[int]:
@@ -75,7 +131,7 @@ def spawn_event_times(schedule_path: Path, sim_start: datetime) -> list[int]:
             amount = int(row["spawningAmount"])
             t = start
             step = timedelta(minutes=interval) if interval > 0 else None
-            while t <= end:
+            while t < end:
                 spawn_dt = datetime.combine(sim_start.date(), t.time())
                 sec = int((spawn_dt - sim_start).total_seconds())
                 for _ in range(amount):
@@ -331,10 +387,14 @@ def main():
     print(f"Trips file   : {trips_path} ({'found' if trips_path.is_file() else 'MISSING'})")
     print(f"CSV file     : {csv_path} ({'found' if csv_path.is_file() else 'not used'})")
 
-    sim_start, config_end_s = read_sim_times()
-    expected, per_lot = read_schedule(SCHEDULE)
+    schedule_path, config_path = resolve_scenario_paths(csv_path)
+    print(f"Schedule     : {schedule_path}")
+    print(f"Config       : {config_path}")
+
+    sim_start, config_end_s = read_sim_times(config_path)
+    expected, per_lot = read_schedule(schedule_path)
     trips, depart_times = load_trips_summary(trips_path, sim_start)
-    spawn_times = spawn_event_times(SCHEDULE, sim_start)
+    spawn_times = spawn_event_times(schedule_path, sim_start)
 
     if csv_path.is_file():
         completed_csv, goal_rows, on_campus_curve, csv_rows = analyze_csv(csv_path)

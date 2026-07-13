@@ -10,7 +10,7 @@ This document describes changes to the shared **SOHModel** library (`../SOHModel
 |----------|--------|-----|
 | `SOHModel/Multimodal/Model/CarDriverSchedulerLayer.cs` | **Untouched (stock HEAD)** | Carleton uses box-local scheduler; no shared-library scheduler patches |
 | `CarletonDrivingBox/CarletonCarLayer.cs` | Box-local `CarLayer` subclass | Skip init spawn when agent config has no `file` (scheduler-only setups NRE in stock `CarLayer.InitLayer`) |
-| `CarletonDrivingBox/CarletonCarDriverSchedulerLayer.cs` | Box-local scheduler | Reads `startLat`/`startLon`/`destLat`/`destLon` from schedule CSV (SemiTruck pattern) |
+| `CarletonDrivingBox/CarletonCarDriverSchedulerLayer.cs` | Box-local scheduler | Reads `startLat`/`startLon`/`destLat`/`destLon`; wires `UnregisterAgent` on goal (prevents OOM) |
 | `SOHModel/Car/Model/CarDriver.cs` | `ID = Guid.NewGuid()` in constructor | Scheduler uses `new CarDriver(...)`; without unique IDs only one car survives in `CarLayer.Driver` |
 | `SOHModel/Car/Model/CarDriver.cs` | Enhanced `CurrentEdgeId` null/array handling | Campus graph `osmid` attributes can be arrays; prevents CSV export crashes during heatmap runs |
 | `CarletonDrivingBox/config.json` | Schedule file on scheduler layer only | Canonical SOH pattern (Bus, Train, HumanTraveler); no schedule CSV on `CarDriver` agent |
@@ -82,13 +82,34 @@ startTime,endTime,...,startLat,startLon,destLat,destLon,...,driveMode
 6:00,6:09,...,45.3814076,-75.7006193,45.3792575,-75.7004525,,,3
 ```
 
-Rather than patch SOHModel, Carleton follows the **SemiTruck pattern**: a box-local scheduler class reads coordinates from `dataRow.Data` directly.
+Rather than patch SOHModel, Carleton follows the **SemiTruck / TrainSchedulerLayer pattern**: a box-local scheduler class reads coordinates from `dataRow.Data` directly and passes **`UnregisterAgent`** (not a no-op) into `CarDriver`.
 
 | Component | Role |
 |-----------|------|
 | `CarletonCarLayer` | Load road graph; hold active drivers; skip init spawn without agent file |
-| `CarletonCarDriverSchedulerLayer` | Spawn cars on the timetable from lat/lon columns |
+| `CarletonCarDriverSchedulerLayer` | Spawn cars on the timetable from lat/lon columns; unregister on `GoalReached` |
 | `CarDriver` | Drive one car along a route |
+
+### OOM on scenarios 02–06 (`deltaT: 1`)
+
+**Symptom:** `dotnet run` exhausts RAM on longer scenarios while scenario 01 may succeed.
+
+**Cause:** Stock `CarDriverSchedulerLayer` passes an empty `Unregister` delegate into `CarDriver`. When a car reaches its goal, `CarDriver.Tick()` calls `_unregister.Invoke(...)`, which does nothing — the agent stays in MARS's tick list and `CarLayer.Driver` forever. With ~3200 cars over 10k–17k ticks, memory grows without bound.
+
+**Fix (box-local):** Pass a wrapper that removes the driver from `CarLayer.Driver` and calls `UnregisterAgent` (same pattern as `TrainSchedulerLayer` and `SOHBigEventBox` / Barclays Arena multimodal travelers).
+
+**Profiling (optional):**
+
+```powershell
+# Terminal 1
+dotnet run --project SOHCarletonDrivingBox.csproj -- configs\config_scenario_02.json
+
+# Terminal 2 — watch working set
+Get-Process SOHCarletonDrivingBox -ErrorAction SilentlyContinue |
+  Select-Object Id, @{n='WS_MB';e={[math]::Round($_.WorkingSet64/1MB)}}
+```
+
+Or with `dotnet-counters`: `dotnet tool install -g dotnet-counters` then `dotnet-counters monitor --process-id <pid> System.Runtime`
 
 ---
 

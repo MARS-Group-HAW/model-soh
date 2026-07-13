@@ -3,7 +3,7 @@
   "globals": {
     "deltaT": 1,
     "startPoint": "2021-10-11T06:00:00",
-    "endPoint": "2021-10-11T11:46:00",
+    "endPoint": "2021-10-11T11:44:00",
     "deltaTUnit": "seconds",
     "console": true,
     "csvOptions": {
@@ -18,7 +18,9 @@
         {
           "kind": "trips",
           "outputConfiguration": {
-            "tripsFields": ["StableId"]
+            "tripsFields": [
+              "StableId"
+            ]
           }
         },
         {

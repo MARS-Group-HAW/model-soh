@@ -70,11 +70,13 @@ Run one scenario:
 dotnet run --project SOHCarletonDrivingBox.csproj -- configs/config_scenario_03.json
 ```
 
-Run all six (WSL):
+Run all six:
 
-```bash
-bash scripts/run_scenarios.sh
+```powershell
+.\scripts\run_all_scenarios.cmd
 ```
+
+Skip rebuild: `.\scripts\run_all_scenarios.cmd --no-build`
 
 `config.json` at project root remains a shortcut for **scenario_01** (`resources/car_driver_schedule.csv`).
 
@@ -91,10 +93,11 @@ bash scripts/run_scenarios.sh
 
 | Task | Where |
 |------|--------|
-| `dotnet build` / `dotnet run` | **Windows PowerShell** (recommended) or WSL with Windows `dotnet.exe` |
+| `dotnet build` / `dotnet run` | **Windows PowerShell** (recommended) |
+| Run all scenarios 01–06 | **Windows PowerShell** — `.\scripts\run_all_scenarios.cmd` |
 | Python analysis scripts | **WSL Ubuntu** + project `.venv` |
 
-WSL does **not** have `dotnet` installed by default — do not use `sudo snap install dotnet` unless you want a separate Linux toolchain. Windows PowerShell does **not** have `python` on PATH by default — use WSL for analysis.
+WSL does **not** have `dotnet` installed by default — do not use `sudo snap install dotnet` unless you want a separate Linux toolchain. Do **not** run batch scenarios via WSL calling Windows `dotnet.exe` (unreliable). Windows PowerShell does **not** have `python` on PATH by default — use WSL for analysis.
 
 ---
 
@@ -175,13 +178,16 @@ Writes `heatmap_matrix.csv` and `heatmap_matrix.png` into `results/scenario_01/`
 
 ### Run all scenarios 01–06
 
-**PowerShell:** run each config in turn, or use WSL:
+**PowerShell** (native `dotnet` — no WSL):
 
-```bash
-bash scripts/run_scenarios.sh
+```powershell
+cd C:\Users\doria\Documents\model-soh\CarletonDrivingBox
+.\scripts\run_all_scenarios.cmd
 ```
 
-(`run_scenarios.sh` uses Windows `dotnet.exe` from WSL.)
+Skip rebuild: `.\scripts\run_all_scenarios.cmd --no-build`
+
+Plain `.cmd` batch file — works even when PowerShell blocks `.ps1` scripts.
 
 ---
 
@@ -197,12 +203,16 @@ dotnet run --project SOHCarletonDrivingBox.csproj -- config.json
 
 | Symptom | Likely cause |
 |---------|----------------|
+| `run_all_scenarios` fails with exit 82 from WSL | Old runner invoked Windows `dotnet.exe` from WSL — use `.\scripts\run_all_scenarios.cmd` instead |
+| `.ps1` blocked by execution policy | Use `.\scripts\run_all_scenarios.cmd` (no PowerShell policy change needed) |
 | `Python was not found` in PowerShell | Use WSL for `python3` (see Quick start); sim stays on PowerShell `dotnet run` |
 | `geometry` null on spawn | Using stock `CarDriverSchedulerLayer` instead of `CarletonCarDriverSchedulerLayer` |
 | Empty trips geojson | Scheduler `file` missing on layer, or sim window too short |
 | Only 1 completed trip | Missing `Guid.NewGuid()` on `CarDriver` |
 | Startup `Sequence contains no elements` | Schedule CSV still on `CarDriver` agent `file` (remove it) |
-| OOM on full run | `endPoint` too late or CSV + trips both enabled — use `deltaT: 2` (2s ticks) and/or shorter `endPoint` |
+| OOM on full run | Missing `UnregisterAgent` in scheduler (fixed in `CarletonCarDriverSchedulerLayer`); also check `ResultTrajectoryEnabled: false` and `endPoint` not longer than needed |
+| `[Carleton scheduler] Spawn failed: IndexOutOfRangeException` | All 3200 agent slots busy while schedule still spawning — usually means `UnregisterAgent` is not freeing slots (see double-unregister fix in `CarletonCarDriverSchedulerLayer`) |
+| `Not suitable type proxy found for ... CarDriver` | `CarDriver` calls unregister twice on goal; second call corrupts MARS agent pool — fixed with idempotent `UnregisterDriver` |
 
 ---
 

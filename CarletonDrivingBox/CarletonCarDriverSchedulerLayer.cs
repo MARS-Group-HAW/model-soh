@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Mars.Common;
 using Mars.Common.Core;
 using Mars.Components.Layers;
@@ -22,6 +23,7 @@ namespace SOHCarletonDrivingBox;
 public class CarletonCarDriverSchedulerLayer : SchedulerLayer
 {
     private readonly CarletonCarLayer _carLayer;
+    private readonly HashSet<Guid> _unregistered = new();
 
     public CarletonCarDriverSchedulerLayer(CarletonCarLayer carLayer)
     {
@@ -33,8 +35,21 @@ public class CarletonCarDriverSchedulerLayer : SchedulerLayer
         // CarDriver's constructor already registers via the register callback.
     }
 
-    private static void Unregister(ILayer layer, ITickClient tickClient)
+    /// <summary>
+    /// Remove finished drivers from the layer and MARS tick list (TrainSchedulerLayer pattern).
+    /// Stock CarDriverSchedulerLayer passes a no-op here, which leaks agents after GoalReached.
+    /// </summary>
+    private void UnregisterDriver(ILayer layer, ITickClient tickClient)
     {
+        if (tickClient is not CarDriver driver)
+            return;
+
+        // CarDriver calls unregister from both Notify(GoalReached) and Tick(); guard double-removal.
+        if (!_unregistered.Add(driver.ID))
+            return;
+
+        _carLayer.Driver.Remove(driver.ID);
+        UnregisterAgent(layer, tickClient);
     }
 
     protected override void Schedule(SchedulerEntry dataRow)
@@ -66,7 +81,7 @@ public class CarletonCarDriverSchedulerLayer : SchedulerLayer
             var cardriver = new CarDriver(
                 _carLayer,
                 Register,
-                Unregister,
+                UnregisterDriver,
                 driveMode,
                 startLat,
                 startLon,
@@ -80,7 +95,7 @@ public class CarletonCarDriverSchedulerLayer : SchedulerLayer
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Carleton scheduler] Spawn failed: {ex.Message}");
+            Console.WriteLine($"[Carleton scheduler] Spawn failed: {ex.GetType().Name}: {ex.Message}");
         }
     }
 }
