@@ -78,6 +78,7 @@ SIM_ROADS = [
     ("Raven Rd & University Dr", "P3 & Raven Rd", "Raven Rd & University Dr to P3 & Raven Rd"),
     ("P3 & Raven Rd", "Raven Rd & University Dr", "P3 & Raven Rd to Raven Rd & University Dr"),
     ("P3 & Raven Rd", "Bronson Ave & Raven Rd", "P3 & Raven Rd to Bronson Ave & Raven Rd"),
+    ("Raven Rd & University Dr", "Bronson Ave & Raven Rd", "Raven Rd & University Dr to Bronson Ave & Raven Rd"),
     ("Library Rd & University Dr", "Colonel By Dr & University Dr", "Library Rd & University Dr to Colonel By Dr & University Dr"),
     ("Raven Rd & University Dr", "P4 & University Dr", "Raven Rd & University Dr to P4 & University Dr"),
     ("P4 & University Dr", "Raven Rd & University Dr", "P4 & University Dr to Raven Rd & University Dr"),
@@ -145,6 +146,16 @@ def nearest_simroad(
 
 def dist_m(lat1, lon1, lat2, lon2):
     return math.hypot((lat2 - lat1) * 111_000, (lon2 - lon1) * 85_000)
+
+
+def load_heatmap_roads(lengths_path: Path) -> list[str]:
+    if lengths_path.resolve() == DEFAULT_LENGTHS.resolve():
+        return HEATMAP_ROADS
+    roads: list[str] = []
+    with lengths_path.open(encoding="utf-8", newline="") as f:
+        for row in csv.DictReader(f):
+            roads.append(row["ROAD"].strip())
+    return roads or HEATMAP_ROADS
 
 
 def load_road_lengths(path: Path) -> dict[str, float]:
@@ -306,7 +317,7 @@ def build_heatmap(
     osm_to_sim, osm_primary, osm_mid, corridor = build_osm_mapping(graph)
     midpoints = build_simroad_midpoints(graph)
     road_length_m = load_road_lengths(lengths_path)
-    roads = HEATMAP_ROADS
+    roads = load_heatmap_roads(lengths_path)
     road_set = set(roads)
 
     if max_time is None:

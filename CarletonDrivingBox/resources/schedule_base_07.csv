@@ -1,0 +1,10 @@
+# Scenario 07 — Bronson/Raven emergency exit (same deploy timing as scenario_01).
+# P3 and P4 exit via Bronson Ave & Raven Rd (DEVS scenario_07_bronson.csv).
+lot,startTime,endTime,spawningIntervalInMinutes,spawningAmount,carType,maxSpeed,averageSpeed,trafficCode,startLat,startLon,destLat,destLon,osmRoute,nextTrafficLightPhase,driveMode
+P1,6:00,6:09,1,12,Golf,13.89,13.89,german,45.3813098,-75.7006879,45.3792575,-75.7004525,,,3
+P2,6:00,6:09,1,12,Golf,13.89,13.89,german,45.3836355,-75.6962699,45.3792575,-75.7004525,,,3
+P3,6:00,6:17,1,12,Golf,13.89,13.89,german,45.384003,-75.694052,45.3851,-75.6903,,,3
+P4,6:00,6:09,1,12,Golf,13.89,13.89,german,45.3857089,-75.6950736,45.3851,-75.6903,,,3
+P5,6:00,6:59,1,12,Golf,13.89,13.89,german,45.3879759,-75.6932794,45.3896198,-75.694494,,,3
+P6,6:00,7:16,1,12,Golf,13.89,13.89,german,45.3885825,-75.6970087,45.3896198,-75.694494,,,3
+P7,6:00,7:32,1,12,Golf,13.89,13.89,german,45.3888841,-75.6962336,45.3896198,-75.694494,,,3

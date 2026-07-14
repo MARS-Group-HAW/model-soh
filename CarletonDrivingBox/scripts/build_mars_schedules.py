@@ -38,16 +38,25 @@ def format_clock(dt: datetime) -> str:
     return dt.strftime("%H:%M")
 
 
-def load_base_rows() -> dict[str, dict[str, str]]:
+def load_base_rows(scenario_id: str) -> dict[str, dict[str, str]]:
+    specific = ROOT / "resources" / f"schedule_base_{scenario_id}.csv"
+    path = specific if specific.is_file() else BASE_SCHEDULE
     rows: dict[str, dict[str, str]] = {}
     lines = [
         line
-        for line in BASE_SCHEDULE.read_text(encoding="utf-8").splitlines()
+        for line in path.read_text(encoding="utf-8").splitlines()
         if line.strip() and not line.strip().startswith("#")
     ]
     for row in csv.DictReader(lines):
         rows[row["lot"]] = row
     return rows
+
+
+def graph_file_for_scenario(scenario_id: str) -> str | None:
+    specific = ROOT / "resources" / f"campus_drive_graph_scenario_{scenario_id}.geojson"
+    if specific.is_file():
+        return f"resources/campus_drive_graph_scenario_{scenario_id}.geojson"
+    return None
 
 
 def load_parking_lot(path: Path) -> tuple[dict[str, int], dict[str, int]]:
@@ -123,7 +132,13 @@ def write_schedule(path: Path, rows: list[dict[str, str]]) -> None:
         w.writerows(rows)
 
 
-def write_config(scenario_id: str, schedule_rel: str, end_dt: datetime, agent_count: int) -> None:
+def write_config(
+    scenario_id: str,
+    schedule_rel: str,
+    end_dt: datetime,
+    agent_count: int,
+    graph_rel: str | None = None,
+) -> None:
     if BASE_CONFIG.is_file():
         cfg = json.loads(BASE_CONFIG.read_text(encoding="utf-8"))
     else:
@@ -139,6 +154,8 @@ def write_config(scenario_id: str, schedule_rel: str, end_dt: datetime, agent_co
     for layer in cfg.get("layers", []):
         if layer.get("name") == "CarletonCarDriverSchedulerLayer":
             layer["file"] = schedule_rel.replace("\\", "/")
+        if graph_rel and layer.get("name") == "CarLayer":
+            layer["file"] = graph_rel.replace("\\", "/")
 
     for agent in cfg.get("agents", []):
         if agent.get("name") == "CarDriver":
@@ -150,24 +167,27 @@ def write_config(scenario_id: str, schedule_rel: str, end_dt: datetime, agent_co
 
 
 def main() -> None:
-    base = load_base_rows()
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     for delay_file in sorted(DELAYS_DIR.glob("scenario_*.csv")):
         scenario_id = delay_file.stem.replace("scenario_", "")
+        base = load_base_rows(scenario_id)
         delays, totals = load_parking_lot(delay_file)
         rows, latest_end, spawn_total = build_schedule_rows(base, delays, totals)
         schedule_path = OUT_DIR / f"scenario_{scenario_id}_schedule.csv"
         write_schedule(schedule_path, rows)
         rel = f"resources/schedules/scenario_{scenario_id}_schedule.csv"
-        write_config(scenario_id, rel, latest_end, spawn_total)
+        graph_rel = graph_file_for_scenario(scenario_id)
+        write_config(scenario_id, rel, latest_end, spawn_total, graph_rel)
+        extra = f", graph={graph_rel}" if graph_rel else ""
         print(
             f"scenario_{scenario_id}: {spawn_total} spawns, deploy ends ~{format_clock(latest_end)}, "
-            f"wrote {schedule_path.name}"
+            f"wrote {schedule_path.name}{extra}"
         )
 
+    base01 = load_base_rows("01")
     delays01, totals01 = load_parking_lot(DELAYS_DIR / "scenario_01.csv")
-    rows01, _, _ = build_schedule_rows(base, delays01, totals01)
+    rows01, _, _ = build_schedule_rows(base01, delays01, totals01)
     legacy = ROOT / "resources" / "car_driver_schedule.csv"
     write_schedule(legacy, rows01)
     print(f"Updated legacy {legacy.name}")

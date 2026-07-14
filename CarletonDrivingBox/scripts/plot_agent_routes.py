@@ -18,15 +18,16 @@ from matplotlib.collections import LineCollection
 from matplotlib.lines import Line2D
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_TRIPS = ROOT / "CarDriver_trips.geojson"
+RESULTS = ROOT / "results"
 DEFAULT_GRAPH = ROOT / "resources" / "campus_drive_graph.geojson"
-DEFAULT_OUT = ROOT / "results" / "agent_routes"
+VALID_SCENARIOS = tuple(f"{i:02d}" for i in range(1, 8))
 
 COLONEL_BY = (45.3792575, -75.7004525)
 BRONSON = (45.3896198, -75.694494)
+BRONSON_RAVEN = (45.3851, -75.6903)  # scenario 07 — P3/P4 emergency exit
 EXIT_TOL_M = 80.0
 
-LOTS = {
+LOTS_BASE = {
     "P1": {"spawn": (45.3813098, -75.7006879), "exit": COLONEL_BY, "color": "#e41a1c"},
     "P2": {"spawn": (45.3836355, -75.6962699), "exit": COLONEL_BY, "color": "#377eb8"},
     "P3": {"spawn": (45.384003, -75.694052), "exit": COLONEL_BY, "color": "#4daf4a"},
@@ -37,12 +38,40 @@ LOTS = {
 }
 
 
+def normalize_scenario(value: str) -> str:
+    sid = value.strip().replace("scenario_", "")
+    if not sid.isdigit():
+        raise ValueError(f"Bad scenario id: {value!r}")
+    sid = f"{int(sid):02d}"
+    if sid not in VALID_SCENARIOS:
+        raise ValueError(f"Scenario must be 01–07, got {value!r}")
+    return sid
+
+
+def lots_for_scenario(scenario_id: str) -> dict:
+    lots = {k: dict(v) for k, v in LOTS_BASE.items()}
+    if scenario_id == "07":
+        lots["P3"]["exit"] = BRONSON_RAVEN
+        lots["P4"]["exit"] = BRONSON_RAVEN
+    return lots
+
+
+def resolve_scenario_paths(scenario_id: str) -> tuple[Path, Path, Path]:
+    """trips geojson, background graph, output folder for a scenario."""
+    scenario_dir = RESULTS / f"scenario_{scenario_id}"
+    trips = scenario_dir / "CarDriver_trips.geojson"
+    out = scenario_dir / "agent_routes"
+    graph_specific = ROOT / "resources" / f"campus_drive_graph_scenario_{scenario_id}.geojson"
+    graph = graph_specific if graph_specific.is_file() else DEFAULT_GRAPH
+    return trips, graph, out
+
+
 def dist_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return math.hypot((lat2 - lat1) * 111_000, (lon2 - lon1) * 85_000)
 
 
-def nearest_lot(lat: float, lon: float) -> str:
-    return min(LOTS, key=lambda k: dist_m(lat, lon, *LOTS[k]["spawn"]))
+def nearest_lot(lat: float, lon: float, lots: dict) -> str:
+    return min(lots, key=lambda k: dist_m(lat, lon, *lots[k]["spawn"]))
 
 
 def flatten_coords(geom: dict) -> list[tuple[float, float]]:
@@ -98,12 +127,13 @@ def plot_trip(
     graph_segments: list[list[tuple[float, float]]],
     out_path: Path,
     dpi: int,
+    lots: dict,
 ):
     lats = [c[0] for c in coords]
     lons = [c[1] for c in coords]
-    spawn = LOTS[lot]["spawn"]
-    expected_exit = LOTS[lot]["exit"]
-    lot_color = LOTS[lot]["color"]
+    spawn = lots[lot]["spawn"]
+    expected_exit = lots[lot]["exit"]
+    lot_color = lots[lot]["color"]
     route_color = "#1b9e77" if exit_ok and ratio >= 1.05 else "#d95f02"
 
     pad_lat = max(0.0015, (max(lats) - min(lats)) * 0.15 + 0.0008)
@@ -145,10 +175,18 @@ def plot_trip(
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Export one route PNG per completed agent trip")
-    ap.add_argument("--trips", type=Path, default=DEFAULT_TRIPS, help="CarDriver_trips.geojson")
-    ap.add_argument("--graph", type=Path, default=DEFAULT_GRAPH, help="Background drive graph")
-    ap.add_argument("--out", type=Path, default=DEFAULT_OUT, help="Output folder for PNGs")
+    ap = argparse.ArgumentParser(
+        description="Export one route PNG per completed agent trip (scenarios 01–07)."
+    )
+    ap.add_argument(
+        "scenario",
+        nargs="?",
+        default="01",
+        help="Scenario id 01–07 (default: 01). Resolves trips/graph/output under results/scenario_XX/",
+    )
+    ap.add_argument("--trips", type=Path, default=None, help="Override CarDriver_trips.geojson")
+    ap.add_argument("--graph", type=Path, default=None, help="Override background drive graph")
+    ap.add_argument("--out", type=Path, default=None, help="Override output folder for PNGs")
     ap.add_argument("--limit", type=int, default=0, help="Max trips to plot (0 = all)")
     ap.add_argument("--lot", type=str, default="", help="Only plot this lot, e.g. P5")
     ap.add_argument("--suspicious-only", action="store_true", help="Only wrong exit or nearly straight routes")
@@ -156,16 +194,34 @@ def main():
     ap.add_argument("--dpi", type=int, default=120)
     args = ap.parse_args()
 
-    if not args.trips.is_file():
-        raise SystemExit(f"Missing trips file: {args.trips}\nRun the sim first — use CarDriver_trips.geojson (completed routes).")
+    try:
+        scenario_id = normalize_scenario(args.scenario)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
 
-    print(f"Loading {args.trips} …")
-    with args.trips.open(encoding="utf-8") as f:
+    default_trips, default_graph, default_out = resolve_scenario_paths(scenario_id)
+    trips_path = args.trips or default_trips
+    graph_path = args.graph or default_graph
+    out_dir = args.out or default_out
+    lots = lots_for_scenario(scenario_id)
+
+    if not trips_path.is_file():
+        raise SystemExit(
+            f"Missing trips file: {trips_path}\n"
+            f"Run scenario {scenario_id} first:\n"
+            f"  dotnet run --project SOHCarletonDrivingBox.csproj -- configs/config_scenario_{scenario_id}.json"
+        )
+
+    print(f"Scenario       : {scenario_id}")
+    print(f"Loading {trips_path} …")
+    with trips_path.open(encoding="utf-8") as f:
         data = json.load(f)
     features = data.get("features", [])
-    print(f"Trips loaded: {len(features)}")
+    print(f"Trips loaded   : {len(features)}")
+    print(f"Graph          : {graph_path}")
+    print(f"Output folder  : {out_dir}")
 
-    graph_segments = [] if args.no_graph else load_graph_segments(args.graph)
+    graph_segments = [] if args.no_graph else load_graph_segments(graph_path)
     if graph_segments:
         print(f"Background graph segments: {len(graph_segments)}")
 
@@ -184,11 +240,11 @@ def main():
             skipped += 1
             continue
 
-        lot = nearest_lot(coords[0][0], coords[0][1])
+        lot = nearest_lot(coords[0][0], coords[0][1], lots)
         if args.lot and lot != args.lot.upper():
             continue
 
-        expected_exit = LOTS[lot]["exit"]
+        expected_exit = lots[lot]["exit"]
         end_lat, end_lon = coords[-1]
         exit_dist = dist_m(end_lat, end_lon, expected_exit[0], expected_exit[1])
         exit_ok = exit_dist <= EXIT_TOL_M
@@ -199,8 +255,8 @@ def main():
             continue
 
         fname = f"{plotted + 1:04d}_{lot}_{safe_name(agent_id)}.png"
-        out_path = args.out / fname
-        plot_trip(coords, lot, agent_id, exit_ok, path_m, ratio, graph_segments, out_path, args.dpi)
+        out_path = out_dir / fname
+        plot_trip(coords, lot, agent_id, exit_ok, path_m, ratio, graph_segments, out_path, args.dpi, lots)
 
         summary_rows.append(
             {
@@ -209,7 +265,7 @@ def main():
                 "lot": lot,
                 "exit_ok": exit_ok,
                 "exit_dist_m": round(exit_dist, 1),
-                "spawn_dist_m": round(dist_m(coords[0][0], coords[0][1], *LOTS[lot]["spawn"]), 1),
+                "spawn_dist_m": round(dist_m(coords[0][0], coords[0][1], *lots[lot]["spawn"]), 1),
                 "path_m": round(path_m, 1),
                 "chord_m": round(chord_m, 1),
                 "path_chord_ratio": round(ratio, 3),
@@ -220,8 +276,8 @@ def main():
         if plotted % 100 == 0:
             print(f"  plotted {plotted} …")
 
-    summary_path = args.out / "route_summary.csv"
-    args.out.mkdir(parents=True, exist_ok=True)
+    summary_path = out_dir / "route_summary.csv"
+    out_dir.mkdir(parents=True, exist_ok=True)
     with summary_path.open("w", encoding="utf-8", newline="") as f:
         if summary_rows:
             writer = csv.DictWriter(f, fieldnames=list(summary_rows[0].keys()))
@@ -233,7 +289,7 @@ def main():
     straight = sum(1 for r in summary_rows if r["path_chord_ratio"] < 1.05)
 
     print()
-    print(f"PNG folder     : {args.out}")
+    print(f"PNG folder     : {out_dir}")
     print(f"Summary CSV    : {summary_path}")
     print(f"Plotted        : {plotted}")
     print(f"Skipped (empty): {skipped}")

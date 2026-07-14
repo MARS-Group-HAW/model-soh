@@ -17,7 +17,7 @@ Scenario 01: scheduler-based car evacuation on the **blueprint Jupyter drive gra
 4. Plot heatmap
 ```
 
-Optional checks after step 2: `plot_agent_routes.py` for per-lot route maps.
+Optional checks after step 2: `plot_agent_routes.py` for per-lot route maps (one PNG per completed trip).
 
 ---
 
@@ -88,6 +88,9 @@ Skip rebuild: `.\scripts\run_all_scenarios.cmd --no-build`
 | 04 | P3 +3600s, P6 +7200s |
 | 05 | P3 +3600s, P4 +3600s, P6 +7200s |
 | 06 | P3 +3600s, P4 +3600s, P6 +5400s |
+| **07** | **No delays** — **Bronson/Raven emergency exit** (P3/P4 → Bronson Ave & Raven Rd + r28 link) |
+
+Scenarios **01–06** share `resources/schedule_base.csv` and `resources/campus_drive_graph.geojson`. **Scenario 07** uses its own schedule base, graph, and heatmap road list (does not change 01–06).
 
 ### Run environment
 
@@ -176,6 +179,39 @@ bash scripts/analyze_and_heatmap.sh results/scenario_01/CarDriver.csv results/sc
 
 Writes `heatmap_matrix.csv` and `heatmap_matrix.png` into `results/scenario_01/`.
 
+### Scenario 07 — Bronson/Raven emergency exit (third exit)
+
+Matches DEVS `scenario_07`: same 3200-car deploy as scenario 01, but P3/P4 cars exit via **Bronson Ave & Raven Rd** and the emergency link **r28** (`Raven Rd & University Dr → Bronson Ave & Raven Rd`).
+
+**One-time setup** (after cloning or pulling scenario 07 files):
+
+```bash
+cd /mnt/c/Users/doria/Documents/model-soh/CarletonDrivingBox
+python3 scripts/build_scenario_07_graph.py
+python3 scripts/build_mars_schedules.py
+```
+
+**Run (PowerShell):**
+
+```powershell
+.\scripts\run_scenario_07.cmd
+```
+
+Or: `dotnet run --project SOHCarletonDrivingBox.csproj -- configs\config_scenario_07.json`
+
+**Analyze + heatmap (WSL):**
+
+```bash
+source .venv/bin/activate
+python3 scripts/analyze_run.py results/scenario_07/CarDriver.csv
+python3 scripts/build_heatmap_matrix.py results/scenario_07/CarDriver.csv \
+  --graph resources/campus_drive_graph_scenario_07.geojson \
+  --lengths resources/sim_road_lengths_scenario_07.csv
+python3 scripts/plot_heatmap.py results/scenario_07/heatmap_matrix.csv
+```
+
+Scenario 07-only files: `schedule_base_07.csv`, `campus_drive_graph_scenario_07.geojson`, `sim_road_lengths_scenario_07.csv`, `configs/config_scenario_07.json`. Scenarios 01–06 are unchanged.
+
 ### Run all scenarios 01–06
 
 **PowerShell** (native `dotnet` — no WSL):
@@ -244,8 +280,13 @@ python3 scripts/analyze_run.py
 Optional route maps per lot:
 
 ```bash
-python3 scripts/plot_agent_routes.py --lot P1 --limit 20
+# Scenario 01–07 — PNGs under results/scenario_XX/agent_routes/
+python3 scripts/plot_agent_routes.py 04
+python3 scripts/plot_agent_routes.py 07 --lot P3 --limit 20
+python3 scripts/plot_agent_routes.py 01 --suspicious-only
 ```
+
+From PowerShell: `.\scripts\plot_agent_routes.cmd 04`
 
 ---
 
