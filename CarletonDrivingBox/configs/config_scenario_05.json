@@ -12,7 +12,7 @@
   },
   "agents": [
     {
-      "name": "CarDriver",
+      "name": "CarletonCarDriver",
       "count": 3200,
       "outputs": [
         {

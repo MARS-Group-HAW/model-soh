@@ -10,6 +10,8 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
+from mars_agent_outputs import agent_output_path
+
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results"
 DEFAULT_SCHEDULE = ROOT / "resources" / "car_driver_schedule.csv"
@@ -375,11 +377,14 @@ def write_outputs(
 
 
 def main():
-    csv_path = resolve_path(sys.argv[1] if len(sys.argv) > 1 else None, RESULTS / "CarDriver.csv")
+    csv_path = resolve_path(
+        sys.argv[1] if len(sys.argv) > 1 else None,
+        agent_output_path(RESULTS, ".csv"),
+    )
     output_dir = csv_path.parent
     trips_path = resolve_path(
         sys.argv[2] if len(sys.argv) > 2 else None,
-        output_dir / "CarDriver_trips.geojson",
+        agent_output_path(output_dir, "_trips.geojson"),
     )
 
     print(f"Project root : {ROOT}")

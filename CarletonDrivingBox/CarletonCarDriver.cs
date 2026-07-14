@@ -1,23 +1,25 @@
+using System;
 using Mars.Components.Agents;
 using Mars.Interfaces.Annotations;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Layers;
 using SOHModel.Car.Common;
+using SOHModel.Car.Model;
 using SOHModel.Car.Steering;
 using SOHModel.Domain.Steering.Common;
 
-namespace SOHModel.Car.Model;
+namespace SOHCarletonDrivingBox;
 
 /// <summary>
-///     Standard implementation of a driver agent that is bound to a single car and drives around with it on the given
-///     osmRoute.
+///     Carleton campus car driver — stock <see cref="CarDriver"/> behaviour plus campus spawn/heatmap fixes.
 /// </summary>
-public sealed class CarDriver : AbstractAgent, ICarSteeringCapable
+public sealed class CarletonCarDriver : AbstractAgent, ICarSteeringCapable
 {
-    public CarDriver(CarLayer layer, RegisterAgent register, UnregisterAgent unregister, int driveMode,
+    public CarletonCarDriver(CarletonCarLayer layer, RegisterAgent register, UnregisterAgent unregister, int driveMode,
         double startLat = 0, double startLon = 0, double destLat = 0, double destLon = 0,
         ISpatialEdge startingEdge = null, string osmRoute = "", string trafficCode = "german")
     {
+        ID = Guid.NewGuid();
         Layer = layer;
         _environment = layer.Environment;
         _unregister = unregister;
@@ -28,7 +30,7 @@ public sealed class CarDriver : AbstractAgent, ICarSteeringCapable
 
         var route = CarRouteFinder.Find(_environment, driveMode,
             startLat, startLon, destLat, destLon, startingEdge, osmRoute);
-        var node = route.First().Edge.From;
+        var node = _environment.NearestNode(Position.CreateGeoPosition(startLon, startLat));
         _environment.Insert(Car, node);
 
         Car.TryEnterDriver(this, out _steeringHandle);
@@ -68,7 +70,7 @@ public sealed class CarDriver : AbstractAgent, ICarSteeringCapable
 
     #region properties
 
-    private CarLayer Layer { get; }
+    private CarletonCarLayer Layer { get; }
 
     public Position Position
     {
@@ -130,8 +132,21 @@ public sealed class CarDriver : AbstractAgent, ICarSteeringCapable
         {
             if (Car.CurrentEdge == null || !Car.CurrentEdge.Attributes.ContainsKey("osmid"))
                 return "-1";
-            var osmId = Car.CurrentEdge.Attributes["osmid"].ToString();
-            return osmId[0] == '[' ? "-1" : osmId;
+            var raw = Car.CurrentEdge.Attributes["osmid"];
+            if (raw is System.Collections.IEnumerable enumerable and not string)
+            {
+                foreach (var item in enumerable)
+                    return item?.ToString() ?? "-1";
+                return "-1";
+            }
+            var osmId = raw.ToString();
+            if (osmId.Length > 0 && osmId[0] == '[')
+            {
+                var inner = osmId.Trim('[', ']');
+                var first = inner.Split(',')[0].Trim();
+                return string.IsNullOrEmpty(first) ? "-1" : first;
+            }
+            return osmId;
         }
     }
 

@@ -15,8 +15,10 @@ import math
 from collections import defaultdict
 from pathlib import Path
 
+from mars_agent_outputs import agent_output_path
+
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CSV = ROOT / "results" / "CarDriver.csv"
+DEFAULT_CSV = agent_output_path(ROOT / "results", ".csv")
 DEFAULT_GRAPH = ROOT / "resources" / "campus_drive_graph.geojson"
 DEFAULT_LENGTHS = ROOT / "resources" / "sim_road_lengths.csv"
 DEFAULT_OUT = ROOT / "results" / "heatmap_matrix.csv"
@@ -397,8 +399,16 @@ def build_heatmap(
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Build DEVS-format heatmap_matrix.csv from MARS CarDriver.csv")
-    ap.add_argument("csv", nargs="?", type=Path, default=DEFAULT_CSV, help="CarDriver.csv path")
+    ap = argparse.ArgumentParser(
+        description="Build DEVS-format heatmap_matrix.csv from MARS CarletonCarDriver.csv"
+    )
+    ap.add_argument(
+        "csv",
+        nargs="?",
+        type=Path,
+        default=DEFAULT_CSV,
+        help="CarletonCarDriver.csv path (CarDriver.csv fallback)",
+    )
     ap.add_argument("--csv", dest="csv_flag", type=Path, help=argparse.SUPPRESS)
     ap.add_argument("--graph", type=Path, default=DEFAULT_GRAPH)
     ap.add_argument("--lengths", type=Path, default=DEFAULT_LENGTHS)

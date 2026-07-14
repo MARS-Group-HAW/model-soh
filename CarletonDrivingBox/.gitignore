@@ -2,6 +2,8 @@ bin/
 obj/
 .venv/
 .cache/
+CarletonCarDriver_trips.geojson
+CarletonCarDriver.csv
 CarDriver_trips.geojson
 CarDriver.csv
 logs/

@@ -10,7 +10,7 @@ using SOHModel.Car.Model;
 namespace SOHCarletonDrivingBox;
 
 /// <summary>
-/// Campus evacuation scheduler for <see cref="CarDriver"/> agents.
+/// Campus evacuation scheduler for <see cref="CarletonCarDriver"/> agents.
 /// </summary>
 /// <remarks>
 /// Stock <c>CarDriverSchedulerLayer</c> (SOHModel) reads spawn coordinates from WKT
@@ -32,7 +32,7 @@ public class CarletonCarDriverSchedulerLayer : SchedulerLayer
 
     private static void Register(ILayer layer, ITickClient tickClient)
     {
-        // CarDriver's constructor already registers via the register callback.
+        // CarletonCarDriver's constructor already registers via the register callback.
     }
 
     /// <summary>
@@ -41,10 +41,10 @@ public class CarletonCarDriverSchedulerLayer : SchedulerLayer
     /// </summary>
     private void UnregisterDriver(ILayer layer, ITickClient tickClient)
     {
-        if (tickClient is not CarDriver driver)
+        if (tickClient is not CarletonCarDriver driver)
             return;
 
-        // CarDriver calls unregister from both Notify(GoalReached) and Tick(); guard double-removal.
+        // CarletonCarDriver calls unregister from both Notify(GoalReached) and Tick(); guard double-removal.
         if (!_unregistered.Add(driver.ID))
             return;
 
@@ -78,7 +78,7 @@ public class CarletonCarDriverSchedulerLayer : SchedulerLayer
                 ? osmRouteVal.Value<string>() ?? ""
                 : "";
 
-            var cardriver = new CarDriver(
+            var cardriver = new CarletonCarDriver(
                 _carLayer,
                 Register,
                 UnregisterDriver,

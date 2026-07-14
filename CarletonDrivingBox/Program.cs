@@ -21,7 +21,7 @@ internal static class Program
 
         var description = new ModelDescription();
         description.AddLayer<CarletonCarLayer>("CarLayer");
-        description.AddAgent<CarDriver, CarletonCarLayer>();
+        description.AddAgent<CarletonCarDriver, CarletonCarLayer>();
         description.AddEntity<Car>();
 
         SimulationConfig simConfig;
@@ -61,22 +61,24 @@ internal static class Program
         Console.WriteLine($"Executed iterations {state.Iterations} lasted {watch.Elapsed}");
     }
 
-    /// <summary>MARS writes trips on dispose; move into the same folder as CarDriver.csv.</summary>
+    /// <summary>MARS writes trips on dispose; move into the same folder as CarletonCarDriver.csv.</summary>
     private static void MoveTripsGeojson(string outputDir)
     {
-        const string fileName = "CarDriver_trips.geojson";
-        var dest = Path.Combine(outputDir, fileName);
-        foreach (var src in new[] { fileName, Path.Combine("results", fileName) })
+        foreach (var fileName in new[] { "CarletonCarDriver_trips.geojson", "CarDriver_trips.geojson" })
         {
-            if (!File.Exists(src))
-                continue;
-            if (Path.GetFullPath(src) == Path.GetFullPath(dest))
+            var dest = Path.Combine(outputDir, fileName);
+            foreach (var src in new[] { fileName, Path.Combine("results", fileName) })
+            {
+                if (!File.Exists(src))
+                    continue;
+                if (Path.GetFullPath(src) == Path.GetFullPath(dest))
+                    return;
+                Directory.CreateDirectory(outputDir);
+                if (File.Exists(dest))
+                    File.Delete(dest);
+                File.Move(src, dest);
                 return;
-            Directory.CreateDirectory(outputDir);
-            if (File.Exists(dest))
-                File.Delete(dest);
-            File.Move(src, dest);
-            return;
+            }
         }
     }
 }

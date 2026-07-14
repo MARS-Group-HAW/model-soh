@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Plot one PNG per completed agent trip from CarDriver_trips.geojson.
+Plot one PNG per completed agent trip from CarletonCarDriver_trips.geojson.
 
 Use this to visually verify each car routes from lot (entrance) to campus exit.
 Trips geojson = finished drives only (one LineString per agent).
@@ -16,6 +16,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib.lines import Line2D
+
+from mars_agent_outputs import agent_output_path
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results"
@@ -59,7 +61,7 @@ def lots_for_scenario(scenario_id: str) -> dict:
 def resolve_scenario_paths(scenario_id: str) -> tuple[Path, Path, Path]:
     """trips geojson, background graph, output folder for a scenario."""
     scenario_dir = RESULTS / f"scenario_{scenario_id}"
-    trips = scenario_dir / "CarDriver_trips.geojson"
+    trips = agent_output_path(scenario_dir, "_trips.geojson")
     out = scenario_dir / "agent_routes"
     graph_specific = ROOT / "resources" / f"campus_drive_graph_scenario_{scenario_id}.geojson"
     graph = graph_specific if graph_specific.is_file() else DEFAULT_GRAPH
@@ -184,7 +186,12 @@ def main():
         default="01",
         help="Scenario id 01–07 (default: 01). Resolves trips/graph/output under results/scenario_XX/",
     )
-    ap.add_argument("--trips", type=Path, default=None, help="Override CarDriver_trips.geojson")
+    ap.add_argument(
+        "--trips",
+        type=Path,
+        default=None,
+        help="Override CarletonCarDriver_trips.geojson (CarDriver_trips.geojson fallback)",
+    )
     ap.add_argument("--graph", type=Path, default=None, help="Override background drive graph")
     ap.add_argument("--out", type=Path, default=None, help="Override output folder for PNGs")
     ap.add_argument("--limit", type=int, default=0, help="Max trips to plot (0 = all)")

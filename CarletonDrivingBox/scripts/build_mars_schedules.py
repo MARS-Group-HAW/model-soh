@@ -158,7 +158,7 @@ def write_config(
             layer["file"] = graph_rel.replace("\\", "/")
 
     for agent in cfg.get("agents", []):
-        if agent.get("name") == "CarDriver":
+        if agent.get("name") in ("CarletonCarDriver", "CarDriver"):
             agent["count"] = agent_count
 
     CONFIGS_DIR.mkdir(parents=True, exist_ok=True)

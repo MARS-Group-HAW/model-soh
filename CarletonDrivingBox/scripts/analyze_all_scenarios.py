@@ -6,6 +6,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from mars_agent_outputs import agent_output_path
+
 ROOT = Path(__file__).resolve().parents[1]
 SCENARIOS = ("01", "02", "03", "04", "05", "06")
 
@@ -14,7 +16,7 @@ def main() -> int:
     analyze = ROOT / "scripts" / "analyze_run.py"
     failed = 0
     for sid in SCENARIOS:
-        csv = ROOT / "results" / f"scenario_{sid}" / "CarDriver.csv"
+        csv = agent_output_path(ROOT / "results" / f"scenario_{sid}", ".csv")
         print(f"\n=== scenario_{sid} ===", flush=True)
         if not csv.is_file():
             print(f"MISSING: {csv}", file=sys.stderr)
