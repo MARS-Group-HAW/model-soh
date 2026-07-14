@@ -58,7 +58,7 @@ Example config layout:
     "endPoint": "2021-10-11T10:01:00",
     "csvOptions": { "outputPath": "results/scenario_01" }
   },
-  "agents": [{ "name": "CarletonCarDriver", "count": 3200 }],
+  "agents": [{ "name": "CarletonCarDriver", "count": 3300 }],
   "layers": [
     { "name": "CarLayer", "file": "resources/campus_drive_graph.geojson" },
     { "name": "CarletonCarDriverSchedulerLayer", "file": "resources/schedules/scenario_01_schedule.csv" }

@@ -13,7 +13,7 @@
   "agents": [
     {
       "name": "CarletonCarDriver",
-      "count": 3200,
+      "count": 3300,
       "outputs": [
         {
           "kind": "trips",
