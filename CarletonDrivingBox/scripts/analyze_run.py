@@ -14,10 +14,12 @@ from mars_agent_outputs import agent_output_path
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results"
-DEFAULT_SCHEDULE = ROOT / "resources" / "car_driver_schedule.csv"
-DEFAULT_CONFIG = ROOT / "config.json"
 SCHEDULES_DIR = ROOT / "resources" / "schedules"
 CONFIGS_DIR = ROOT / "configs"
+DEFAULT_SCENARIO = "01"
+DEFAULT_RESULTS = RESULTS / f"scenario_{DEFAULT_SCENARIO}"
+DEFAULT_SCHEDULE = SCHEDULES_DIR / f"scenario_{DEFAULT_SCENARIO}_schedule.csv"
+DEFAULT_CONFIG = CONFIGS_DIR / f"config_scenario_{DEFAULT_SCENARIO}.json"
 SCHEDULE_BASE = ROOT / "resources" / "schedule_base.csv"
 DEVS_TARGET = 3200
 LOT_COUNTS = {"P1": 100, "P2": 100, "P3": 200, "P4": 100, "P5": 700, "P6": 900, "P7": 1100}
@@ -379,7 +381,7 @@ def write_outputs(
 def main():
     csv_path = resolve_path(
         sys.argv[1] if len(sys.argv) > 1 else None,
-        agent_output_path(RESULTS, ".csv"),
+        agent_output_path(DEFAULT_RESULTS, ".csv"),
     )
     output_dir = csv_path.parent
     trips_path = resolve_path(

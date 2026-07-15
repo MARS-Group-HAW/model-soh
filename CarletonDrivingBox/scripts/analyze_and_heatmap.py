@@ -10,13 +10,14 @@ from mars_agent_outputs import agent_output_path
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results"
+DEFAULT_RESULTS = RESULTS / "scenario_01"
 
 
 def main() -> int:
     csv = (
         Path(sys.argv[1])
         if len(sys.argv) > 1
-        else agent_output_path(RESULTS, ".csv")
+        else agent_output_path(DEFAULT_RESULTS, ".csv")
     )
     if not csv.is_file():
         print(f"CSV not found: {csv}", file=sys.stderr)

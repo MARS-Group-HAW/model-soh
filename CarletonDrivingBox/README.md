@@ -47,7 +47,7 @@ Each variant has its own config under `configs/`:
 | `configs/config_scenario_06.json` | P3 + P4 delayed 1 h, P6 delayed 1.5 h |
 | `configs/config_scenario_07.json` | Baseline timing; alternate graph and P3/P4 exit |
 
-`config.json` at the project root is a legacy shortcut for scenario 01 (writes to `results/` instead of `results/scenario_01/`).
+`config.json` at the project root is a shortcut for scenario 01 (same as `configs/config_scenario_01.json`, writes to `results/scenario_01/`).
 
 Example config layout:
 
