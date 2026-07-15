@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "Default (config.json)": {
+      "commandName": "Project"
+    },
+    "Scenario 01": {
+      "commandName": "Project",
+      "commandLineArgs": "configs/config_scenario_01.json"
+    },
+    "Scenario 02": {
+      "commandName": "Project",
+      "commandLineArgs": "configs/config_scenario_02.json"
+    },
+    "Scenario 03": {
+      "commandName": "Project",
+      "commandLineArgs": "configs/config_scenario_03.json"
+    },
+    "Scenario 04": {
+      "commandName": "Project",
+      "commandLineArgs": "configs/config_scenario_04.json"
+    },
+    "Scenario 05": {
+      "commandName": "Project",
+      "commandLineArgs": "configs/config_scenario_05.json"
+    },
+    "Scenario 06": {
+      "commandName": "Project",
+      "commandLineArgs": "configs/config_scenario_06.json"
+    },
+    "Scenario 07": {
+      "commandName": "Project",
+      "commandLineArgs": "configs/config_scenario_07.json"
+    }
+  }
+}
