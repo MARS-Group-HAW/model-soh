@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Build MARS heatmap_matrix.csv — same format as DEVS analysis/data_analysis.py.
+Build MARS heatmap_matrix.csv for road occupancy over time.
 
-Uses the blueprint Jupyter graph (campus_drive_graph.geojson) for edge mapping and
-DEVS sim-road segment lengths for the cars-per-100m normalization.
+Uses the campus drive graph for edge mapping and sim-road segment lengths
+for cars-per-100m normalization.
 """
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ import csv
 import heapq
 import json
 import math
+import re
 from collections import defaultdict
 from pathlib import Path
 
@@ -23,7 +24,7 @@ DEFAULT_GRAPH = ROOT / "resources" / "campus_drive_graph.geojson"
 DEFAULT_LENGTHS = ROOT / "resources" / "sim_road_lengths.csv"
 DEFAULT_OUT = ROOT / "results" / "heatmap_matrix.csv"
 
-# Column order from DEVS output_data/processed/heatmap_matrix.csv
+# Standard campus evacuation road columns for heatmap_matrix.csv
 HEATMAP_ROADS = [
     "Campus Ave & Library Rd to Campus Ave & P2",
     "Campus Ave & Library Rd to Library Rd & P1",
@@ -35,17 +36,23 @@ HEATMAP_ROADS = [
     "Library Rd & P1 to Campus Ave & Library Rd",
     "Library Rd & P1 to Library Rd & University Dr",
     "Library Rd & University Dr to Colonel By Dr & University Dr",
-    "P3 & Raven Rd to Raven Rd & University Dr",
+    "P3 & Raven Rd to Bronson Ave & Raven Rd",
     "P4 & University Dr to Raven Rd & University Dr",
     "P4 & University Dr to Stadium Way & University Dr",
     "P5 & Stadium Way to Bronson Ave & Stadium Way",
     "P5 & Stadium Way to Stadium Way & University Dr",
+    "Raven Rd & University Dr to Bronson Ave & Raven Rd",
     "Raven Rd & University Dr to Campus Ave & University Dr",
     "Raven Rd & University Dr to P4 & University Dr",
     "Roundabout to Bronson Ave & University Dr",
     "Stadium Way & University Dr to P5 & Stadium Way",
     "Stadium Way & University Dr to Roundabout",
 ]
+
+# Synthetic / scenario-specific graph edges (osmid -> sim road name)
+CUSTOM_OSM_ROADS = {
+    "carleton_scenario07_r28": "Raven Rd & University Dr to Bronson Ave & Raven Rd",
+}
 
 PLACES = {
     "Library Rd & P1": (45.3813, -75.7007),
@@ -239,6 +246,20 @@ class RoadGraph:
         return edges
 
 
+def resolve_graph_path(csv_path: Path, graph_path: Path) -> Path:
+    """Use per-scenario graph when results/scenario_XX/ and a matching geojson exists."""
+    if graph_path.resolve() != DEFAULT_GRAPH.resolve():
+        return graph_path
+    match = re.search(r"scenario_(\d+)", csv_path.as_posix())
+    if not match:
+        return graph_path
+    sid = f"{int(match.group(1)):02d}"
+    scenario_graph = ROOT / "resources" / f"campus_drive_graph_scenario_{sid}.geojson"
+    if scenario_graph.is_file():
+        return scenario_graph
+    return graph_path
+
+
 def build_osm_mapping(graph: RoadGraph):
     place_node = {name: graph.nearest_node(lat, lon) for name, (lat, lon) in PLACES.items()}
     osm_to_sim: dict[str, set[str]] = defaultdict(set)
@@ -260,10 +281,16 @@ def build_osm_mapping(graph: RoadGraph):
         if len(sims) == 1:
             osm_primary[oid] = next(iter(sims))
 
+    for oid, sim_name in CUSTOM_OSM_ROADS.items():
+        osm_to_sim[oid].add(sim_name)
+        osm_primary[oid] = sim_name
+
     return osm_to_sim, osm_primary, osm_mid, corridor
 
 
 def pick_sim_road(osm_id, lat, lon, osm_to_sim, osm_primary, osm_mid, corridor, max_dist_m=120.0) -> str | None:
+    if osm_id in CUSTOM_OSM_ROADS:
+        return CUSTOM_OSM_ROADS[osm_id]
     if osm_id in osm_primary:
         return osm_primary[osm_id]
     sims = osm_to_sim.get(osm_id)
@@ -315,6 +342,8 @@ def build_heatmap(
     max_time: float | None = None,
     snap_m: float = 35.0,
 ):
+    graph_path = resolve_graph_path(csv_path, graph_path)
+    print(f"Graph: {graph_path.relative_to(ROOT)}")
     graph = RoadGraph(graph_path)
     osm_to_sim, osm_primary, osm_mid, corridor = build_osm_mapping(graph)
     midpoints = build_simroad_midpoints(graph)
@@ -331,7 +360,7 @@ def build_heatmap(
 
     print(f"Blueprint edges: {len(graph.edge_osm)}, mapped osm ids: {len(osm_to_sim)}")
     print(f"Sim-road midpoints: {len(midpoints)}, position snap: {snap_m}m")
-    print(f"Road columns: {len(roads)}, DEVS lengths loaded: {len(road_length_m)}")
+    print(f"Road columns: {len(roads)}, segment lengths loaded: {len(road_length_m)}")
 
     step_counts: dict[int, dict[str, int]] = defaultdict(lambda: defaultdict(int))
     rows_read = mapped_rows = osm_mapped = pos_fallback = unmapped = 0
@@ -400,7 +429,7 @@ def build_heatmap(
 
 def main():
     ap = argparse.ArgumentParser(
-        description="Build DEVS-format heatmap_matrix.csv from MARS CarletonCarDriver.csv"
+        description="Build heatmap_matrix.csv from MARS CarletonCarDriver.csv"
     )
     ap.add_argument(
         "csv",
