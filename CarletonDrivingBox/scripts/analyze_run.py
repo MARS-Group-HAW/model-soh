@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Summarize a MARS scheduler run — deployed vs completed, charts like DEVS."""
+"""Summarize a MARS scheduler run — deployed vs completed, evacuation charts."""
 import csv
 import json
 import re
@@ -21,7 +21,7 @@ DEFAULT_RESULTS = RESULTS / f"scenario_{DEFAULT_SCENARIO}"
 DEFAULT_SCHEDULE = SCHEDULES_DIR / f"scenario_{DEFAULT_SCENARIO}_schedule.csv"
 DEFAULT_CONFIG = CONFIGS_DIR / f"config_scenario_{DEFAULT_SCENARIO}.json"
 SCHEDULE_BASE = ROOT / "resources" / "schedule_base.csv"
-DEVS_TARGET = 3200
+BASELINE_TARGET = 3200
 LOT_COUNTS = {"P1": 100, "P2": 100, "P3": 200, "P4": 100, "P5": 700, "P6": 900, "P7": 1100}
 LOT_ORDER = ["P1", "P2", "P3", "P4", "P5", "P6", "P7"]
 
@@ -279,7 +279,7 @@ def write_outputs(
             f,
             fieldnames=[
                 "expected_deployed",
-                "devs_target",
+                "baseline_target",
                 "completed_trips_geojson",
                 "completed_unique_ids_csv",
                 "goal_reached_rows_csv",
@@ -293,7 +293,7 @@ def write_outputs(
         w.writerow(
             {
                 "expected_deployed": expected,
-                "devs_target": DEVS_TARGET,
+                "baseline_target": BASELINE_TARGET,
                 "completed_trips_geojson": trips,
                 "completed_unique_ids_csv": completed_csv,
                 "goal_reached_rows_csv": goal_rows,
@@ -304,14 +304,14 @@ def write_outputs(
         )
 
     with (output_dir / "lot_deploy_plan.csv").open("w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=["lot", "schedule_spawns", "devs_target"])
+        w = csv.DictWriter(f, fieldnames=["lot", "schedule_spawns", "baseline_target"])
         w.writeheader()
         for lot in LOT_ORDER:
             w.writerow(
                 {
                     "lot": lot,
                     "schedule_spawns": per_lot.get(lot, 0),
-                    "devs_target": LOT_COUNTS[lot],
+                    "baseline_target": LOT_COUNTS[lot],
                 }
             )
 
@@ -342,14 +342,14 @@ def write_outputs(
     plt.figure(figsize=(6, 4))
     completed = int(trips)
     plt.bar(
-        ["Expected\n(schedule)", "DEVS\ntarget", "Completed\n(trips)"],
-        [int(expected), int(DEVS_TARGET), completed],
+        ["Expected\n(schedule)", "Baseline\ntarget", "Completed\n(trips)"],
+        [int(expected), int(BASELINE_TARGET), completed],
         color=["#4c72b0", "#8172b2", "#c44e52"],
     )
     plt.ylabel("Vehicles")
     plt.title("Deployment vs completion")
     if completed == 0:
-        plt.text(2, max(int(expected), int(DEVS_TARGET)) * 0.05, "0 — check trips geojson path", ha="center", fontsize=8)
+        plt.text(2, max(int(expected), int(BASELINE_TARGET)) * 0.05, "0 — check trips geojson path", ha="center", fontsize=8)
     plt.tight_layout()
     plt.savefig(output_dir / "summary.png", dpi=200)
     plt.close()
@@ -464,7 +464,7 @@ def main():
 
     print("=== MARS run summary ===")
     print(f"Expected deployed (schedule) : {expected}")
-    print(f"DEVS scenario 01 target      : {DEVS_TARGET}")
+    print(f"Baseline deployment target   : {BASELINE_TARGET}")
     print(f"Completed (trips geojson)    : {trips}")
     print(f"Completion rate              : {trips / expected * 100:.2f}%" if expected else "n/a")
     print(f"CSV tick rows                : {csv_rows}")
