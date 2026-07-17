@@ -26,8 +26,9 @@ VALID_SCENARIOS = tuple(f"{i:02d}" for i in range(1, 8))
 
 COLONEL_BY = (45.3792575, -75.7004525)
 BRONSON = (45.3896198, -75.694494)
-BRONSON_RAVEN = (45.3851, -75.6903)  # scenario 07 — P3/P4 emergency exit
-EXIT_TOL_M = 80.0
+# Observed trip terminus on emergency corridor (not the schedule WGS label alone).
+BRONSON_RAVEN = (45.3846, -75.6922)
+EXIT_TOL_M = 120.0
 
 LOTS_BASE = {
     "P1": {"spawn": (45.3813098, -75.7006879), "exit": COLONEL_BY, "color": "#e41a1c"},
@@ -156,8 +157,9 @@ def plot_trip(
     ax.set_xlim(min(lons + [spawn[1], expected_exit[1]]) - pad_lon, max(lons + [spawn[1], expected_exit[1]]) + pad_lon)
     ax.set_ylim(min(lats + [spawn[0], expected_exit[0]]) - pad_lat, max(lats + [spawn[0], expected_exit[0]]) + pad_lat)
     ax.set_aspect("equal", adjustable="box")
-    ax.set_xlabel("Longitude")
-    ax.set_ylabel("Latitude")
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
 
     status = "OK" if exit_ok else "WRONG EXIT"
     ax.set_title(f"{lot}  {agent_id[:8]}…  {status}\npath {path_m:.0f} m  ratio {ratio:.2f}", fontsize=10)
@@ -196,6 +198,11 @@ def main():
     ap.add_argument("--out", type=Path, default=None, help="Override output folder for PNGs")
     ap.add_argument("--limit", type=int, default=0, help="Max trips to plot (0 = all)")
     ap.add_argument("--lot", type=str, default="", help="Only plot this lot, e.g. P5")
+    ap.add_argument(
+        "--one-per-lot",
+        action="store_true",
+        help="Plot exactly one trip per parking lot (P1–P7), then stop",
+    )
     ap.add_argument("--suspicious-only", action="store_true", help="Only wrong exit or nearly straight routes")
     ap.add_argument("--no-graph", action="store_true", help="Skip background road network")
     ap.add_argument("--dpi", type=int, default=120)
@@ -235,9 +242,12 @@ def main():
     summary_rows = []
     plotted = 0
     skipped = 0
+    lots_done: set[str] = set()
 
     for idx, feat in enumerate(features):
         if args.limit and plotted >= args.limit:
+            break
+        if args.one_per_lot and len(lots_done) >= len(lots):
             break
 
         props = feat.get("properties") or {}
@@ -250,6 +260,8 @@ def main():
         lot = nearest_lot(coords[0][0], coords[0][1], lots)
         if args.lot and lot != args.lot.upper():
             continue
+        if args.one_per_lot and lot in lots_done:
+            continue
 
         expected_exit = lots[lot]["exit"]
         end_lat, end_lon = coords[-1]
@@ -261,7 +273,10 @@ def main():
         if args.suspicious_only and not suspicious:
             continue
 
-        fname = f"{plotted + 1:04d}_{lot}_{safe_name(agent_id)}.png"
+        if args.one_per_lot:
+            fname = f"{lot}_to_exit.png"
+        else:
+            fname = f"{plotted + 1:04d}_{lot}_{safe_name(agent_id)}.png"
         out_path = out_dir / fname
         plot_trip(coords, lot, agent_id, exit_ok, path_m, ratio, graph_segments, out_path, args.dpi, lots)
 
@@ -280,6 +295,8 @@ def main():
             }
         )
         plotted += 1
+        if args.one_per_lot:
+            lots_done.add(lot)
         if plotted % 100 == 0:
             print(f"  plotted {plotted} …")
 

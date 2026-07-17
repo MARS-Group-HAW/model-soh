@@ -44,6 +44,21 @@ def load_lot_coords() -> dict[str, tuple[float, float]]:
 
 LOT_COORDS = load_lot_coords()
 
+# Campus exits (lat, lon) — classify completed trips by destination.
+# Only the two normal exits + scenario-07 emergency (Bronson & Raven).
+EXIT_POINTS = {
+    "Colonel By": (45.3792575, -75.7004525),
+    "Bronson Ave & University Dr": (45.3896198, -75.694494),
+    "Bronson Ave & Raven Rd (emergency)": (45.3846, -75.6922),
+}
+EXIT_ORDER = [
+    "Colonel By",
+    "Bronson Ave & University Dr",
+    "Bronson Ave & Raven Rd (emergency)",
+    "other",
+]
+EXIT_TOL_M = 120.0
+
 
 def scenario_id_from_path(path: Path) -> str | None:
     for part in reversed(path.parts):
@@ -187,8 +202,18 @@ def nearest_lot(lat: float, lon: float) -> str:
     return best
 
 
+def nearest_exit(lat: float, lon: float, max_dist_m: float = EXIT_TOL_M) -> str:
+    """Classify trip end by nearest named campus exit."""
+    best, best_d = "other", max_dist_m
+    for name, (elat, elon) in EXIT_POINTS.items():
+        d = math.hypot((lat - elat) * 111_000, (lon - elon) * 85_000)
+        if d < best_d:
+            best_d, best = d, name
+    return best
+
+
 def extract_trip_records_stream(path: Path, sim_start_unix: int) -> list[dict]:
-    """Stream trips geojson: travel time, exit-from-t0, and origin lot per trip.
+    """Stream trips geojson: travel time, exit-from-t0, origin lot, and exit name.
 
     Coordinates are [lon, lat, z, unix_timestamp]. Does not load the full file.
     """
@@ -216,17 +241,19 @@ def extract_trip_records_stream(path: Path, sim_start_unix: int) -> list[dict]:
                 coords = coord_re.findall(segment)
                 if coords:
                     lon0, lat0, _, t0 = coords[0]
-                    _, _, _, t1 = coords[-1]
+                    lon1, lat1, _, t1 = coords[-1]
                     start_u = int(t0)
                     end_u = int(t1)
                     travel_s = end_u - start_u
                     exit_from_t0_s = end_u - sim_start_unix
                     if travel_s >= 0 and exit_from_t0_s >= 0:
+                        end_lat, end_lon = float(lat1), float(lon1)
                         records.append(
                             {
                                 "travel_s": travel_s,
                                 "exit_from_t0_s": exit_from_t0_s,
                                 "lot": nearest_lot(float(lat0), float(lon0)),
+                                "exit": nearest_exit(end_lat, end_lon),
                             }
                         )
                 buf = buf[props:]
@@ -306,6 +333,8 @@ def trip_time_stats(records: list[dict]) -> dict:
         "mean_exit_from_t0_s": None,
         "median_exit_from_t0_s": None,
         "clearance_by_lot_s": {lot: None for lot in LOT_ORDER},
+        "completed_by_lot": {lot: 0 for lot in LOT_ORDER},
+        "exit_usage": {name: 0 for name in EXIT_ORDER},
     }
     if not records:
         return empty
@@ -313,11 +342,17 @@ def trip_time_stats(records: list[dict]) -> dict:
     travel = [r["travel_s"] for r in records]
     from_t0 = [r["exit_from_t0_s"] for r in records]
     clearance: dict[str, int] = {}
+    completed_by_lot = Counter()
+    exit_usage = Counter()
     for r in records:
         lot = r["lot"]
-        if lot not in LOT_ORDER:
-            continue
-        clearance[lot] = max(clearance.get(lot, 0), r["exit_from_t0_s"])
+        if lot in LOT_ORDER:
+            clearance[lot] = max(clearance.get(lot, 0), r["exit_from_t0_s"])
+            completed_by_lot[lot] += 1
+        exit_name = r.get("exit", "other")
+        if exit_name not in EXIT_ORDER:
+            exit_name = "other"
+        exit_usage[exit_name] += 1
 
     return {
         "n_trips": len(records),
@@ -326,8 +361,74 @@ def trip_time_stats(records: list[dict]) -> dict:
         "mean_exit_from_t0_s": round(mean(from_t0), 2),
         "median_exit_from_t0_s": round(median(from_t0), 2),
         "clearance_by_lot_s": {lot: clearance.get(lot) for lot in LOT_ORDER},
+        "completed_by_lot": {lot: int(completed_by_lot.get(lot, 0)) for lot in LOT_ORDER},
+        "exit_usage": {name: int(exit_usage.get(name, 0)) for name in EXIT_ORDER},
         "travel_times": travel,
     }
+
+
+def plot_lot_completion_and_exits(output_dir: Path, per_lot: dict, stats: dict) -> None:
+    """Write completion_by_lot.png and exit_usage.png."""
+    if not stats.get("n_trips"):
+        print("No trip records — skipping lot/exit charts.")
+        return
+
+    scheduled = [int(per_lot.get(lot, 0)) for lot in LOT_ORDER]
+    completed = [int((stats.get("completed_by_lot") or {}).get(lot, 0)) for lot in LOT_ORDER]
+    x = list(range(len(LOT_ORDER)))
+    width = 0.38
+
+    plt.figure(figsize=(8, 4.5))
+    b1 = plt.bar([i - width / 2 for i in x], scheduled, width, color="#4c72b0", label="Scheduled")
+    b2 = plt.bar([i + width / 2 for i in x], completed, width, color="#c44e52", label="Completed")
+    plt.xticks(x, LOT_ORDER)
+    plt.ylabel("Vehicles")
+    plt.xlabel("Parking lot")
+    plt.title("Per-lot completion (scheduled vs finished trips)")
+    plt.legend()
+    for bars in (b1, b2):
+        for bar in bars:
+            h = bar.get_height()
+            if h:
+                plt.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    h,
+                    f"{int(h)}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=7,
+                )
+    plt.tight_layout()
+    plt.savefig(output_dir / "completion_by_lot.png", dpi=200)
+    plt.close()
+
+    usage = stats.get("exit_usage") or {}
+    labels = [name for name in EXIT_ORDER if usage.get(name, 0) > 0 or name != "other"]
+    # Always show named exits; include other only if used
+    labels = [n for n in EXIT_ORDER if n != "other" or usage.get("other", 0)]
+    values = [int(usage.get(name, 0)) for name in labels]
+    short = {
+        "Colonel By": "Colonel By",
+        "Bronson Ave & University Dr": "Bronson\n(University Dr)",
+        "Bronson Ave & Raven Rd (emergency)": "Bronson\n(Raven emergency)",
+        "other": "Other / unmatched",
+    }
+    plt.figure(figsize=(8, 4.5))
+    bars = plt.bar([short.get(n, n) for n in labels], values, color="#8172b2")
+    plt.ylabel("Completed trips")
+    plt.title("Exit usage (trip end near campus exit)")
+    for bar, val in zip(bars, values):
+        plt.text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height(),
+            f"{val}",
+            ha="center",
+            va="bottom",
+            fontsize=8,
+        )
+    plt.tight_layout()
+    plt.savefig(output_dir / "exit_usage.png", dpi=200)
+    plt.close()
 
 
 def plot_trip_time_charts(output_dir: Path, stats: dict) -> None:
@@ -475,10 +576,20 @@ def build_metrics_payload(
         "clearance_by_lot_s": {
             lot: clearance.get(lot) for lot in LOT_ORDER
         },
+        "completed_by_lot": {
+            lot: {
+                "schedule_spawns": int(per_lot.get(lot, 0)),
+                "completed_trips": int((trip_stats.get("completed_by_lot") or {}).get(lot, 0)),
+            }
+            for lot in LOT_ORDER
+        },
+        "exit_usage": trip_stats.get("exit_usage") or {name: 0 for name in EXIT_ORDER},
         "artifacts": {
             "summary_csv": "summary.csv",
             "evac_curve_csv": "evac_curve.csv",
             "clearance_by_lot_csv": "clearance_by_lot.csv",
+            "completion_by_lot_csv": "completion_by_lot.csv",
+            "exit_usage_csv": "exit_usage.csv",
             "metrics_json": "metrics.json",
         },
     }
@@ -582,6 +693,26 @@ def write_outputs(
             val = (trip_stats.get("clearance_by_lot_s") or {}).get(lot)
             w.writerow({"lot": lot, "clearance_s_from_t0": val if val is not None else ""})
 
+    with (output_dir / "completion_by_lot.csv").open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["lot", "schedule_spawns", "completed_trips"])
+        w.writeheader()
+        completed_by_lot = trip_stats.get("completed_by_lot") or {}
+        for lot in LOT_ORDER:
+            w.writerow(
+                {
+                    "lot": lot,
+                    "schedule_spawns": per_lot.get(lot, 0),
+                    "completed_trips": completed_by_lot.get(lot, 0),
+                }
+            )
+
+    with (output_dir / "exit_usage.csv").open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["exit", "completed_trips"])
+        w.writeheader()
+        usage = trip_stats.get("exit_usage") or {}
+        for name in EXIT_ORDER:
+            w.writerow({"exit": name, "completed_trips": usage.get(name, 0)})
+
     with (output_dir / "evac_curve.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(
@@ -645,6 +776,7 @@ def write_outputs(
         plt.close()
 
     plot_trip_time_charts(output_dir, trip_stats)
+    plot_lot_completion_and_exits(output_dir, per_lot, trip_stats)
 
 def main():
     csv_path = resolve_path(
@@ -750,10 +882,19 @@ def main():
         for lot in LOT_ORDER:
             val = stats["clearance_by_lot_s"].get(lot)
             print(f"  {lot}: {val if val is not None else 'n/a'}s")
+        print("Completed by lot:")
+        for lot in LOT_ORDER:
+            print(f"  {lot}: {stats['completed_by_lot'].get(lot, 0)}")
+        print("Exit usage:")
+        for name in EXIT_ORDER:
+            n = stats["exit_usage"].get(name, 0)
+            if n or name != "other":
+                print(f"  {name}: {n}")
     print(f"Output folder                : {output_dir}")
     print()
     print("Charts: summary.png, evac_curve.png, trip_time_stats.png,")
-    print("        trip_time_hist.png, clearance_by_lot.png")
+    print("        trip_time_hist.png, clearance_by_lot.png,")
+    print("        completion_by_lot.png, exit_usage.png")
     print("Metrics : metrics.json (schema_version=1, join on scenario_id)")
     print("Note: trips geojson = finished drives only.")
     print("      Travel time = last coord timestamp - first (spawn to exit).")
