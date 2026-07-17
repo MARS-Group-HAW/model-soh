@@ -2,11 +2,13 @@
 """Summarize a MARS scheduler run — deployed vs completed, evacuation charts."""
 import csv
 import json
+import math
 import re
 import sys
 from collections import Counter
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from statistics import mean, median
 
 import matplotlib.pyplot as plt
 
@@ -63,13 +65,14 @@ def resolve_scenario_paths(csv_path: Path) -> tuple[Path, Path]:
 
 
 def read_sim_times(config_path: Path) -> tuple[datetime, int | None]:
-    """Return simulation start time and optional end offset in seconds."""
+    """Return simulation start time (UTC) and optional end offset in seconds."""
     if not config_path.is_file():
-        start = datetime(2021, 10, 11, 6, 0, 0)
+        start = datetime(2021, 10, 11, 6, 0, 0, tzinfo=timezone.utc)
         return start, None
     cfg = json.loads(config_path.read_text(encoding="utf-8"))
-    start = datetime.fromisoformat(cfg["globals"]["startPoint"])
-    end = datetime.fromisoformat(cfg["globals"]["endPoint"])
+    # Config times are naive but MARS trip timestamps are UTC unix — treat as UTC.
+    start = datetime.fromisoformat(cfg["globals"]["startPoint"]).replace(tzinfo=timezone.utc)
+    end = datetime.fromisoformat(cfg["globals"]["endPoint"]).replace(tzinfo=timezone.utc)
     return start, int((end - start).total_seconds())
 
 
@@ -136,7 +139,7 @@ def spawn_event_times(schedule_path: Path, sim_start: datetime) -> list[int]:
             t = start
             step = timedelta(minutes=interval) if interval > 0 else None
             while t < end:
-                spawn_dt = datetime.combine(sim_start.date(), t.time())
+                spawn_dt = datetime.combine(sim_start.date(), t.time(), tzinfo=timezone.utc)
                 sec = int((spawn_dt - sim_start).total_seconds())
                 for _ in range(amount):
                     events.append(sec)
@@ -170,12 +173,31 @@ def count_features_fast(path: Path) -> int:
     return count
 
 
-def extract_depart_times_stream(path: Path, sim_start_unix: int) -> list[int]:
-    """Exit time (sim seconds) from the last coordinate timestamp in each feature."""
-    depart: list[int] = []
+def nearest_lot(lat: float, lon: float) -> str:
+    """Assign a trip to the nearest parking lot by spawn coordinate."""
+    if not LOT_COORDS:
+        return "unknown"
+    best = "unknown"
+    best_d = float("inf")
+    for lot, (llat, llon) in LOT_COORDS.items():
+        d = math.hypot((lat - llat) * 111_000, (lon - llon) * 85_000)
+        if d < best_d:
+            best_d = d
+            best = lot
+    return best
+
+
+def extract_trip_records_stream(path: Path, sim_start_unix: int) -> list[dict]:
+    """Stream trips geojson: travel time, exit-from-t0, and origin lot per trip.
+
+    Coordinates are [lon, lat, z, unix_timestamp]. Does not load the full file.
+    """
+    records: list[dict] = []
     buf = ""
     feat_re = re.compile(r'"type"\s*:\s*"Feature"')
-    ts_re = re.compile(r",(\d{10})\]")
+    coord_re = re.compile(
+        r"\[(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?),\s*(\d{10})\]"
+    )
     with path.open(encoding="utf-8", errors="ignore") as f:
         while True:
             chunk = f.read(8 * 1024 * 1024)
@@ -191,33 +213,49 @@ def extract_depart_times_stream(path: Path, sim_start_unix: int) -> list[int]:
                 if props < 0:
                     break
                 segment = buf[m.start() : props]
-                matches = ts_re.findall(segment)
-                if matches:
-                    depart.append(int(matches[-1]) - sim_start_unix)
+                coords = coord_re.findall(segment)
+                if coords:
+                    lon0, lat0, _, t0 = coords[0]
+                    _, _, _, t1 = coords[-1]
+                    start_u = int(t0)
+                    end_u = int(t1)
+                    travel_s = end_u - start_u
+                    exit_from_t0_s = end_u - sim_start_unix
+                    if travel_s >= 0 and exit_from_t0_s >= 0:
+                        records.append(
+                            {
+                                "travel_s": travel_s,
+                                "exit_from_t0_s": exit_from_t0_s,
+                                "lot": nearest_lot(float(lat0), float(lon0)),
+                            }
+                        )
                 buf = buf[props:]
-    depart.sort()
-    return depart
+    return records
 
 
-def load_trips_summary(path: Path, sim_start: datetime) -> tuple[int, list[int]]:
-    """Trip count and exit time (sim seconds) for each completed trip."""
+def load_trips_summary(path: Path, sim_start: datetime) -> tuple[int, list[int], list[dict]]:
+    """Trip count, exit times (sim s), and per-trip travel records."""
     if not path.is_file():
         print(f"WARNING: trips file not found: {path}")
-        return 0, []
+        return 0, [], []
 
     size = path.stat().st_size
     fast_count = count_features_fast(path)
     sim_start_unix = int(sim_start.timestamp())
-    depart_times = extract_depart_times_stream(path, sim_start_unix)
-    trip_count = max(fast_count, len(depart_times))
+    records = extract_trip_records_stream(path, sim_start_unix)
+    depart_times = sorted(r["exit_from_t0_s"] for r in records)
+    trip_count = max(fast_count, len(records))
 
-    print(f"Trips geojson: {size:,} bytes | feature scan={fast_count} | exit timestamps={len(depart_times)}")
+    print(
+        f"Trips geojson: {size:,} bytes | feature scan={fast_count} | "
+        f"trip records={len(records)}"
+    )
 
     if size > 100_000 and trip_count == 0:
         head = path.read_bytes()[:400].decode("utf-8", errors="replace")
         print(f"ERROR: geojson is non-empty but 0 trips counted. Head: {head[:200]!r}")
 
-    return trip_count, depart_times
+    return trip_count, depart_times, records
 
 
 def cumulative_curve(event_times: list[int], max_t: int) -> list[tuple[int, int]]:
@@ -259,6 +297,128 @@ def analyze_csv(path: Path):
     return len(completed_ids), goal_true_rows, curve, csv_rows
 
 
+def trip_time_stats(records: list[dict]) -> dict:
+    """Mean/median travel time (from lot) and exit time (from t=0)."""
+    empty = {
+        "n_trips": 0,
+        "mean_trip_s": None,
+        "median_trip_s": None,
+        "mean_exit_from_t0_s": None,
+        "median_exit_from_t0_s": None,
+        "clearance_by_lot_s": {lot: None for lot in LOT_ORDER},
+    }
+    if not records:
+        return empty
+
+    travel = [r["travel_s"] for r in records]
+    from_t0 = [r["exit_from_t0_s"] for r in records]
+    clearance: dict[str, int] = {}
+    for r in records:
+        lot = r["lot"]
+        if lot not in LOT_ORDER:
+            continue
+        clearance[lot] = max(clearance.get(lot, 0), r["exit_from_t0_s"])
+
+    return {
+        "n_trips": len(records),
+        "mean_trip_s": round(mean(travel), 2),
+        "median_trip_s": round(median(travel), 2),
+        "mean_exit_from_t0_s": round(mean(from_t0), 2),
+        "median_exit_from_t0_s": round(median(from_t0), 2),
+        "clearance_by_lot_s": {lot: clearance.get(lot) for lot in LOT_ORDER},
+        "travel_times": travel,
+    }
+
+
+def plot_trip_time_charts(output_dir: Path, stats: dict) -> None:
+    """Write trip_time_stats.png, trip_time_hist.png, clearance_by_lot.png."""
+    if not stats.get("n_trips"):
+        print("No trip records — skipping travel-time charts.")
+        return
+
+    travel = stats["travel_times"]
+    values = [
+        stats["mean_trip_s"],
+        stats["median_trip_s"],
+        stats["mean_exit_from_t0_s"],
+        stats["median_exit_from_t0_s"],
+    ]
+    colors = ["#4c72b0", "#4c72b0", "#55a868", "#55a868"]
+    bar_labels = [
+        "Mean\ndrive time",
+        "Median\ndrive time",
+        "Mean\nfinish time",
+        "Median\nfinish time",
+    ]
+
+    from matplotlib.patches import Patch
+
+    plt.figure(figsize=(8, 4.8))
+    bars = plt.bar(bar_labels, values, color=colors)
+    plt.ylabel("Seconds")
+    plt.title("Travel-time summary")
+    plt.legend(
+        handles=[
+            Patch(
+                facecolor="#4c72b0",
+                label="Blue = drive time (leave lot → campus exit)",
+            ),
+            Patch(
+                facecolor="#55a868",
+                label="Green = finish time (sim start t=0 → campus exit)",
+            ),
+        ],
+        loc="upper left",
+        fontsize=8,
+    )
+    for bar, val in zip(bars, values):
+        plt.text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height(),
+            f"{val:.0f}s",
+            ha="center",
+            va="bottom",
+            fontsize=8,
+        )
+    plt.tight_layout()
+    plt.savefig(output_dir / "trip_time_stats.png", dpi=200)
+    plt.close()
+
+    plt.figure(figsize=(8, 4.5))
+    plt.hist(travel, bins=40, color="#4c72b0", edgecolor="white", linewidth=0.4)
+    plt.axvline(stats["mean_trip_s"], color="#c44e52", linestyle="--", linewidth=1.5, label=f"Mean {stats['mean_trip_s']:.0f}s")
+    plt.axvline(stats["median_trip_s"], color="#8172b2", linestyle="-", linewidth=1.5, label=f"Median {stats['median_trip_s']:.0f}s")
+    plt.xlabel("Trip duration (s) — spawn to exit")
+    plt.ylabel("Trips")
+    plt.title("Travel-time distribution")
+    plt.legend()
+    plt.grid(True, axis="y", alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(output_dir / "trip_time_hist.png", dpi=200)
+    plt.close()
+
+    lots = LOT_ORDER
+    clearance = [stats["clearance_by_lot_s"].get(lot) or 0 for lot in lots]
+    plt.figure(figsize=(7, 4.2))
+    bars = plt.bar(lots, clearance, color="#dd8452")
+    plt.ylabel("Clearance time (s from t=0)")
+    plt.xlabel("Parking lot")
+    plt.title("Clearance time by lot (last exit)")
+    for bar, val in zip(bars, clearance):
+        if val:
+            plt.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height(),
+                f"{val}",
+                ha="center",
+                va="bottom",
+                fontsize=8,
+            )
+    plt.tight_layout()
+    plt.savefig(output_dir / "clearance_by_lot.png", dpi=200)
+    plt.close()
+
+
 def write_outputs(
     output_dir: Path,
     expected,
@@ -271,8 +431,10 @@ def write_outputs(
     depart_curve,
     csv_rows,
     evac_end_s=0,
+    trip_stats: dict | None = None,
 ):
     output_dir.mkdir(parents=True, exist_ok=True)
+    trip_stats = trip_stats or trip_time_stats([])
 
     with (output_dir / "summary.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(
@@ -286,6 +448,10 @@ def write_outputs(
                 "completion_rate_pct",
                 "csv_tick_rows",
                 "evac_end_s",
+                "mean_trip_s",
+                "median_trip_s",
+                "mean_exit_from_t0_s",
+                "median_exit_from_t0_s",
             ],
         )
         w.writeheader()
@@ -300,6 +466,10 @@ def write_outputs(
                 "completion_rate_pct": round(rate, 2),
                 "csv_tick_rows": csv_rows,
                 "evac_end_s": evac_end_s,
+                "mean_trip_s": trip_stats.get("mean_trip_s") or "",
+                "median_trip_s": trip_stats.get("median_trip_s") or "",
+                "mean_exit_from_t0_s": trip_stats.get("mean_exit_from_t0_s") or "",
+                "median_exit_from_t0_s": trip_stats.get("median_exit_from_t0_s") or "",
             }
         )
 
@@ -314,6 +484,13 @@ def write_outputs(
                     "baseline_target": LOT_COUNTS[lot],
                 }
             )
+
+    with (output_dir / "clearance_by_lot.csv").open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["lot", "clearance_s_from_t0"])
+        w.writeheader()
+        for lot in LOT_ORDER:
+            val = (trip_stats.get("clearance_by_lot_s") or {}).get(lot)
+            w.writerow({"lot": lot, "clearance_s_from_t0": val if val is not None else ""})
 
     with (output_dir / "evac_curve.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
@@ -377,6 +554,7 @@ def write_outputs(
         plt.savefig(output_dir / "evac_curve.png", dpi=200)
         plt.close()
 
+    plot_trip_time_charts(output_dir, trip_stats)
 
 def main():
     csv_path = resolve_path(
@@ -400,8 +578,9 @@ def main():
 
     sim_start, config_end_s = read_sim_times(config_path)
     expected, per_lot = read_schedule(schedule_path)
-    trips, depart_times = load_trips_summary(trips_path, sim_start)
+    trips, depart_times, trip_records = load_trips_summary(trips_path, sim_start)
     spawn_times = spawn_event_times(schedule_path, sim_start)
+    stats = trip_time_stats(trip_records)
 
     if csv_path.is_file():
         completed_csv, goal_rows, on_campus_curve, csv_rows = analyze_csv(csv_path)
@@ -460,6 +639,7 @@ def main():
         depart_curve,
         csv_rows,
         evac_end_s,
+        trip_stats=stats,
     )
 
     print("=== MARS run summary ===")
@@ -470,11 +650,22 @@ def main():
     print(f"CSV tick rows                : {csv_rows}")
     if evac_end_s:
         print(f"Evac end (last car on campus): t={evac_end_s}s")
+    if stats.get("n_trips"):
+        print(f"Mean trip (from lot)         : {stats['mean_trip_s']:.1f}s")
+        print(f"Median trip (from lot)       : {stats['median_trip_s']:.1f}s")
+        print(f"Mean exit (from t=0)         : {stats['mean_exit_from_t0_s']:.1f}s")
+        print(f"Median exit (from t=0)       : {stats['median_exit_from_t0_s']:.1f}s")
+        print("Clearance by lot (last exit):")
+        for lot in LOT_ORDER:
+            val = stats["clearance_by_lot_s"].get(lot)
+            print(f"  {lot}: {val if val is not None else 'n/a'}s")
     print(f"Output folder                : {output_dir}")
     print()
+    print("Charts: summary.png, evac_curve.png, trip_time_stats.png,")
+    print("        trip_time_hist.png, clearance_by_lot.png")
     print("Note: trips geojson = finished drives only.")
-    print("      Red line = cumulative cars exited; blue = on campus.")
-    print("      Without CSV, on-campus is estimated as spawned − exited.")
+    print("      Travel time = last coord timestamp - first (spawn to exit).")
+    print("      From t=0 = exit unix - simulation start.")
 
 
 if __name__ == "__main__":
