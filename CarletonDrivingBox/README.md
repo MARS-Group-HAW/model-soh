@@ -99,7 +99,23 @@ Per-scenario results are written to the folder set in `globals.csvOptions.output
 
 ## Post-run analysis (optional)
 
-Python 3 scripts under `scripts/` (install `matplotlib` with `pip install matplotlib`):
+### Interactive notebook
+
+`analyze_scenario.ipynb` — pick scenario 1–7, optionally run the simulation, then view summary charts. A DEVS comparison section is stubbed for later.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+python -m ipykernel install --user --name=carleton-driving --display-name="Carleton Driving"
+jupyter notebook analyze_scenario.ipynb
+```
+
+Set `SCENARIO = 7` and `RUN_SIMULATION = True` (or `False` to only re-analyze existing `results/scenario_XX/` output).
+
+### Scripts
+
+Python 3 scripts under `scripts/`:
 
 | Script | Purpose |
 |--------|---------|
