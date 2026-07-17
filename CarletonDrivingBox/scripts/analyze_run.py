@@ -419,6 +419,77 @@ def plot_trip_time_charts(output_dir: Path, stats: dict) -> None:
     plt.close()
 
 
+def peak_on_campus(on_campus_curve) -> int | None:
+    if not on_campus_curve:
+        return None
+    return int(max(c for _, c in on_campus_curve))
+
+
+def build_metrics_payload(
+    *,
+    scenario_id: str | None,
+    expected: int,
+    per_lot: dict,
+    completed_csv: int,
+    goal_rows: int,
+    trips: int,
+    csv_rows: int,
+    evac_end_s: int,
+    trip_stats: dict,
+    on_campus_curve,
+) -> dict:
+    """Stable metrics schema for later cross-framework joins (join on scenario_id)."""
+    rate = round((trips / expected * 100.0), 2) if expected else None
+    clearance = trip_stats.get("clearance_by_lot_s") or {}
+    return {
+        "schema_version": 1,
+        "framework": "mars",
+        "scenario_id": scenario_id,
+        "units": {
+            "time": "seconds",
+            "counts": "vehicles",
+        },
+        "metrics": {
+            "expected_deployed": int(expected),
+            "baseline_target": int(BASELINE_TARGET),
+            "completed_trips": int(trips),
+            "completed_unique_ids_csv": int(completed_csv),
+            "goal_reached_rows_csv": int(goal_rows),
+            "completion_rate_pct": rate,
+            "csv_tick_rows": int(csv_rows),
+            "evac_end_s": int(evac_end_s) if evac_end_s else None,
+            "peak_on_campus": peak_on_campus(on_campus_curve),
+            "mean_trip_s": trip_stats.get("mean_trip_s"),
+            "median_trip_s": trip_stats.get("median_trip_s"),
+            "mean_exit_from_t0_s": trip_stats.get("mean_exit_from_t0_s"),
+            "median_exit_from_t0_s": trip_stats.get("median_exit_from_t0_s"),
+            "n_trips_timed": trip_stats.get("n_trips") or 0,
+        },
+        "lot_deploy_plan": {
+            lot: {
+                "schedule_spawns": int(per_lot.get(lot, 0)),
+                "baseline_target": int(LOT_COUNTS[lot]),
+            }
+            for lot in LOT_ORDER
+        },
+        "clearance_by_lot_s": {
+            lot: clearance.get(lot) for lot in LOT_ORDER
+        },
+        "artifacts": {
+            "summary_csv": "summary.csv",
+            "evac_curve_csv": "evac_curve.csv",
+            "clearance_by_lot_csv": "clearance_by_lot.csv",
+            "metrics_json": "metrics.json",
+        },
+    }
+
+
+def write_metrics_json(output_dir: Path, payload: dict) -> Path:
+    path = output_dir / "metrics.json"
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
 def write_outputs(
     output_dir: Path,
     expected,
@@ -432,14 +503,17 @@ def write_outputs(
     csv_rows,
     evac_end_s=0,
     trip_stats: dict | None = None,
+    scenario_id: str | None = None,
 ):
     output_dir.mkdir(parents=True, exist_ok=True)
     trip_stats = trip_stats or trip_time_stats([])
+    rate = (trips / expected * 100.0) if expected else 0.0
 
     with (output_dir / "summary.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(
             f,
             fieldnames=[
+                "scenario_id",
                 "expected_deployed",
                 "baseline_target",
                 "completed_trips_geojson",
@@ -448,6 +522,7 @@ def write_outputs(
                 "completion_rate_pct",
                 "csv_tick_rows",
                 "evac_end_s",
+                "peak_on_campus",
                 "mean_trip_s",
                 "median_trip_s",
                 "mean_exit_from_t0_s",
@@ -455,9 +530,9 @@ def write_outputs(
             ],
         )
         w.writeheader()
-        rate = (trips / expected * 100.0) if expected else 0.0
         w.writerow(
             {
+                "scenario_id": scenario_id or "",
                 "expected_deployed": expected,
                 "baseline_target": BASELINE_TARGET,
                 "completed_trips_geojson": trips,
@@ -466,12 +541,27 @@ def write_outputs(
                 "completion_rate_pct": round(rate, 2),
                 "csv_tick_rows": csv_rows,
                 "evac_end_s": evac_end_s,
+                "peak_on_campus": peak_on_campus(on_campus_curve) or "",
                 "mean_trip_s": trip_stats.get("mean_trip_s") or "",
                 "median_trip_s": trip_stats.get("median_trip_s") or "",
                 "mean_exit_from_t0_s": trip_stats.get("mean_exit_from_t0_s") or "",
                 "median_exit_from_t0_s": trip_stats.get("median_exit_from_t0_s") or "",
             }
         )
+
+    metrics = build_metrics_payload(
+        scenario_id=scenario_id,
+        expected=expected,
+        per_lot=per_lot,
+        completed_csv=completed_csv,
+        goal_rows=goal_rows,
+        trips=trips,
+        csv_rows=csv_rows,
+        evac_end_s=evac_end_s,
+        trip_stats=trip_stats,
+        on_campus_curve=on_campus_curve,
+    )
+    write_metrics_json(output_dir, metrics)
 
     with (output_dir / "lot_deploy_plan.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=["lot", "schedule_spawns", "baseline_target"])
@@ -640,6 +730,7 @@ def main():
         csv_rows,
         evac_end_s,
         trip_stats=stats,
+        scenario_id=scenario_id_from_path(csv_path) or scenario_id_from_path(output_dir),
     )
 
     print("=== MARS run summary ===")
@@ -663,6 +754,7 @@ def main():
     print()
     print("Charts: summary.png, evac_curve.png, trip_time_stats.png,")
     print("        trip_time_hist.png, clearance_by_lot.png")
+    print("Metrics : metrics.json (schema_version=1, join on scenario_id)")
     print("Note: trips geojson = finished drives only.")
     print("      Travel time = last coord timestamp - first (spawn to exit).")
     print("      From t=0 = exit unix - simulation start.")
