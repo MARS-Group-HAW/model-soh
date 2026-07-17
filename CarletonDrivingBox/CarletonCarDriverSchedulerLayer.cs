@@ -24,6 +24,8 @@ public class CarletonCarDriverSchedulerLayer : SchedulerLayer
 {
     private readonly CarletonCarLayer _carLayer;
     private readonly HashSet<Guid> _unregistered = new();
+    // CarLayer.Driver is a plain Dictionary; MARS ticks agents in parallel by default.
+    private readonly object _driverSync = new();
 
     public CarletonCarDriverSchedulerLayer(CarletonCarLayer carLayer)
     {
@@ -45,10 +47,14 @@ public class CarletonCarDriverSchedulerLayer : SchedulerLayer
             return;
 
         // CarletonCarDriver calls unregister from both Notify(GoalReached) and Tick(); guard double-removal.
-        if (!_unregistered.Add(driver.ID))
-            return;
+        lock (_driverSync)
+        {
+            if (!_unregistered.Add(driver.ID))
+                return;
 
-        _carLayer.Driver.Remove(driver.ID);
+            _carLayer.Driver.Remove(driver.ID);
+        }
+
         UnregisterAgent(layer, tickClient);
     }
 
@@ -90,7 +96,11 @@ public class CarletonCarDriverSchedulerLayer : SchedulerLayer
                 osmRoute: osmRoute,
                 trafficCode: trafficCode);
 
-            _carLayer.Driver.Add(cardriver.ID, cardriver);
+            lock (_driverSync)
+            {
+                _carLayer.Driver[cardriver.ID] = cardriver;
+            }
+
             RegisterAgent(_carLayer, cardriver);
         }
         catch (Exception ex)
