@@ -35,7 +35,7 @@ LOTS_BASE = {
     "P2": {"spawn": (45.3836355, -75.6962699), "exit": COLONEL_BY, "color": "#377eb8"},
     "P3": {"spawn": (45.384003, -75.694052), "exit": COLONEL_BY, "color": "#4daf4a"},
     "P4": {"spawn": (45.3857, -75.6950), "exit": BRONSON, "color": "#984ea3"},
-    "P5": {"spawn": (45.3879759, -75.6932794), "exit": BRONSON, "color": "#ff7f00"},
+    "P5": {"spawn": (45.3876035, -75.6950176), "exit": BRONSON, "color": "#ff7f00"},
     "P6": {"spawn": (45.3885825, -75.6970087), "exit": BRONSON, "color": "#a65628"},
     "P7": {"spawn": (45.3888841, -75.6962336), "exit": BRONSON, "color": "#f781bf"},
 }
