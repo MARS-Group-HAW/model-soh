@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Analyze MARS results for scenarios 01–08."""
+"""Analyze MARS results for scenarios 01–10."""
 from __future__ import annotations
 
 import subprocess
@@ -9,7 +9,7 @@ from pathlib import Path
 from mars_agent_outputs import agent_output_path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCENARIOS = tuple(f"{i:02d}" for i in range(1, 9))
+SCENARIOS = tuple(f"{i:02d}" for i in range(1, 11))
 
 
 def main() -> int:

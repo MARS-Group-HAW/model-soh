@@ -35,6 +35,14 @@
     "Scenario 08": {
       "commandName": "Project",
       "commandLineArgs": "configs/config_scenario_08.json"
+    },
+    "Scenario 09": {
+      "commandName": "Project",
+      "commandLineArgs": "configs/config_scenario_09.json"
+    },
+    "Scenario 10": {
+      "commandName": "Project",
+      "commandLineArgs": "configs/config_scenario_10.json"
     }
   }
 }

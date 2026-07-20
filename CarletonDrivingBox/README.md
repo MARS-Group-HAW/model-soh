@@ -4,7 +4,7 @@ Car evacuation on the Carleton campus drive network. Cars spawn from parking lot
 
 ![Campus parking lots P1–P7 and exits](docs/campus_parking_lots.png)
 
-Parking lots **P1–P7** and the two main exits: **Colonel By** (south-west) and **Bronson Avenue** (north-east). Scenario 07 uses an additional emergency exit at Bronson Ave & Raven Rd for P3 and P4.
+Parking lots **P1–P7** and the two main exits: **Colonel By** (south-west) and **Bronson Avenue** (north-east). Scenario 07 uses an additional emergency exit at Bronson Ave & Raven Rd for P3 and P4. Scenario 09 blocks the main Bronson exit and splits traffic between Colonel By (P1/P2) and the Raven emergency exit (P3/P4/P5/P6/P7). Scenario 10 keeps baseline timing and the base graph, but sends P6 to Colonel By instead of Bronson.
 
 ---
 
@@ -47,6 +47,8 @@ Each variant has its own config under `configs/`:
 | `configs/config_scenario_06.json` | P3 + P4 delayed 1 h, P6 delayed 1.5 h |
 | `configs/config_scenario_07.json` | Baseline timing; alternate graph and P3/P4 exit |
 | `configs/config_scenario_08.json` | Baseline timing; Bronson exit blocked; all lots → Colonel By |
+| `configs/config_scenario_09.json` | Baseline timing; Bronson blocked + Raven emergency; P1/P2 → Colonel By, P3/P4/P5/P6/P7 → emergency |
+| `configs/config_scenario_10.json` | Baseline timing; base graph; P6 → Colonel By (P1–P3 Colonel By, P4/P5/P7 Bronson) |
 
 `config.json` at the project root is a shortcut for scenario 01 (same as `configs/config_scenario_01.json`, writes to `results/scenario_01/`).
 
@@ -76,13 +78,16 @@ The schedule file belongs on **`CarletonCarDriverSchedulerLayer`**, not on the a
 
 | Path | Role |
 |------|------|
-| `resources/campus_drive_graph.geojson` | Drive network (scenarios 01–06) |
+| `resources/campus_drive_graph.geojson` | Drive network (scenarios 01–06, 10) |
 | `resources/campus_drive_graph_scenario_07.geojson` | Drive network for scenario 07 |
 | `resources/campus_drive_graph_scenario_08.geojson` | Drive network for scenario 08 (Bronson exits removed) |
+| `resources/campus_drive_graph_scenario_09.geojson` | Drive network for scenario 09 (Bronson blocked + Raven emergency link) |
 | `resources/schedules/scenario_XX_schedule.csv` | Spawn windows and coordinates per lot |
 | `resources/schedule_base.csv` | Lot deploy windows and coordinates for scenarios 01–06 |
 | `resources/schedule_base_07.csv` | Lot deploy windows and coordinates for scenario 07 |
 | `resources/schedule_base_08.csv` | Lot deploy windows and coordinates for scenario 08 |
+| `resources/schedule_base_09.csv` | Lot deploy windows and coordinates for scenario 09 |
+| `resources/schedule_base_10.csv` | Lot deploy windows and coordinates for scenario 10 |
 | `resources/parking_lot_schedules/scenario_XX.csv` | Per-lot delay offsets (`initEventInSec`) |
 | `resources/car.csv` | Car entity parameters |
 | `resources/sim_road_lengths.csv` | Road segment lengths (heatmap scripts) |
@@ -104,7 +109,7 @@ Per-scenario results are written to the folder set in `globals.csvOptions.output
 
 ### Interactive notebook
 
-`analyze_scenario.ipynb` — pick scenario 1–7, optionally run the simulation, then view summary charts. A DEVS comparison section is stubbed for later.
+`analyze_scenario.ipynb` — pick scenario 1–10, optionally run the simulation, then view summary charts. A DEVS comparison section is stubbed for later.
 
 ```bash
 python3 -m venv .venv
@@ -123,12 +128,12 @@ Python 3 scripts under `scripts/`:
 | Script | Purpose |
 |--------|---------|
 | `scripts/analyze_run.py` | Summary stats and evacuation curve for one scenario |
-| `scripts/analyze_all_scenarios.py` | Same for all scenarios 01–08 |
+| `scripts/analyze_all_scenarios.py` | Same for all scenarios 01–10 |
 | `scripts/analyze_and_heatmap.py` | Analyze + heatmap matrix + plot for one scenario |
 | `scripts/build_heatmap_matrix.py` | Road occupancy matrix only |
 | `scripts/plot_heatmap.py` | Heatmap image only |
 | `scripts/plot_agent_routes.py` | Per-trip route maps (`python scripts/plot_agent_routes.py 01`) |
-| `scripts/run_all_scenarios.py` | Run simulations 01–08 (`python scripts/run_all_scenarios.py`) |
+| `scripts/run_all_scenarios.py` | Run simulations 01–10 (`python scripts/run_all_scenarios.py`) |
 
 Pass the path to `CarletonCarDriver.csv` where a script accepts a file argument; trips geojson is resolved from the same folder.
 
