@@ -22,7 +22,7 @@ from mars_agent_outputs import agent_output_path
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results"
 DEFAULT_GRAPH = ROOT / "resources" / "campus_drive_graph.geojson"
-VALID_SCENARIOS = tuple(f"{i:02d}" for i in range(1, 8))
+VALID_SCENARIOS = tuple(f"{i:02d}" for i in range(1, 9))
 
 COLONEL_BY = (45.3792575, -75.7004525)
 BRONSON = (45.3896198, -75.694494)
@@ -47,7 +47,7 @@ def normalize_scenario(value: str) -> str:
         raise ValueError(f"Bad scenario id: {value!r}")
     sid = f"{int(sid):02d}"
     if sid not in VALID_SCENARIOS:
-        raise ValueError(f"Scenario must be 01–07, got {value!r}")
+        raise ValueError(f"Scenario must be 01–08, got {value!r}")
     return sid
 
 
@@ -56,6 +56,9 @@ def lots_for_scenario(scenario_id: str) -> dict:
     if scenario_id == "07":
         lots["P3"]["exit"] = BRONSON_RAVEN
         lots["P4"]["exit"] = BRONSON_RAVEN
+    elif scenario_id == "08":
+        for lot in lots.values():
+            lot["exit"] = COLONEL_BY
     return lots
 
 
@@ -180,13 +183,13 @@ def plot_trip(
 
 def main():
     ap = argparse.ArgumentParser(
-        description="Export one route PNG per completed agent trip (scenarios 01–07)."
+        description="Export one route PNG per completed agent trip (scenarios 01–08)."
     )
     ap.add_argument(
         "scenario",
         nargs="?",
         default="01",
-        help="Scenario id 01–07 (default: 01). Resolves trips/graph/output under results/scenario_XX/",
+        help="Scenario id 01–08 (default: 01). Resolves trips/graph/output under results/scenario_XX/",
     )
     ap.add_argument(
         "--trips",

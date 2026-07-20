@@ -46,6 +46,7 @@ Each variant has its own config under `configs/`:
 | `configs/config_scenario_05.json` | P3 + P4 delayed 1 h, P6 delayed 2 h |
 | `configs/config_scenario_06.json` | P3 + P4 delayed 1 h, P6 delayed 1.5 h |
 | `configs/config_scenario_07.json` | Baseline timing; alternate graph and P3/P4 exit |
+| `configs/config_scenario_08.json` | Baseline timing; Bronson exit blocked; all lots → Colonel By |
 
 `config.json` at the project root is a shortcut for scenario 01 (same as `configs/config_scenario_01.json`, writes to `results/scenario_01/`).
 
@@ -77,9 +78,11 @@ The schedule file belongs on **`CarletonCarDriverSchedulerLayer`**, not on the a
 |------|------|
 | `resources/campus_drive_graph.geojson` | Drive network (scenarios 01–06) |
 | `resources/campus_drive_graph_scenario_07.geojson` | Drive network for scenario 07 |
+| `resources/campus_drive_graph_scenario_08.geojson` | Drive network for scenario 08 (Bronson exits removed) |
 | `resources/schedules/scenario_XX_schedule.csv` | Spawn windows and coordinates per lot |
 | `resources/schedule_base.csv` | Lot deploy windows and coordinates for scenarios 01–06 |
 | `resources/schedule_base_07.csv` | Lot deploy windows and coordinates for scenario 07 |
+| `resources/schedule_base_08.csv` | Lot deploy windows and coordinates for scenario 08 |
 | `resources/parking_lot_schedules/scenario_XX.csv` | Per-lot delay offsets (`initEventInSec`) |
 | `resources/car.csv` | Car entity parameters |
 | `resources/sim_road_lengths.csv` | Road segment lengths (heatmap scripts) |
@@ -120,12 +123,12 @@ Python 3 scripts under `scripts/`:
 | Script | Purpose |
 |--------|---------|
 | `scripts/analyze_run.py` | Summary stats and evacuation curve for one scenario |
-| `scripts/analyze_all_scenarios.py` | Same for all scenarios 01–07 |
+| `scripts/analyze_all_scenarios.py` | Same for all scenarios 01–08 |
 | `scripts/analyze_and_heatmap.py` | Analyze + heatmap matrix + plot for one scenario |
 | `scripts/build_heatmap_matrix.py` | Road occupancy matrix only |
 | `scripts/plot_heatmap.py` | Heatmap image only |
 | `scripts/plot_agent_routes.py` | Per-trip route maps (`python scripts/plot_agent_routes.py 01`) |
-| `scripts/run_all_scenarios.py` | Run simulations 01–07 (`python scripts/run_all_scenarios.py`) |
+| `scripts/run_all_scenarios.py` | Run simulations 01–08 (`python scripts/run_all_scenarios.py`) |
 
 Pass the path to `CarletonCarDriver.csv` where a script accepts a file argument; trips geojson is resolved from the same folder.
 

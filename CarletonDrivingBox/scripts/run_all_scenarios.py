@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run campus evacuation scenarios 01–07."""
+"""Run campus evacuation scenarios 01–08."""
 from __future__ import annotations
 
 import argparse
@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = "SOHCarletonDrivingBox.csproj"
-SCENARIOS = tuple(f"{i:02d}" for i in range(1, 8))
+SCENARIOS = tuple(f"{i:02d}" for i in range(1, 9))
 
 
 def run(cmd: list[str]) -> int:
@@ -18,12 +18,12 @@ def run(cmd: list[str]) -> int:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Run CarletonDrivingBox scenarios 01–07.")
+    ap = argparse.ArgumentParser(description="Run CarletonDrivingBox scenarios 01–08.")
     ap.add_argument("--no-build", action="store_true", help="Skip dotnet build")
     ap.add_argument(
         "scenarios",
         nargs="*",
-        help="Scenario ids to run (e.g. 01 03). Default: all 01–07.",
+        help="Scenario ids to run (e.g. 01 03). Default: all 01–08.",
     )
     args = ap.parse_args()
 

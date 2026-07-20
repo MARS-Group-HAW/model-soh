@@ -1,0 +1,54 @@
+{
+  "id": "scenario_08",
+  "globals": {
+    "deltaT": 1,
+    "startPoint": "2021-10-11T06:00:00",
+    "endPoint": "2021-10-11T10:01:00",
+    "deltaTUnit": "seconds",
+    "console": true,
+    "csvOptions": {
+      "outputPath": "results/scenario_08"
+    }
+  },
+  "agents": [
+    {
+      "name": "CarletonCarDriver",
+      "count": 3300,
+      "outputs": [
+        {
+          "kind": "trips",
+          "outputConfiguration": {
+            "tripsFields": [
+              "StableId"
+            ]
+          }
+        },
+        {
+          "kind": "csv"
+        }
+      ],
+      "individual": [
+        {
+          "value": false,
+          "parameter": "ResultTrajectoryEnabled"
+        }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "name": "CarLayer",
+      "file": "resources/campus_drive_graph_scenario_08.geojson"
+    },
+    {
+      "name": "CarletonCarDriverSchedulerLayer",
+      "file": "resources/schedules/scenario_08_schedule.csv"
+    }
+  ],
+  "entities": [
+    {
+      "name": "Car",
+      "file": "resources/car.csv"
+    }
+  ]
+}
