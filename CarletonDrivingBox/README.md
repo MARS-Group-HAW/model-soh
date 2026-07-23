@@ -4,7 +4,21 @@ Car evacuation on the Carleton campus drive network. Cars spawn from parking lot
 
 ![Campus parking lots P1–P7 and exits](docs/campus_parking_lots.png)
 
-Parking lots **P1–P7** and the two main exits: **Colonel By** (south-west) and **Bronson Avenue** (north-east). Scenario 07 uses an additional emergency exit at Bronson Ave & Raven Rd for P3 and P4. Scenario 09 blocks the main Bronson exit and splits traffic between Colonel By (P1/P2) and the Raven emergency exit (P3/P4/P5/P6/P7). Scenario 10 keeps baseline timing and the base graph, but sends P6 to Colonel By instead of Bronson.
+![Spawn boxes and parking aisles](docs/parking_lot_spawn_boxes.png)
+
+Parking lots **P1–P7** and the two main exits: **Colonel By** (south-west) and **Bronson Avenue** (north-east). Scenario 07 uses an additional emergency exit at Bronson Ave & Raven Rd for P3 and P4. Scenario 08 blocks Bronson & University Dr (Stadium Way stays open). Scenario 09 is the same as 08 with the Raven→Bronson emergency link also available. Scenario 10 keeps baseline timing and the base graph, but sends P6 to the SW Meadowlands point (same as P1/P2) instead of Brewer Park.
+
+| Lot | Real campus area | Egress onto |
+|-----|------------------|-------------|
+| P1 | OSM Library Rd / CIMS aisles (west strip + entrance + east loop) | Library Rd |
+| P2 | Unnamed lot west of Campus Ave (near P2 junction) | Campus Ave |
+| P3 | OSM P3 Raven Rd grid (aisles + east egress) | Raven Rd |
+| P4 | OSM P4 aisle loop + short curb cut (University Dr straightened) | University Dr |
+| P5 | OSM **P5** athletics lot (Stadium Way / Bronson) | Stadium Way |
+| P6 | OSM **P6** large western lot (west of P18) | Campus Ave & P6 |
+| P7 | OSM **P7** large northern lot | Roundabout |
+
+Footprints come from OpenStreetMap parking polygons; aisles use OSM `highway=service` inside each lot (plus a light inset grid on large lots). Narrow egress funnels connect each lot to its campus-road attach node. Pre-built graphs and parking layers live under `resources/` (no OSM rebuild step for analysis).
 
 ---
 
@@ -39,16 +53,16 @@ Each variant has its own config under `configs/`:
 
 | Config | Description |
 |--------|-------------|
-| `configs/config_scenario_01.json` | Baseline — all lots deploy at simulation start |
+| `configs/config_scenario_01.json` | Instant deploy at 06:00; P1/P2 → SW evac (Meadowlands); P3–P7 → NE evac box |
 | `configs/config_scenario_02.json` | P6 delayed 1 h |
 | `configs/config_scenario_03.json` | P6 delayed 2 h |
 | `configs/config_scenario_04.json` | P3 delayed 1 h, P6 delayed 2 h |
 | `configs/config_scenario_05.json` | P3 + P4 delayed 1 h, P6 delayed 2 h |
 | `configs/config_scenario_06.json` | P3 + P4 delayed 1 h, P6 delayed 1.5 h |
 | `configs/config_scenario_07.json` | Baseline timing; alternate graph and P3/P4 exit |
-| `configs/config_scenario_08.json` | Baseline timing; Bronson exit blocked; all lots → Colonel By |
-| `configs/config_scenario_09.json` | Baseline timing; Bronson blocked + Raven emergency; P1/P2 → Colonel By, P3/P4/P5/P6/P7 → emergency |
-| `configs/config_scenario_10.json` | Baseline timing; base graph; P6 → Colonel By (P1–P3 Colonel By, P4/P5/P7 Bronson) |
+| `configs/config_scenario_08.json` | Bronson & University Dr exit blocked; P1/P2 → SW; P3–P7 → Brewer Park (often Stadium Way) |
+| `configs/config_scenario_09.json` | Same as 08 + Raven→Bronson emergency open; P1/P2 → SW Meadowlands; P3–P7 → Brewer Park |
+| `configs/config_scenario_10.json` | Baseline timing; base graph; P1/P2/P6 → SW Meadowlands; P3–P5/P7 → Brewer Park |
 
 `config.json` at the project root is a shortcut for scenario 01 (same as `configs/config_scenario_01.json`, writes to `results/scenario_01/`).
 
@@ -78,10 +92,14 @@ The schedule file belongs on **`CarletonCarDriverSchedulerLayer`**, not on the a
 
 | Path | Role |
 |------|------|
-| `resources/campus_drive_graph.geojson` | Drive network (scenarios 01–06, 10) |
+| `resources/campus_drive_graph.geojson` | Drive network (scenarios 01–06, 10), includes parking aisles |
 | `resources/campus_drive_graph_scenario_07.geojson` | Drive network for scenario 07 |
-| `resources/campus_drive_graph_scenario_08.geojson` | Drive network for scenario 08 (Bronson exits removed) |
-| `resources/campus_drive_graph_scenario_09.geojson` | Drive network for scenario 09 (Bronson blocked + Raven emergency link) |
+| `resources/campus_drive_graph_scenario_08.geojson` | Drive network for scenario 08 (Bronson & University Dr exit removed; Stadium Way kept) |
+| `resources/campus_drive_graph_scenario_09.geojson` | Drive network for scenario 09 (s08 graph + Raven→Bronson emergency link) |
+| `resources/parking_lot_spawn_boxes.geojson` | Polygon spawn AOIs for P1–P7 |
+| `resources/parking_lot_aisles.geojson` | Parking aisle + narrow egress edges (also merged into drive graphs) |
+| `resources/parking_lot_spawn_candidates.json` | Interior aisle nodes; scheduler picks one at random per car |
+| `resources/parking_lot_spawns.csv` | Interior spawn lat/lon + box bounds per lot |
 | `resources/schedules/scenario_XX_schedule.csv` | Spawn windows and coordinates per lot |
 | `resources/schedule_base.csv` | Lot deploy windows and coordinates for scenarios 01–06 |
 | `resources/schedule_base_07.csv` | Lot deploy windows and coordinates for scenario 07 |
@@ -133,6 +151,7 @@ Python 3 scripts under `scripts/`:
 | `scripts/build_heatmap_matrix.py` | Road occupancy matrix only |
 | `scripts/plot_heatmap.py` | Heatmap image only |
 | `scripts/plot_agent_routes.py` | Per-trip route maps (`python scripts/plot_agent_routes.py 01`) |
+| `scripts/mars_agent_outputs.py` | Shared paths for agent CSV / trips GeoJSON |
 | `scripts/run_all_scenarios.py` | Run simulations 01–10 (`python scripts/run_all_scenarios.py`) |
 
 Pass the path to `CarletonCarDriver.csv` where a script accepts a file argument; trips geojson is resolved from the same folder.

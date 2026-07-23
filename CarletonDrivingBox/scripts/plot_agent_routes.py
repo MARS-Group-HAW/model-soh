@@ -26,19 +26,39 @@ VALID_SCENARIOS = tuple(f"{i:02d}" for i in range(1, 11))
 
 COLONEL_BY = (45.3792575, -75.7004525)
 BRONSON = (45.3896198, -75.694494)
-# Observed trip terminus on emergency corridor (not the schedule WGS label alone).
+# Scenario 01 off-campus SW box (P1/P2). Legacy NE box kept for old-run labels.
+SW_EVAC_BOX = (45.3675, -75.7040)   # Meadowlands / SW of Colonel By — P1, P2 (s01); P1/P2/P6 (s10)
+NE_EVAC_BOX = (45.3925, -75.6875)   # legacy NE box (pre–Brewer Park)
+# NE exit for P3–P7 (s10: P3–P5/P7 only): Brewer Park east of Bronson.
+BREWER_PARK = (45.387983, -75.690183)
+# Legacy emergency corridor terminus (pre–Brewer Park schedules).
 BRONSON_RAVEN = (45.3846, -75.6922)
 EXIT_TOL_M = 120.0
 
 LOTS_BASE = {
     "P1": {"spawn": (45.3813098, -75.7006879), "exit": COLONEL_BY, "color": "#e41a1c"},
     "P2": {"spawn": (45.3836355, -75.6962699), "exit": COLONEL_BY, "color": "#377eb8"},
-    "P3": {"spawn": (45.384003, -75.694052), "exit": COLONEL_BY, "color": "#4daf4a"},
-    "P4": {"spawn": (45.3857, -75.6950), "exit": BRONSON, "color": "#984ea3"},
-    "P5": {"spawn": (45.3876035, -75.6950176), "exit": BRONSON, "color": "#ff7f00"},
-    "P6": {"spawn": (45.3885825, -75.6970087), "exit": BRONSON, "color": "#a65628"},
-    "P7": {"spawn": (45.3888841, -75.6962336), "exit": BRONSON, "color": "#f781bf"},
+    "P3": {"spawn": (45.384003, -75.694052), "exit": BREWER_PARK, "color": "#4daf4a"},
+    "P4": {"spawn": (45.3857, -75.6950), "exit": BREWER_PARK, "color": "#984ea3"},
+    "P5": {"spawn": (45.3876035, -75.6950176), "exit": BREWER_PARK, "color": "#ff7f00"},
+    "P6": {"spawn": (45.3885825, -75.6970087), "exit": BREWER_PARK, "color": "#a65628"},
+    "P7": {"spawn": (45.3888841, -75.6962336), "exit": BREWER_PARK, "color": "#f781bf"},
 }
+
+
+def _load_interior_spawns() -> None:
+    """Prefer parking-lot interior spawn points when present."""
+    path = ROOT / "resources" / "parking_lot_spawns.csv"
+    if not path.is_file():
+        return
+    with path.open(encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            lot = row["lot"]
+            if lot in LOTS_BASE:
+                LOTS_BASE[lot]["spawn"] = (float(row["spawn_lat"]), float(row["spawn_lon"]))
+
+
+_load_interior_spawns()
 
 
 def normalize_scenario(value: str) -> str:
@@ -52,20 +72,20 @@ def normalize_scenario(value: str) -> str:
 
 
 def lots_for_scenario(scenario_id: str) -> dict:
+    """Expected finish markers: P3–P7 → Brewer Park; s10 P6 → SW Meadowlands like P1/P2."""
     lots = {k: dict(v) for k, v in LOTS_BASE.items()}
-    if scenario_id == "07":
-        lots["P3"]["exit"] = BRONSON_RAVEN
-        lots["P4"]["exit"] = BRONSON_RAVEN
-    elif scenario_id == "08":
-        for lot in lots.values():
-            lot["exit"] = COLONEL_BY
-    elif scenario_id == "09":
+    for lot in ("P3", "P4", "P5", "P6", "P7"):
+        lots[lot]["exit"] = BREWER_PARK
+    if scenario_id == "01":
+        for lot in ("P1", "P2"):
+            lots[lot]["exit"] = SW_EVAC_BOX
+    else:
         for lot in ("P1", "P2"):
             lots[lot]["exit"] = COLONEL_BY
-        for lot in ("P3", "P4", "P5", "P6", "P7"):
-            lots[lot]["exit"] = BRONSON_RAVEN
-    elif scenario_id == "10":
-        lots["P6"]["exit"] = COLONEL_BY
+    if scenario_id == "10":
+        # Match schedule_base_10 / scenario_10_schedule: P1/P2/P6 → Meadowlands.
+        for lot in ("P1", "P2", "P6"):
+            lots[lot]["exit"] = SW_EVAC_BOX
     return lots
 
 
