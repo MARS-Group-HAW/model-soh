@@ -91,7 +91,8 @@ public class CarletonCarDriverSchedulerLayer : SchedulerLayer
                 : "";
 
             // Spread cars across the lot aisle network instead of one schedule coordinate.
-            (startLat, startLon) = ResolveSpawn(startLat, startLon);
+            string parkingLot;
+            (startLat, startLon, parkingLot) = ResolveSpawn(startLat, startLon);
 
             var cardriver = new CarletonCarDriver(
                 _carLayer,
@@ -103,7 +104,10 @@ public class CarletonCarDriverSchedulerLayer : SchedulerLayer
                 destLat,
                 destLon,
                 osmRoute: osmRoute,
-                trafficCode: trafficCode);
+                trafficCode: trafficCode)
+            {
+                ParkingLot = parkingLot
+            };
 
             lock (_driverSync)
             {
@@ -118,33 +122,38 @@ public class CarletonCarDriverSchedulerLayer : SchedulerLayer
         }
     }
 
-    private (double lat, double lon) ResolveSpawn(double scheduleLat, double scheduleLon)
+    private (double lat, double lon, string lot) ResolveSpawn(double scheduleLat, double scheduleLon)
     {
         EnsureSpawnPools();
         if (_spawnPools == null || _spawnPools.Count == 0)
-            return (scheduleLat, scheduleLon);
+            return (scheduleLat, scheduleLon, "");
 
+        string? bestLot = null;
         LotSpawnPool? best = null;
         var bestDist = double.MaxValue;
-        foreach (var pool in _spawnPools.Values)
+        foreach (var (lot, pool) in _spawnPools)
         {
             var d = HaversineM(scheduleLat, scheduleLon, pool.AnchorLat, pool.AnchorLon);
             if (d < bestDist)
             {
                 bestDist = d;
                 best = pool;
+                bestLot = lot;
             }
         }
 
         // Schedule anchors should match a lot within tens of meters; 250 m is a safe ceiling.
-        if (best == null || best.Candidates.Count == 0 || bestDist > 250.0)
-            return (scheduleLat, scheduleLon);
+        if (best == null || bestLot == null || bestDist > 250.0)
+            return (scheduleLat, scheduleLon, "");
+
+        if (best.Candidates.Count == 0)
+            return (scheduleLat, scheduleLon, bestLot);
 
         lock (_spawnSync)
         {
             var idx = Random.Shared.Next(best.Candidates.Count);
             var pick = best.Candidates[idx];
-            return (pick.Lat, pick.Lon);
+            return (pick.Lat, pick.Lon, bestLot);
         }
     }
 

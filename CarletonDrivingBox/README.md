@@ -156,6 +156,8 @@ Python 3 scripts under `scripts/`:
 
 Pass the path to `CarletonCarDriver.csv` where a script accepts a file argument; trips geojson is resolved from the same folder.
 
+Heatmap corridors are mapped from place-to-place shortest paths on the **scenario graph**. If a named link is missing (e.g. Raven→Bronson emergency only in scenario_07+), that corridor is skipped when the path is longer than 1.75× `sim_road_lengths.csv` — otherwise Dijkstra would mis-attribute Stadium Way / Bronson / P5 traffic to the emergency road name.
+
 ---
 
 ## Key files

@@ -33,19 +33,33 @@ internal static class Program
             simConfig = SimulationConfig.Deserialize(configText);
             if (configText.Contains("CarletonCarDriverSchedulerLayer", StringComparison.Ordinal))
                 description.AddLayer<CarletonCarDriverSchedulerLayer>();
-            application = SimulationStarter.BuildApplication(description, simConfig);
         }
         else
         {
             simConfig = SimulationConfig.Deserialize(File.ReadAllText("config.json"));
             description.AddLayer<CarletonCarDriverSchedulerLayer>();
-            application = SimulationStarter.BuildApplication(description, simConfig);
         }
+
+        // Default configs keep console:true. MARS ProgressBar needs a real console;
+        // redirected / no-TTY shells throw — only then disable progress.
+        if (simConfig.Globals.ShowConsoleProgress && !CanUseConsoleProgressBar())
+        {
+            Console.WriteLine(
+                "[Carleton] No interactive console — disabling MARS progress bar " +
+                "(globals.console / ShowConsoleProgress).");
+            simConfig.Globals.ShowConsoleProgress = false;
+        }
+
+        application = SimulationStarter.BuildApplication(description, simConfig);
 
         var outputDir = simConfig.Globals.CsvOptions?.OutputPath;
         if (string.IsNullOrWhiteSpace(outputDir))
             outputDir = "results";
         Directory.CreateDirectory(outputDir);
+        // Scenario 11 (and any run with breakdowns enabled) writes one row per event here.
+        CarletonCarLayer.BreakdownLogPath = Path.Combine(outputDir, "breakdowns.csv");
+        if (File.Exists(CarletonCarLayer.BreakdownLogPath))
+            File.Delete(CarletonCarLayer.BreakdownLogPath);
 
         var simulation = application.Resolve<ISimulation>();
 
@@ -59,6 +73,26 @@ internal static class Program
 
         Console.WriteLine($"Output folder: {Path.GetFullPath(outputDir)}");
         Console.WriteLine($"Executed iterations {state.Iterations} lasted {watch.Elapsed}");
+    }
+
+    /// <summary>
+    /// True when console progress APIs are usable (required by MARS ProgressBar).
+    /// </summary>
+    private static bool CanUseConsoleProgressBar()
+    {
+        try
+        {
+            _ = Console.CursorTop;
+            return true;
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
     }
 
     /// <summary>MARS writes trips on dispose; move into the same folder as CarletonCarDriver.csv.</summary>

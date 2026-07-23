@@ -26,7 +26,13 @@ def main() -> int:
     matrix = csv.parent / "heatmap_matrix.csv"
     steps = [
         [sys.executable, str(ROOT / "scripts" / "analyze_run.py"), str(csv)],
-        [sys.executable, str(ROOT / "scripts" / "build_heatmap_matrix.py"), str(csv)],
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "build_heatmap_matrix.py"),
+            str(csv),
+            "--dt",
+            "10",
+        ],
         [sys.executable, str(ROOT / "scripts" / "plot_heatmap.py"), str(matrix)],
     ]
     for cmd in steps:
