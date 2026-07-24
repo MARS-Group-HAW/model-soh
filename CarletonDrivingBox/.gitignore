@@ -1,12 +1,29 @@
+# Build
 bin/
 obj/
+
+# Python
 .venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.jupyter/
+
+# IDE / cache
+.idea/
 .cache/
-CarletonCarDriver_trips.geojson
-CarletonCarDriver.csv
-CarDriver_trips.geojson
-CarDriver.csv
-logs/
+*.user
+*.suo
+
+# Simulation outputs (regenerate locally)
 results/
+logs/
+*.log
 scheduler_spawn.log
+CarletonCarDriver.csv
+CarletonCarDriver_trips.geojson
+CarDriver.csv
+CarDriver_trips.geojson
+
+# Office junk
 *.docx
