@@ -15,22 +15,34 @@ Which exits are open depends on the scenario (for example, **08** closes Bronson
 
 ![Spawn boxes and parking aisles](docs/parking_lot_spawn_boxes.png)
 
-| Lot | Where it is | How cars leave the lot |
-|-----|-------------|------------------------|
-| P1 | Library Rd / CIMS | Library Rd |
-| P2 | West of Campus Ave | Campus Ave |
-| P3 | Raven Rd grid | Raven Rd |
-| P4 | University Dr aisle | University Dr |
-| P5 | Athletics (Stadium Way / Bronson) | Stadium Way |
-| P6 | Large western lot | Campus Ave & P6 |
-| P7 | Large northern lot | Roundabout |
+---
 
-**Special scenarios**
+## Preferred way to test: Jupyter notebook
 
-- **07** — Uses a different road map. P3 and P4 leave via a Raven Rd emergency exit.
-- **08** — Blocks Bronson and University Dr. Stadium Way stays open.
-- **09** — Same as 08, plus a Raven→Bronson emergency link.
-- **10** — Same base map as 01–06. P6 goes southwest with P1 and P2.
+The easiest way to run and inspect a scenario is the notebook `analyze_scenario.ipynb`.
+
+1. Install .NET and the parent `SOHModel` package (needed if you run a simulation from the notebook).
+2. Set up Python once from this folder:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python3 -m ipykernel install --user --name=carleton-driving --display-name="Carleton Driving"
+```
+
+3. Open the notebook:
+
+```bash
+jupyter notebook analyze_scenario.ipynb
+```
+
+4. In the first cells, set:
+   - `SCENARIO` — scenario number `1`–`10`
+   - `RUN_SIMULATION` — `True` to run the sim, or `False` to only analyze existing results under `results/scenario_XX/`
+   - Optionally turn on analysis and/or heatmap steps as the notebook describes
+
+Then run the cells in order. Charts and summaries appear in the notebook; files are written under `results/scenario_XX/`.
 
 ---
 
@@ -73,9 +85,9 @@ Spawn times come from schedule CSV files on the **`CarletonCarDriverSchedulerLay
 
 ---
 
-## Build and run
+## Build and run (command line)
 
-You need .NET and the parent `SOHModel` package. From this folder:
+You can also run the simulator directly without the notebook. You need .NET and the parent `SOHModel` package. From this folder:
 
 ```bash
 dotnet build SOHCarletonDrivingBox.csproj
@@ -97,15 +109,9 @@ Names in the config must match the registered types: `CarletonCarLayer` (as `"Ca
 
 ---
 
-## Analysis and heatmaps
+## Analysis and heatmaps (command line)
 
-Set up Python once:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
+Activate the same Python environment as above (`source .venv/bin/activate`), then:
 
 | Script | What it does |
 |--------|--------------|
@@ -116,8 +122,6 @@ pip install -r requirements.txt
 | `scripts/plot_heatmap.py` | Heatmap PNG (percentile scale by default; `--comparable` uses fixed vmax=20) |
 | `scripts/plot_agent_routes.py` | Map of each trip’s route |
 | `scripts/run_all_scenarios.py` | Run simulations 01–10 |
-
-You can also use the notebook `analyze_scenario.ipynb`. Set `SCENARIO`, and optionally `RUN_SIMULATION`.
 
 Examples:
 
@@ -144,5 +148,6 @@ python3 scripts/plot_heatmap.py results/scenario_01/heatmap_matrix.csv --compara
 | `resources/car.csv` | Car parameters |
 | `CarletonCarDriver.cs` / `CarletonCarLayer.cs` / `CarletonCarDriverSchedulerLayer.cs` | Local agent and layer code |
 | `Program.cs` | Registers model types |
+| `analyze_scenario.ipynb` | Preferred notebook for testing |
 
 MARS docs: [mars.haw-hamburg.de](https://mars.haw-hamburg.de)
