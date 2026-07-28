@@ -1,4 +1,4 @@
-# Carleton campus car evacuation (MARS)
+﻿# Carleton campus car evacuation (MARS)
 
 This project simulates cars leaving Carleton University during an evacuation.
 
@@ -38,7 +38,7 @@ jupyter notebook analyze_scenario.ipynb
 ```
 
 4. In the first cells, set:
-   - `SCENARIO` — scenario number `1`–`10`
+   - `SCENARIO` — scenario number `1`–`12`
    - `RUN_SIMULATION` — `True` to run the sim, or `False` to only analyze existing results under `results/scenario_XX/`
    - Optionally turn on analysis and/or heatmap steps as the notebook describes
 
@@ -48,7 +48,7 @@ Then run the cells in order. Charts and summaries appear in the notebook; files 
 
 ## Scenarios
 
-Config files: `configs/config_scenario_01.json` … `config_scenario_10.json`.
+Config files: `configs/config_scenario_01.json` … `config_scenario_12.json`.
 
 `config.json` at the project root is a shortcut for scenario 01.
 
@@ -64,6 +64,8 @@ Config files: `configs/config_scenario_01.json` … `config_scenario_10.json`.
 | 08 | Bronson & University Dr blocked; P1/P2 → SW; P3–P7 → Brewer Park |
 | 09 | Same as 08, plus Raven→Bronson emergency open |
 | 10 | Base map; P1/P2/P6 → SW; P3–P5/P7 → Brewer Park |
+| 11 | Same as 01, except P7 split 550 → Brewer (NE) + 550 → Meadowlands (SW). All lots still start at 06:01; P5 stays Brewer |
+| 12 | Same as 10 (P6 → Meadowlands/SW), except P7 split 550 → Brewer (NE) + 550 → Meadowlands (SW). All lots early one-shot 06:01 |
 
 Spawn times come from schedule CSV files on the **`CarletonCarDriverSchedulerLayer`** (not on the car agent). Example config:
 
@@ -94,7 +96,7 @@ dotnet build SOHCarletonDrivingBox.csproj
 dotnet run --project SOHCarletonDrivingBox.csproj -- configs/config_scenario_01.json
 ```
 
-Run all scenarios 01–10:
+Run all scenarios 01–12:
 
 ```bash
 python3 scripts/run_all_scenarios.py
@@ -116,12 +118,12 @@ Activate the same Python environment as above (`source .venv/bin/activate`), the
 | Script | What it does |
 |--------|--------------|
 | `scripts/analyze_run.py` | Summary and evacuation curve for one run |
-| `scripts/analyze_all_scenarios.py` | Analyze scenarios 01–10 |
+| `scripts/analyze_all_scenarios.py` | Analyze scenarios 01–12 |
 | `scripts/analyze_and_heatmap.py` | Analyze, build matrix, and plot heatmap |
 | `scripts/build_heatmap_matrix.py` | Road occupancy over time (`--dt 10` by default) |
 | `scripts/plot_heatmap.py` | Heatmap PNG (percentile scale by default; `--comparable` uses fixed vmax=20) |
 | `scripts/plot_agent_routes.py` | Map of each trip’s route |
-| `scripts/run_all_scenarios.py` | Run simulations 01–10 |
+| `scripts/run_all_scenarios.py` | Run simulations 01–12 |
 
 Examples:
 
@@ -137,7 +139,7 @@ python3 scripts/plot_heatmap.py results/scenario_01/heatmap_matrix.csv --compara
 
 | Path | Role |
 |------|------|
-| `resources/campus_drive_graph.geojson` | Road network for scenarios 01–06 and 10 |
+| `resources/campus_drive_graph.geojson` | Road network for scenarios 01–06, 10, 11, and 12 |
 | `resources/campus_drive_graph_scenario_07.geojson` | Road network for scenario 07 |
 | `resources/campus_drive_graph_scenario_08.geojson` | Road network for scenario 08 |
 | `resources/campus_drive_graph_scenario_09.geojson` | Road network for scenario 09 |

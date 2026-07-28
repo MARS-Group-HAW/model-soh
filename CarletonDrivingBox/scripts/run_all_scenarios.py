@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run campus evacuation scenarios 01–10 (sequential or in parallel).
+"""Run campus evacuation scenarios 01–12 (sequential or in parallel).
 
 Parallel mode isolates each run's working directory so MARS trip GeoJSON
 files do not collide in the project root (that race caused CLR crashes
@@ -25,7 +25,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "SOHCarletonDrivingBox.csproj"
-SCENARIOS = tuple(f"{i:02d}" for i in range(1, 11))
+SCENARIOS = tuple(f"{i:02d}" for i in range(1, 13))
 BAR_W = 24
 
 
@@ -318,7 +318,7 @@ def run_scenario_sequential(sid: str) -> tuple[str, int]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(
-        description="Run CarletonDrivingBox scenarios 01–10 (optionally in parallel)."
+        description="Run CarletonDrivingBox scenarios 01–12 (optionally in parallel)."
     )
     ap.add_argument("--no-build", action="store_true", help="Skip dotnet build")
     ap.add_argument(
@@ -340,7 +340,7 @@ def main() -> int:
     ap.add_argument(
         "scenarios",
         nargs="*",
-        help="Scenario ids to run (e.g. 01 03 10). Default: all 01–10.",
+        help="Scenario ids to run (e.g. 01 03 12). Default: all 01–12.",
     )
     args = ap.parse_args()
 

@@ -1445,6 +1445,14 @@ def main():
     else:
         evac_end_s = 0
 
+    remaining = max(0, n0 - len(depart_times))
+    if remaining > 0 and config_end_s:
+        print(
+            f"WARNING: {remaining} cars never left campus by endPoint "
+            f"(t={config_end_s}s). Metrics still count geojson features as "
+            f"completed — extend globals.endPoint and re-run the scenario."
+        )
+
     completed = max(
         trips,
         len(depart_times),

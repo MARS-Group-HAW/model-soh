@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Analyze MARS results for scenarios 01–10 (sequential or in parallel).
+"""Analyze MARS results for scenarios 01–12 (sequential or in parallel).
 
 Default: run ``analyze_run.py`` only.
 Pass ``--heatmap`` to also build and plot the congestion matrix (same as
@@ -16,7 +16,7 @@ from pathlib import Path
 from mars_agent_outputs import agent_output_path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCENARIOS = tuple(f"{i:02d}" for i in range(1, 11))
+SCENARIOS = tuple(f"{i:02d}" for i in range(1, 13))
 ANALYZE = ROOT / "scripts" / "analyze_run.py"
 BUILD_HEAT = ROOT / "scripts" / "build_heatmap_matrix.py"
 PLOT_HEAT = ROOT / "scripts" / "plot_heatmap.py"
@@ -69,7 +69,7 @@ def analyze_scenario(sid: str, *, heatmap: bool, dt: int) -> tuple[str, int]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(
-        description="Analyze CarletonDrivingBox scenarios 01–10 (optionally in parallel)."
+        description="Analyze CarletonDrivingBox scenarios 01–12 (optionally in parallel)."
     )
     ap.add_argument(
         "--parallel",
@@ -98,7 +98,7 @@ def main() -> int:
     ap.add_argument(
         "scenarios",
         nargs="*",
-        help="Scenario ids (e.g. 01 03 10). Default: all 01–10.",
+        help="Scenario ids (e.g. 01 03 12). Default: all 01–12.",
     )
     args = ap.parse_args()
 

@@ -22,14 +22,14 @@ from mars_agent_outputs import agent_output_path
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results"
 DEFAULT_GRAPH = ROOT / "resources" / "campus_drive_graph.geojson"
-VALID_SCENARIOS = tuple(f"{i:02d}" for i in range(1, 11))
+VALID_SCENARIOS = tuple(f"{i:02d}" for i in range(1, 13))
 
 COLONEL_BY = (45.3792575, -75.7004525)
 BRONSON = (45.3896198, -75.694494)
 # Scenario 01 off-campus SW box (P1/P2). Legacy NE box kept for old-run labels.
-SW_EVAC_BOX = (45.3675, -75.7040)   # Meadowlands / SW of Colonel By — P1, P2 (s01); P1/P2/P6 (s10)
+SW_EVAC_BOX = (45.3675, -75.7040)   # Meadowlands / SW — P1/P2 (s01); P1/P2/P6 (s10/s12); + half P7 (s11/s12)
 NE_EVAC_BOX = (45.3925, -75.6875)   # legacy NE box (pre–Brewer Park)
-# NE exit for P3–P7 (s10: P3–P5/P7 only): Brewer Park east of Bronson.
+# NE exit for P3–P7 (s10/s12: P3–P5 + half P7; s11: P3/P4/P6 + half P7): Brewer Park east of Bronson.
 BREWER_PARK = (45.387983, -75.690183)
 # Legacy emergency corridor terminus (pre–Brewer Park schedules).
 BRONSON_RAVEN = (45.3846, -75.6922)
@@ -67,12 +67,12 @@ def normalize_scenario(value: str) -> str:
         raise ValueError(f"Bad scenario id: {value!r}")
     sid = f"{int(sid):02d}"
     if sid not in VALID_SCENARIOS:
-        raise ValueError(f"Scenario must be 01–10, got {value!r}")
+        raise ValueError(f"Scenario must be 01–12, got {value!r}")
     return sid
 
 
 def lots_for_scenario(scenario_id: str) -> dict:
-    """Expected finish markers: P3–P7 → Brewer Park; s10 P6 → SW Meadowlands like P1/P2."""
+    """Expected finish markers: P3–P7 → Brewer Park; s10/s12 P6 → SW; s11 P5+half P7 → SW; s12 half P7 → SW."""
     lots = {k: dict(v) for k, v in LOTS_BASE.items()}
     for lot in ("P3", "P4", "P5", "P6", "P7"):
         lots[lot]["exit"] = BREWER_PARK
@@ -82,11 +82,37 @@ def lots_for_scenario(scenario_id: str) -> dict:
     else:
         for lot in ("P1", "P2"):
             lots[lot]["exit"] = COLONEL_BY
-    if scenario_id == "10":
-        # Match schedule_base_10 / scenario_10_schedule: P1/P2/P6 → Meadowlands.
+    if scenario_id in ("10", "12"):
+        # Match scenario_10/12: P1/P2/P6 → Meadowlands.
         for lot in ("P1", "P2", "P6"):
             lots[lot]["exit"] = SW_EVAC_BOX
+    if scenario_id == "11":
+        # P1/P2/P5 → Meadowlands; P3/P4/P6 → Brewer; P7 split Brewer|Meadowlands.
+        for lot in ("P1", "P2", "P5"):
+            lots[lot]["exit"] = SW_EVAC_BOX
+        for lot in ("P3", "P4", "P6"):
+            lots[lot]["exit"] = BREWER_PARK
+        lots["P7"]["exit"] = BREWER_PARK
+        lots["P7"]["alt_exit"] = SW_EVAC_BOX
+    if scenario_id == "12":
+        # Same destinations as s10, plus P7 split 550 Brewer / 550 Meadowlands.
+        lots["P7"]["exit"] = BREWER_PARK
+        lots["P7"]["alt_exit"] = SW_EVAC_BOX
     return lots
+
+
+def exit_ok_for_lot(end_lat: float, end_lon: float, lot_info: dict) -> tuple[bool, float]:
+    """True if trip ends near expected exit (or alt_exit when present, e.g. s11/s12 P7 split)."""
+    expected = lot_info["exit"]
+    dist = dist_m(end_lat, end_lon, expected[0], expected[1])
+    ok = dist <= EXIT_TOL_M
+    alt = lot_info.get("alt_exit")
+    if alt is not None:
+        alt_dist = dist_m(end_lat, end_lon, alt[0], alt[1])
+        if alt_dist < dist:
+            dist = alt_dist
+        ok = ok or alt_dist <= EXIT_TOL_M
+    return ok, dist
 
 
 def resolve_scenario_paths(scenario_id: str) -> tuple[Path, Path, Path]:
@@ -215,13 +241,13 @@ def plot_trip(
 
 def main():
     ap = argparse.ArgumentParser(
-        description="Export one route PNG per completed agent trip (scenarios 01–10)."
+        description="Export one route PNG per completed agent trip (scenarios 01–12)."
     )
     ap.add_argument(
         "scenario",
         nargs="?",
         default="01",
-        help="Scenario id 01–10 (default: 01). Resolves trips/graph/output under results/scenario_XX/",
+        help="Scenario id 01–12 (default: 01). Resolves trips/graph/output under results/scenario_XX/",
     )
     ap.add_argument(
         "--trips",
@@ -298,10 +324,8 @@ def main():
         if args.one_per_lot and lot in lots_done:
             continue
 
-        expected_exit = lots[lot]["exit"]
         end_lat, end_lon = coords[-1]
-        exit_dist = dist_m(end_lat, end_lon, expected_exit[0], expected_exit[1])
-        exit_ok = exit_dist <= EXIT_TOL_M
+        exit_ok, exit_dist = exit_ok_for_lot(end_lat, end_lon, lots[lot])
         path_m, chord_m, ratio = path_metrics(coords)
         suspicious = (not exit_ok) or ratio < 1.05
 
