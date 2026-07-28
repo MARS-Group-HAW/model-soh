@@ -161,6 +161,7 @@ def plot_trip(
     out_path: Path,
     dpi: int,
     lots: dict,
+    scenario_id: str | None = None,
 ):
     lats = [c[0] for c in coords]
     lons = [c[1] for c in coords]
@@ -192,7 +193,11 @@ def plot_trip(
     ax.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
 
     status = "OK" if exit_ok else "WRONG EXIT"
-    ax.set_title(f"{lot}  {agent_id[:8]}…  {status}\npath {path_m:.0f} m  ratio {ratio:.2f}", fontsize=10)
+    prefix = f"scenario_{scenario_id} — " if scenario_id else ""
+    ax.set_title(
+        f"{prefix}{lot}  {agent_id[:8]}…  {status}\npath {path_m:.0f} m  ratio {ratio:.2f}",
+        fontsize=10,
+    )
 
     legend = [
         Line2D([0], [0], marker="o", color="w", markerfacecolor=lot_color, markersize=8, label=f"Lot {lot} spawn"),
@@ -308,7 +313,19 @@ def main():
         else:
             fname = f"{plotted + 1:04d}_{lot}_{safe_name(agent_id)}.png"
         out_path = out_dir / fname
-        plot_trip(coords, lot, agent_id, exit_ok, path_m, ratio, graph_segments, out_path, args.dpi, lots)
+        plot_trip(
+            coords,
+            lot,
+            agent_id,
+            exit_ok,
+            path_m,
+            ratio,
+            graph_segments,
+            out_path,
+            args.dpi,
+            lots,
+            scenario_id=scenario_id,
+        )
 
         summary_rows.append(
             {

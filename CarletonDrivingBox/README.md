@@ -1,4 +1,4 @@
-﻿# Carleton campus car evacuation (MARS)
+# Carleton campus car evacuation (MARS)
 
 This project simulates cars leaving Carleton University during an evacuation.
 

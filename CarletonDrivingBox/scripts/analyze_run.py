@@ -223,6 +223,14 @@ def normalize_scenario_id(scenario_id: str | None) -> str | None:
     return m.group(1).zfill(2) if m else s
 
 
+def scenario_chart_title(base: str, scenario_id: str | None) -> str:
+    """Append scenario tag so charts are identifiable, e.g. '… — scenario_01'."""
+    sid = normalize_scenario_id(scenario_id)
+    if sid:
+        return f"{base} — scenario_{sid}"
+    return base
+
+
 def campus_exit_points_for_scenario(
     scenario_id: str | None = None,
 ) -> dict[str, tuple[float, float]]:
@@ -286,17 +294,26 @@ def parse_clock(value: str) -> datetime:
 
 
 def spawns_for_row(row) -> int:
-    """MARS endTime is exclusive (SOHTrainBox README)."""
+    """Count intended schedule spawns for a row.
+
+    One-shot rows use spawningIntervalInMinutes <= 0 (Mars fires only when
+    CurrentTimePoint == startTime, minute precision for clock-only CSV) or
+    startTime == endTime. Dump schedules use 06:01 (not 06:00) so the first
+    PreTick after startPoint can match; seconds in HH:MM:SS are stripped.
+    Positive intervals are counted on inclusive [start, end] minute steps for
+    *expected* deploy totals (intent).
+    """
     start = parse_clock(row["startTime"])
     end = parse_clock(row["endTime"])
     interval = float(row["spawningIntervalInMinutes"])
     amount = int(row["spawningAmount"])
-    if interval <= 0:
+    if interval <= 0 or start == end:
         return amount
     total = 0
     t = start
     step = timedelta(minutes=interval)
-    while t < end:
+    # Inclusive end matches Mars.Components 5.3.1 ScheduleForTime modulo path.
+    while t <= end:
         total += amount
         t += step
     return total
@@ -346,16 +363,19 @@ def spawn_event_times(schedule_path: Path, sim_start: datetime) -> list[int]:
             end = parse_clock(row["endTime"])
             interval = float(row["spawningIntervalInMinutes"])
             amount = int(row["spawningAmount"])
+            one_shot = interval <= 0 or start == end
             t = start
-            step = timedelta(minutes=interval) if interval > 0 else None
-            while t < end:
+            step = None if one_shot else timedelta(minutes=interval)
+            while True:
                 spawn_dt = datetime.combine(sim_start.date(), t.time(), tzinfo=timezone.utc)
                 sec = int((spawn_dt - sim_start).total_seconds())
                 for _ in range(amount):
                     events.append(sec)
-                if step is None:
+                if one_shot or step is None:
                     break
                 t += step
+                if t > end:
+                    break
     events.sort()
     return events
 
@@ -858,7 +878,12 @@ def trip_time_stats(records: list[dict]) -> dict:
     }
 
 
-def plot_lot_completion_and_exits(output_dir: Path, per_lot: dict, stats: dict) -> None:
+def plot_lot_completion_and_exits(
+    output_dir: Path,
+    per_lot: dict,
+    stats: dict,
+    scenario_id: str | None = None,
+) -> None:
     """Write completion_by_lot.png and exit_usage.png."""
     if not stats.get("n_trips"):
         print("No trip records — skipping lot/exit charts.")
@@ -875,7 +900,7 @@ def plot_lot_completion_and_exits(output_dir: Path, per_lot: dict, stats: dict) 
     plt.xticks(x, LOT_ORDER)
     plt.ylabel("Vehicles")
     plt.xlabel("Parking lot")
-    plt.title("Per-lot completion (scheduled vs campus exits detected)")
+    plt.title(scenario_chart_title("Per-lot completion (scheduled vs campus exits detected)", scenario_id))
     plt.legend()
     for bars in (b1, b2):
         for bar in bars:
@@ -909,7 +934,7 @@ def plot_lot_completion_and_exits(output_dir: Path, per_lot: dict, stats: dict) 
     plt.figure(figsize=(8, 4.5))
     bars = plt.bar([short.get(n, n) for n in labels], values, color="#8172b2")
     plt.ylabel("Campus exits")
-    plt.title("Campus exit usage")
+    plt.title(scenario_chart_title("Campus exit usage", scenario_id))
     for bar, val in zip(bars, values):
         plt.text(
             bar.get_x() + bar.get_width() / 2,
@@ -924,7 +949,11 @@ def plot_lot_completion_and_exits(output_dir: Path, per_lot: dict, stats: dict) 
     plt.close()
 
 
-def plot_trip_time_charts(output_dir: Path, stats: dict) -> None:
+def plot_trip_time_charts(
+    output_dir: Path,
+    stats: dict,
+    scenario_id: str | None = None,
+) -> None:
     """Write trip_time_stats.png, trip_time_hist.png, clearance_by_lot.png."""
     if not stats.get("n_trips"):
         print("No trip records — skipping travel-time charts.")
@@ -950,7 +979,7 @@ def plot_trip_time_charts(output_dir: Path, stats: dict) -> None:
     plt.figure(figsize=(8, 4.8))
     bars = plt.bar(bar_labels, values, color=colors)
     plt.ylabel("Seconds")
-    plt.title("Travel-time summary")
+    plt.title(scenario_chart_title("Travel-time summary", scenario_id))
     plt.legend(
         handles=[
             Patch(
@@ -984,7 +1013,12 @@ def plot_trip_time_charts(output_dir: Path, stats: dict) -> None:
     plt.axvline(stats["median_trip_s"], color="#8172b2", linestyle="-", linewidth=1.5, label=f"Median {stats['median_trip_s']:.0f}s")
     plt.xlabel("Trip duration (s) — spawn to leave university")
     plt.ylabel("Trips")
-    plt.title("Travel-time distribution (to leave campus, not destination)")
+    plt.title(
+        scenario_chart_title(
+            "Travel-time distribution (to leave campus, not destination)",
+            scenario_id,
+        )
+    )
     plt.legend()
     plt.grid(True, axis="y", alpha=0.3)
     plt.tight_layout()
@@ -997,7 +1031,12 @@ def plot_trip_time_charts(output_dir: Path, stats: dict) -> None:
     bars = plt.bar(lots, clearance, color="#dd8452")
     plt.ylabel("Clearance time (s from t=0)")
     plt.xlabel("Parking lot")
-    plt.title("Clearance time by lot (last car to leave university)")
+    plt.title(
+        scenario_chart_title(
+            "Clearance time by lot (last car to leave university)",
+            scenario_id,
+        )
+    )
     for bar, val in zip(bars, clearance):
         if val:
             plt.text(
@@ -1286,7 +1325,7 @@ def write_outputs(
         color=["#4c72b0", "#8172b2", "#c44e52"],
     )
     plt.ylabel("Vehicles")
-    plt.title("Deployment vs completion")
+    plt.title(scenario_chart_title("Deployment vs completion", scenario_id))
     if completed == 0:
         plt.text(2, max(int(expected), int(BASELINE_TARGET)) * 0.05, "0 — check trips geojson path", ha="center", fontsize=8)
     plt.tight_layout()
@@ -1312,7 +1351,12 @@ def write_outputs(
 
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Cars left to evacuate")
-        ax.set_title("Evacuation curve — cars that have not yet left campus")
+        ax.set_title(
+            scenario_chart_title(
+                "Evacuation curve — cars that have not yet left campus",
+                scenario_id,
+            )
+        )
         subtitle = (
             f"Start={start_n} (N0={BASELINE_TARGET})   End={end_n}   "
             f"Avg (t≤60s)={avg_early:.2f}   Avg (all)={avg_all:.2f}"
@@ -1327,8 +1371,8 @@ def write_outputs(
         fig.savefig(output_dir / "evac_curve.png", dpi=200)
         plt.close(fig)
 
-    plot_trip_time_charts(output_dir, trip_stats)
-    plot_lot_completion_and_exits(output_dir, per_lot, trip_stats)
+    plot_trip_time_charts(output_dir, trip_stats, scenario_id=scenario_id)
+    plot_lot_completion_and_exits(output_dir, per_lot, trip_stats, scenario_id=scenario_id)
 
 def main():
     csv_path = resolve_path(
