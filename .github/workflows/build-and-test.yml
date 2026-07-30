@@ -19,17 +19,45 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          lfs: true
+          fetch-depth: 0
+          submodules: recursive
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 10.0.x
 
       - name: Restore dependencies
         run: dotnet restore SOH.sln
 
       - name: Build
         run: dotnet build SOH.sln --configuration Release --no-restore
+
+      - name: Ensure GeoJSON test resource is present
+        run: |
+          set -euo pipefail
+          echo "Checking for GeoJSON resource..."
+          mkdir -p SOHLogisticsBox/resources
+          GEO_PATH="SOHLogisticsBox/resources/autobahn_und_bundesstrassen_deutschland_elevation_08.geojson"
+          # If you have a URL stored in secrets (recommended for large files), download it:
+          if [ -n "${{ secrets.GEOJSON_URL }}" ]; then
+            echo "Downloading GeoJSON from configured secret URL..."
+            curl -fsSL "${{ secrets.GEOJSON_URL }}" -o "$GEO_PATH" || (echo "Download failed"; exit 1)
+          fi
+          # Debug listing for troubleshooting
+          echo "Listing SOHLogisticsBox/resources:"
+          ls -alh SOHLogisticsBox/resources || true
+          if [ ! -f "$GEO_PATH" ]; then
+            echo "ERROR: GeoJSON file not found at $GEO_PATH"
+            echo "Possible fixes:"
+            echo " - Commit the file at SOHLogisticsBox/resources/ and push it"
+            echo " - Push LFS objects and enable LFS in checkout (already enabled)"
+            echo " - Set a GEOJSON_URL repo secret pointing to a downloadable location"
+            exit 1
+          fi
+          echo "GeoJSON found: $(stat -c '%s bytes' "$GEO_PATH")"
 
       - name: Test
         run: dotnet test SOH.sln --configuration Release --no-build --verbosity normal
