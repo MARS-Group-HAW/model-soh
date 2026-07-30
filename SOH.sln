@@ -46,8 +46,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOHCarletonDrivingBox", "CarletonDrivingBox\SOHCarletonDrivingBox.csproj", "{A1F75FCE-62A9-4F19-BD03-A6598ABBDBA8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOHCarletonWalkingBox", "CarletonWalkingBox\SOHCarletonWalkingBox.csproj", "{B2E84A1D-7C3F-4E91-9A5B-8D6F2C1E0A47}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -149,12 +147,6 @@ Global
 		{A1F75FCE-62A9-4F19-BD03-A6598ABBDBA8}.Full|Any CPU.Build.0 = Debug|Any CPU
 		{A1F75FCE-62A9-4F19-BD03-A6598ABBDBA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1F75FCE-62A9-4F19-BD03-A6598ABBDBA8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B2E84A1D-7C3F-4E91-9A5B-8D6F2C1E0A47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B2E84A1D-7C3F-4E91-9A5B-8D6F2C1E0A47}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B2E84A1D-7C3F-4E91-9A5B-8D6F2C1E0A47}.Full|Any CPU.ActiveCfg = Debug|Any CPU
-		{B2E84A1D-7C3F-4E91-9A5B-8D6F2C1E0A47}.Full|Any CPU.Build.0 = Debug|Any CPU
-		{B2E84A1D-7C3F-4E91-9A5B-8D6F2C1E0A47}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B2E84A1D-7C3F-4E91-9A5B-8D6F2C1E0A47}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
