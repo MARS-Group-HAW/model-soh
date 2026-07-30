@@ -1,4 +1,5 @@
-﻿using Mars.Interfaces.Environments;
+using Mars.Interfaces.Annotations;
+using Mars.Interfaces.Environments;
 using SOHModel.Domain.Model;
 using SOHModel.Domain.Steering.Capables;
 using SOHModel.Ferry.Station;
@@ -14,7 +15,8 @@ public class Ferry : Vehicle<IFerrySteeringCapable, IPassengerCapable, FerryStee
         ModalityType = SpatialModalityType.ShipDriving;
     }
 
-    public FerryLayer Layer { get; set; }
+    [PropertyDescription(Name = "ferryLayer")]
+    public FerryLayer FerryLayer { get; set; }
 
     /// <summary>
     ///     Where the <see cref="Ferry" /> is located right now. Null if ferry is not at any station right now.
@@ -28,6 +30,6 @@ public class Ferry : Vehicle<IFerrySteeringCapable, IPassengerCapable, FerryStee
 
     protected override FerrySteeringHandle CreateSteeringHandle(IFerrySteeringCapable driver)
     {
-        return new FerrySteeringHandle(Layer.GraphEnvironment, driver, this);
+        return new FerrySteeringHandle(FerryLayer.GraphEnvironment, driver, this);
     }
 }
