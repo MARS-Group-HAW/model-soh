@@ -19,19 +19,20 @@ namespace SOHTests.SOHLogisticsTests
 
         public GeoJsonRouteSamplingFixture()
         {
-            // Dynamically navigate to the project root
-            var projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
-    
-            // Construct the full path to the GeoJSON file
-            GeoJsonPath = Path.Combine(projectRoot, "SOHLogisticsBox", "resources", "autobahn_und_bundesstrassen_deutschland_elevation_08.geojson");
+            GeoJsonPath = GeoJsonTestResources.ResolveElevation08Path();
             Console.WriteLine($"Looking for GeoJSON file at: {Path.GetFullPath(GeoJsonPath)}");
-            if (!File.Exists(GeoJsonPath))
+            IsAvailable = File.Exists(GeoJsonPath);
+            if (!IsAvailable)
             {
-                throw new FileNotFoundException("GeoJSON file not found for testing.", GeoJsonPath);
+                Console.WriteLine($"GeoJSON file not found (tests will skip): {GeoJsonPath}");
             }
-
-            Console.WriteLine($"GeoJSON file found at: {GeoJsonPath}");
+            else
+            {
+                Console.WriteLine($"GeoJSON file found at: {GeoJsonPath}");
+            }
         }
+
+        public bool IsAvailable { get; }
     }
 
     /// <summary>
@@ -40,17 +41,20 @@ namespace SOHTests.SOHLogisticsTests
     public class GeoJsonRandomRouteSamplingTest : IClassFixture<GeoJsonRouteSamplingFixture>
     {
         private readonly string _geoJsonPath;
+        private readonly bool _isAvailable;
         private readonly ITestOutputHelper _output;
 
         public GeoJsonRandomRouteSamplingTest(GeoJsonRouteSamplingFixture fixture, ITestOutputHelper output)
         {
             _geoJsonPath = fixture.GeoJsonPath ?? throw new ArgumentNullException(nameof(fixture.GeoJsonPath));
+            _isAvailable = fixture.IsAvailable;
             _output = output;
         }
 
-        [Fact]
+        [SkippableFact]
         public void TestRandomRouteSampling()
         {
+            Skip.If(!_isAvailable, GeoJsonTestResources.MissingSkipReason);
             var helper = new GeoJsonRouteSamplingHelper(_geoJsonPath, _output);
             var issues = helper.CheckRandomRoutes(sampleSize: 500);
 

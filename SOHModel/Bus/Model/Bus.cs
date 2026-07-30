@@ -1,4 +1,5 @@
-﻿using Mars.Interfaces.Environments;
+using Mars.Interfaces.Annotations;
+using Mars.Interfaces.Environments;
 using SOHModel.Bus.Station;
 using SOHModel.Bus.Steering;
 using SOHModel.Domain.Model;
@@ -14,7 +15,8 @@ public class Bus : Vehicle<IBusSteeringCapable, IPassengerCapable, BusSteeringHa
         ModalityType = SpatialModalityType.CarDriving;
     }
 
-    public BusLayer Layer { get; set; }
+    [PropertyDescription(Name = "busLayer")]
+    public BusLayer BusLayer { get; set; }
 
     /// <summary>
     ///     Where the <see cref="Bus" /> is located right now. Null if train is not at any station right now.
@@ -28,6 +30,6 @@ public class Bus : Vehicle<IBusSteeringCapable, IPassengerCapable, BusSteeringHa
 
     protected override BusSteeringHandle CreateSteeringHandle(IBusSteeringCapable driver)
     {
-        return new BusSteeringHandle(Layer.GraphEnvironment, driver, this);
+        return new BusSteeringHandle(BusLayer.GraphEnvironment, driver, this);
     }
 }
