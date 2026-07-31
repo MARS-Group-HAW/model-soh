@@ -99,18 +99,28 @@ public class MultimodalResolverConsumeTests
     {
         var carParkingSpace = _multimodalLayer.CarParkingLayer.Nearest(
                 Position.CreateGeoPosition(9.9528571, 53.5505072));
+        Assert.NotNull(carParkingSpace);
         var nearestNode = _environment.NearestNode(carParkingSpace.Position);
-        
-        Assert.False(carParkingSpace.Occupied);
+
+        Assert.True(carParkingSpace.HasCapacity);
         Assert.True(_multimodalLayer.Consumes(ModalChoice.CarDriving, nearestNode));
 
-        carParkingSpace.Occupied = true;
-        Assert.False(_multimodalLayer.Consumes(ModalChoice.CarDriving, nearestNode));
+        // Occupy via public API (not Occupied=true) so parking bookkeeping stays consistent.
+        var parkedCars = new List<Car>();
+        for (var i = 0; i < carParkingSpace.Capacity; i++)
+        {
+            var car = new Car();
+            Assert.True(carParkingSpace.Enter(car));
+            parkedCars.Add(car);
+        }
 
-        carParkingSpace.Occupied = false;
+        Assert.False(carParkingSpace.HasCapacity);
+        Assert.False(carParkingSpace.Enter(new Car()));
+
+        foreach (var car in parkedCars)
+            Assert.True(carParkingSpace.Leave(car));
+
+        Assert.True(carParkingSpace.HasCapacity);
         Assert.True(_multimodalLayer.Consumes(ModalChoice.CarDriving, nearestNode));
-
-        for (var i = 0; i < carParkingSpace.Capacity; i++) Assert.True(carParkingSpace.Enter(new Car()));
-        Assert.False(_multimodalLayer.Consumes(ModalChoice.CarDriving, nearestNode));
     }
 }

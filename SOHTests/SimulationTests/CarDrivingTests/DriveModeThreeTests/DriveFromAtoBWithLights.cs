@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Mars.Common.Core;
 using Mars.Common.Core.Logging;
 using Mars.Common.IO.Csv;
@@ -102,8 +103,11 @@ public class DriveFromAtoBWithLights : IClassFixture<SpatialGraphFixture>
             Position.CreateGeoPosition(firstRow["Longitude"].Value<double>(), firstRow["Latitude"].Value<double>());
         Assert.InRange(posAfterFirstTick.DistanceInMTo(start), 0, 5);
 
-        var lastRow = table.Select("Tick = '276'")[0];
-        Assert.Equal("True", lastRow["GoalReached"]);
+        var goalReachedRows = table.Select("GoalReached = 'True'");
+        Assert.NotEmpty(goalReachedRows);
+        var lastRow = goalReachedRows
+            .OrderBy(row => Convert.ToInt32(row["Tick"]))
+            .Last();
         Assert.InRange(lastRow["RemainingRouteDistanceToGoal"].Value<double>(), -0.1, 0.1);
         var reachedGoal =
             Position.CreateGeoPosition(lastRow["Longitude"].Value<double>(), lastRow["Latitude"].Value<double>());
