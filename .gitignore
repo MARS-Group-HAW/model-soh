@@ -397,3 +397,5 @@ SOHTruckFuelAlternativeBox/resources/*.geojson
 # Route cache databases (local cache, not committed)
 **/route_cache.db
 /CarletonWalkingBox
+/CarletonDrivingBox/resources/schedules/opt_candidates
+/CarletonDrivingBox/configs/opt_candidates
