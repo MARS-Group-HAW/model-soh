@@ -2,9 +2,11 @@
 """Ranked closed-loop optimizer for Carleton lot→exit assignments.
 
 Search space: fractions of P5/P6/P7 sent to Meadowlands (SW). P1/P2 always SW;
-P3/P4 always NE. Default mode ranks by a fast demand-balance proxy (with SW
-overload penalty), writes top-K schedules + configs + a leaderboard. Optional
-`--eval-sim` / `--eval-top` / `--max-evals` run real MARS sims (hours each).
+P3/P4 always NE. Default mode ranks by a fast demand-balance *filter* proxy
+(NOT a clearance guarantee). Ranking prefers low SW overload, then closeness
+to the scenario-12 seed, then weaker imbalance. Optional `--eval-sim` /
+`--eval-top` / `--max-evals` run real MARS sims (hours each) — only those
+prove campus clearance.
 
 Examples:
   python scripts/optimize_exit_assignment.py --optimize --write-top 10
@@ -55,8 +57,18 @@ SW_SOFT_CAP = 1800
 SW_HARD_CAP = 2000
 OVERLOAD_SOFT_WEIGHT = 2.0
 OVERLOAD_HARD_WEIGHT = 10.0
-# Mild preference for plans near scenario 12 (tie-break / seed).
-S12_SEED_WEIGHT = 25.0
+# Balanced ~1600/1600 with P5→SW still jammed SW approaches / trapped NE lots.
+NEAR_SOFT_CAP_START = 1550
+NEAR_SOFT_CAP_WEIGHT = 1.5
+# Strong preference for plans near scenario 12 (known-good baseline).
+S12_SEED_WEIGHT = 250.0
+# Imbalance is a weaker filter term (proxy ≠ clearance).
+IMBALANCE_WEIGHT = 0.15
+# P5→SW historically correlates with corridor traps; keep default grid low.
+P5_SW_MAX_DEFAULT = 0.25
+P5_SW_PENALTY_WEIGHT = 80.0
+# Extra hit when all three big lots leave the s12 pattern.
+TRIPLE_DEVIATION_PENALTY = 120.0
 
 GRID_FRACS = (0.0, 0.25, 0.5, 0.75, 1.0)
 NEIGHBOR_STEP = 0.25
@@ -152,6 +164,15 @@ class ExitFrac:
 
 # Scenario 12 seed: P6→SW, P7 half/half, P5→NE
 S12_SEED = ExitFrac(0.0, 1.0, 0.5)
+S12_SEED_NAME = S12_SEED.name()  # opt_p6sw1_p7sw05_p5sw0
+
+PROXY_BANNER = (
+    "=" * 72 + "\n"
+    "Proxy does NOT guarantee campus clears. Only --eval-sim / real metrics\n"
+    "prove clearance. Prefer evaluating scenario-12 seed first.\n"
+    f"  Seed: {S12_SEED_NAME}\n"
+    + "=" * 72
+)
 
 
 def parse_frac_name(name: str) -> ExitFrac:
@@ -292,6 +313,15 @@ def overload_penalty(sw: int) -> float:
     ) * OVERLOAD_HARD_WEIGHT
 
 
+def near_soft_cap_penalty(sw: int) -> float:
+    """Penalize SW demand approaching soft cap (1600/1600 can still jam)."""
+    if sw <= NEAR_SOFT_CAP_START:
+        return 0.0
+    # Cap contribution once hard soft-cap overload kicks in (avoid double-count).
+    ceiling = min(sw, SW_SOFT_CAP)
+    return (ceiling - NEAR_SOFT_CAP_START) * NEAR_SOFT_CAP_WEIGHT
+
+
 def s12_distance(frac: ExitFrac) -> float:
     """L1 distance in fraction-space from scenario 12 seed."""
     return (
@@ -301,12 +331,31 @@ def s12_distance(frac: ExitFrac) -> float:
     )
 
 
+def pattern_penalty(frac: ExitFrac) -> float:
+    """Penalize P5→SW and plans that leave s12 on all three big lots."""
+    p5_pen = P5_SW_PENALTY_WEIGHT * frac.p5_sw
+    d5 = abs(frac.p5_sw - S12_SEED.p5_sw) > 1e-9
+    d6 = abs(frac.p6_sw - S12_SEED.p6_sw) > 1e-9
+    d7 = abs(frac.p7_sw - S12_SEED.p7_sw) > 1e-9
+    triple = TRIPLE_DEVIATION_PENALTY if (d5 and d6 and d7) else 0.0
+    return p5_pen + triple
+
+
 def proxy_score(frac: ExitFrac) -> dict:
     sw, ne = demand_totals(frac)
     imbalance = abs(sw - ne)
     overload = overload_penalty(sw)
+    near = near_soft_cap_penalty(sw)
     dist = s12_distance(frac)
-    score = float(imbalance) + overload + S12_SEED_WEIGHT * dist
+    pattern = pattern_penalty(frac)
+    # Scalar used by hill-climb; mirrors rank priority (overload ≫ s12 ≫ imbalance).
+    score = (
+        overload
+        + near
+        + S12_SEED_WEIGHT * dist
+        + IMBALANCE_WEIGHT * float(imbalance)
+        + pattern
+    )
     return {
         "name": frac.name(),
         "p5_sw": frac.p5_sw,
@@ -316,7 +365,7 @@ def proxy_score(frac: ExitFrac) -> dict:
         "vehicles_ne": ne,
         "total": sw + ne,
         "sw_ne_imbalance": imbalance,
-        "overload_penalty": round(overload, 3),
+        "overload_penalty": round(overload + near, 3),
         "s12_distance": round(dist, 3),
         "proxy_score": round(score, 3),
         "evac_end_s": "",
@@ -324,9 +373,37 @@ def proxy_score(frac: ExitFrac) -> dict:
     }
 
 
+def proxy_rank_key(row: dict) -> tuple:
+    """Sort: (1) low overload, (2) close to s12, (3) weaker imbalance."""
+    try:
+        overload = float(row.get("overload_penalty", math.inf))
+    except (TypeError, ValueError):
+        overload = math.inf
+    try:
+        dist = float(row.get("s12_distance", math.inf))
+    except (TypeError, ValueError):
+        dist = math.inf
+    try:
+        imb = float(row.get("sw_ne_imbalance", math.inf))
+    except (TypeError, ValueError):
+        imb = math.inf
+    return (overload, dist, imb, row.get("name") or "")
+
+
+def prefer_s12_first(rows: list[dict]) -> list[dict]:
+    """Always place scenario-12 seed first regardless of proxy score."""
+    seed = [r for r in rows if r.get("name") == S12_SEED_NAME]
+    rest = [r for r in rows if r.get("name") != S12_SEED_NAME]
+    if not seed:
+        seed = [proxy_score(S12_SEED)]
+    return seed + rest
+
+
 def coarse_grid() -> list[ExitFrac]:
     out: list[ExitFrac] = []
     for p5 in GRID_FRACS:
+        if p5 > P5_SW_MAX_DEFAULT + 1e-9:
+            continue
         for p6 in GRID_FRACS:
             for p7 in GRID_FRACS:
                 out.append(ExitFrac(p5, p6, p7))
@@ -548,8 +625,8 @@ def eval_sim_candidate(
 
 def rank_all() -> list[dict]:
     scored = [proxy_score(f) for f in coarse_grid()]
-    scored.sort(key=lambda r: (r["proxy_score"], r["s12_distance"], r["name"]))
-    return scored
+    scored.sort(key=proxy_rank_key)
+    return prefer_s12_first(scored)
 
 
 def hill_climb_proxy(start: ExitFrac, rounds: int = 8) -> list[ExitFrac]:
@@ -595,45 +672,54 @@ def optimize_and_write(
     eval_top: int,
     max_evals: int,
 ) -> list[dict]:
+    print(PROXY_BANNER, flush=True)
     ranked = rank_all()
-    # Enrich with hill-climb around s12 and around current proxy best
+    # Enrich with hill-climb around s12 and around current proxy best (after seed)
     extra: list[ExitFrac] = []
     extra.extend(hill_climb_proxy(S12_SEED))
-    if ranked:
-        best_frac = ExitFrac(ranked[0]["p5_sw"], ranked[0]["p6_sw"], ranked[0]["p7_sw"])
+    # First non-seed row is the best proxy alternative under the new rank
+    alt = next((r for r in ranked if r["name"] != S12_SEED_NAME), None)
+    if alt is not None:
+        best_frac = ExitFrac(alt["p5_sw"], alt["p6_sw"], alt["p7_sw"])
         extra.extend(hill_climb_proxy(best_frac))
     by_name = {r["name"]: r for r in ranked}
     for frac in extra:
         s = proxy_score(frac)
         by_name[s["name"]] = s
-    ranked = sorted(
-        by_name.values(),
-        key=lambda r: (r["proxy_score"], r["s12_distance"], r["name"]),
-    )
+    ranked = prefer_s12_first(sorted(by_name.values(), key=proxy_rank_key))
 
     top_n = max(write_top, eval_top, 0)
-    selected = ranked[:top_n] if top_n else ranked[:10]
+    # Always write s12 first, then remaining by new rank (skip duplicate seed).
+    selected_names: list[str] = [S12_SEED_NAME]
+    for row in ranked:
+        if row["name"] == S12_SEED_NAME:
+            continue
+        if len(selected_names) >= max(top_n, 1):
+            break
+        selected_names.append(row["name"])
+
     written: list[dict] = []
-    for row in selected:
-        frac = ExitFrac(row["p5_sw"], row["p6_sw"], row["p7_sw"])
+    for name in selected_names:
+        frac = parse_frac_name(name)
         written.append(materialize_candidate(coords, frac))
 
     # Always ensure s12 seed is on disk even if somehow not in top-K
     seed_row = materialize_candidate(coords, S12_SEED)
     if seed_row["name"] not in {r["name"] for r in written}:
-        written.append(seed_row)
+        written = [seed_row] + written
 
     merge_leaderboard(written + ranked[:50])  # keep a wider proxy view on board
 
     print(f"Wrote {len(written)} candidate schedules under {OUT_SCHEDULES}")
     print(f"Wrote configs under {OUT_CONFIGS}")
     print(f"Leaderboard: {LEADERBOARD}")
-    print("\nTop proxy-ranked candidates:")
+    print("\nTop proxy-ranked candidates (s12 seed forced #1):")
     for i, row in enumerate(ranked[: max(write_top, 10)], 1):
         print(
             f"  {i:2d}. {row['name']}  proxy={row['proxy_score']:.1f}  "
             f"SW={row['vehicles_sw']} NE={row['vehicles_ne']}  "
-            f"imbalance={row['sw_ne_imbalance']} overload={row['overload_penalty']}"
+            f"imbalance={row['sw_ne_imbalance']} overload={row['overload_penalty']}  "
+            f"s12_dist={row['s12_distance']}"
         )
 
     to_eval: list[str] = []
@@ -643,7 +729,15 @@ def optimize_and_write(
             f"(typically hours each).",
             flush=True,
         )
-        to_eval = [r["name"] for r in ranked[:eval_top]]
+        # Always eval s12 seed first, then remaining by new rank.
+        to_eval = [S12_SEED_NAME]
+        for row in ranked:
+            if row["name"] == S12_SEED_NAME:
+                continue
+            if len(to_eval) >= eval_top:
+                break
+            to_eval.append(row["name"])
+        print(f"Eval order: {to_eval}", flush=True)
     elif max_evals > 0:
         print(
             f"\nWARNING: --max-evals {max_evals} hill-climb with real sims "
@@ -651,11 +745,8 @@ def optimize_and_write(
             flush=True,
         )
         # Start from s12 seed, then climb using real/proxy objective
-        current = S12_SEED
         evaluated: dict[str, dict] = {}
         # Always eval seed first
-        order = [S12_SEED] + neighbors(S12_SEED)
-        # Prefer low proxy among neighbors for first batch
         order = [S12_SEED] + sorted(
             neighbors(S12_SEED), key=lambda f: proxy_score(f)["proxy_score"]
         )
@@ -766,6 +857,7 @@ def main() -> int:
             args.optimize = True
 
     if args.list:
+        print(PROXY_BANNER, flush=True)
         ranked = rank_all()
         print(json.dumps(ranked[:30], indent=2))
         return 0
@@ -789,12 +881,11 @@ def main() -> int:
             max_evals=args.max_evals,
         )
         print(
-            "\nNext (overnight clearance search):\n"
+            "\nNext (overnight clearance search — eval s12 seed first):\n"
+            f"  python scripts/optimize_exit_assignment.py --eval-sim {S12_SEED_NAME}\n"
             "  python scripts/optimize_exit_assignment.py --optimize --eval-top 3\n"
-            "  # or one at a time:\n"
-            f"  python scripts/optimize_exit_assignment.py --eval-sim {S12_SEED.name()}\n"
             "Rank by evac_end_s in results/opt_candidates/leaderboard.csv "
-            "(lower is better). Do not overwrite scenarios 01-12."
+            "(lower is better). Proxy is a filter only. Do not overwrite scenarios 01-12."
         )
         return 0
 
