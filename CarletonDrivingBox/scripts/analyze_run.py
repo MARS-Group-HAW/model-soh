@@ -262,13 +262,23 @@ def scenario_id_from_path(path: Path) -> str | None:
 
 
 def resolve_scenario_paths(csv_path: Path) -> tuple[Path, Path]:
-    """Pick schedule + config for results/scenario_XX/ runs."""
+    """Pick schedule + config for results/scenario_XX/ or opt_candidates/<name>/ runs."""
     sid = scenario_id_from_path(csv_path)
     if sid:
         schedule = SCHEDULES_DIR / f"scenario_{sid}_schedule.csv"
         config = CONFIGS_DIR / f"config_scenario_{sid}.json"
         if schedule.is_file() and config.is_file():
             return schedule, config
+    # Optimizer candidates: results/opt_candidates/<name>/
+    parts = csv_path.resolve().parts
+    if "opt_candidates" in parts:
+        idx = parts.index("opt_candidates")
+        if idx + 1 < len(parts):
+            name = parts[idx + 1]
+            schedule = SCHEDULES_DIR / "opt_candidates" / f"{name}_schedule.csv"
+            config = CONFIGS_DIR / "opt_candidates" / f"config_{name}.json"
+            if schedule.is_file() and config.is_file():
+                return schedule, config
     return DEFAULT_SCHEDULE, DEFAULT_CONFIG
 
 

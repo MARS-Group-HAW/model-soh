@@ -1,33 +1,143 @@
 # Carleton MARS evacuation route optimization
 
-Experiment scaffold for shortening campus clearance by choosing better
-lot→exit assignments (inspired by scenario 12 and patterns from
-`SOHBigEventBox`).
+Closed-loop / ranked search for shorter campus clearance (`evac_end_s`) by
+choosing lot→exit split fractions. Inspired by scenario 12 and lessons from
+heavy SW overload (gridlock).
 
-Existing scenarios **01–12** are unchanged. Candidate schedules from this
-work live under `resources/schedules/opt_candidates/` only.
+Existing scenarios **01–12** are unchanged. Candidates live only under:
+
+- `resources/schedules/opt_candidates/`
+- `configs/opt_candidates/`
+- `results/opt_candidates/` (sims + `leaderboard.csv`; gitignored outputs)
 
 ---
 
-## Lesson from scenario 12
+## Lessons baked into the search
 
-Manual route changes already cut clearance in MARS:
+| Plan | Assignment idea | Effect |
+|------|-----------------|--------|
+| **01** | P1/P2 → SW; P3–P7 → NE | NE corridor overloaded (esp. P6/P7) |
+| **10** | P6 → SW | Moves 900 cars off NE onto SW |
+| **12** | P6 → SW + P7 50/50 | Best early one-shot clearance |
+| Heavy SW (old jam) | Large SW share (e.g. P5 + half P7 + delays) | Overloads Meadowlands / SW; gridlock |
 
-| Scenario | Assignment idea | Effect (qualitative) |
-|----------|-----------------|----------------------|
-| **01** | P1/P2 → Meadowlands (SW); P3–P7 → Brewer (NE) | Baseline: NE corridor overloaded (especially P6/P7) |
-| **10** | Same as 01 but **P6 → Meadowlands** | Redirects 900 cars off the NE stack onto SW |
-| **11** | Like 01, but **P7 split** 550 Brewer / 550 Meadowlands | Splits the largest lot across exits |
-| **12** | **P6 → Meadowlands** + **P7 split** 550/550 | Combines both levers; shortest clearance among early one-shot plans |
+Takeaway: minimize clearance by **balancing exit demand**, not dumping
+everything onto the “faster” exit. Soft SW demand cap ≈ **1800–2000** cars
+(P1+P2 + SW shares of P5/P6/P7).
 
-Takeaway: clearance is sensitive to **exit load balance**, not only spawn
-timing. Destination assignment (which lot uses Meadowlands vs Brewer) is a
-high-leverage control variable.
+Fixed in this optimizer:
 
-Exit coordinates used in schedules:
+- **P1/P2 → Meadowlands (SW)** always
+- **P3/P4 → Brewer (NE)** always
+- Search **P5/P6/P7** fractions to SW on `{0, 0.25, 0.5, 0.75, 1.0}` + hill-climb
+
+Exit coordinates:
 
 - **Meadowlands / SW:** `45.3675, -75.7040`
 - **Brewer / NE:** `45.387983, -75.690183`
+
+Scenario 12 seed name: `opt_p6sw1_p7sw05_p5sw0`
+
+---
+
+## How to find best clearance (overnight)
+
+### 1. Fast proxy rank (seconds — do this first)
+
+From `CarletonDrivingBox/`:
+
+```bash
+python scripts/optimize_exit_assignment.py --optimize --write-top 10
+```
+
+This:
+
+1. Scores the full 5³ coarse grid with  
+   `proxy = |SW−NE| + SW_overload_penalty + small_distance_to_s12`
+2. Hill-climbs neighbors of the s12 seed and the best proxy plan
+3. Writes top-K:
+   - `resources/schedules/opt_candidates/<name>_schedule.csv`
+   - `configs/opt_candidates/config_<name>.json`
+4. Updates `results/opt_candidates/leaderboard.csv`
+
+Lower **proxy_score** is better for filtering. It is **not** real clearance.
+
+### 2. Real MARS evaluation (hours each)
+
+**Option A — eval the top 3 proxy plans (recommended overnight):**
+
+```bash
+python scripts/optimize_exit_assignment.py --optimize --write-top 10 --eval-top 3
+```
+
+**Option B — eval one named candidate:**
+
+```bash
+python scripts/optimize_exit_assignment.py --eval-sim opt_p6sw1_p7sw05_p5sw0
+```
+
+**Option C — hill-climb with a budget of real sims:**
+
+```bash
+python scripts/optimize_exit_assignment.py --optimize --max-evals 5
+```
+
+Each eval runs:
+
+```text
+dotnet run --project SOHCarletonDrivingBox.csproj -- configs/opt_candidates/config_<name>.json
+python scripts/analyze_run.py results/opt_candidates/<name>/
+```
+
+and records `evac_end_s` on the leaderboard.
+
+### 3. Pick the winner
+
+Open `results/opt_candidates/leaderboard.csv`. Rank by **`evac_end_s` ascending**
+(campus clear / last leave). Use proxy_score only when a row has not been
+simulated yet.
+
+Promote a winner to a future scenario **13+** only after review — never
+overwrite 01–12.
+
+### Re-analyze without re-simulating
+
+```bash
+python scripts/optimize_exit_assignment.py --analyze-only opt_p6sw1_p7sw05_p5sw0
+```
+
+---
+
+## Proxy scoring details
+
+| Term | Role |
+|------|------|
+| `|SW_demand − NE_demand|` | Balance exits (primary) |
+| Soft overload if SW > 1800 | Mild penalty |
+| Steep overload if SW > 2000 | Strong penalty (jam region) |
+| Distance to s12 seed | Small tie-break; keeps search near the known win |
+
+Demand uses lot sizes P1=100 … P7=1100 (3200 total).
+
+---
+
+## CLI cheat sheet
+
+```bash
+# Default useful action (same as --optimize --write-top 10)
+python scripts/optimize_exit_assignment.py --optimize --write-top 10
+
+# Print top proxy rows without writing
+python scripts/optimize_exit_assignment.py --list
+
+# Show s12 seed naming / demand
+python scripts/optimize_exit_assignment.py --baseline-check
+
+# Real sims (WARN: hours each)
+python scripts/optimize_exit_assignment.py --eval-sim opt_p6sw1_p7sw05_p5sw0
+python scripts/optimize_exit_assignment.py --optimize --eval-top 3
+python scripts/optimize_exit_assignment.py --optimize --max-evals 5
+```
 
 ---
 
@@ -35,81 +145,7 @@ Exit coordinates used in schedules:
 
 Arena box name: **`SOHBigEventBox`** (agents/logic under `SOHModel/BigEvent/`).
 
-It models post-event egress at Hamburg’s Barclays Arena (~23:00 end,
-sim window 22:30–02:30):
-
-1. **Staged multimodal release** — `visitor_spawning_*.csv` drives
-   `AgentSchedulerLayer<Visitor>` with `startTime` / `endTime` /
-   `spawningIntervalInMinutes` / `spawningAmount` per modality row
-   (walk, bus, bike, car). Early trickle before event end, denser pulse
-   after 23:00.
-2. **Arena entrances → modality → destination** — visitors spawn at arena
-   entrance polygons; CSV modality probabilities (`usesCar`, `usesBus`,
-   `usesBike`, …) pick mode; destinations are points/polygons in the CSV.
-3. **Car path** — `BarclaysParkingLayer` fills named “Parkplatz” lots to
-   capacity at init (`ParkedCars`). A car visitor **picks a random parked
-   car**, walks/drives via multimodal search to a destination polygon.
-   There is **no** lot→exit optimizer and **no** capacity-aware exit split
-   beyond what the schedule CSV encodes.
-4. **Background traffic** — `Resident` agents add ambient car demand.
-5. **Routing** — default multimodal search; bus uses a hand-wired
-   station-pair fallback (`FindMultimodalRoute`). Congestion analysis is
-   observational (heatmaps), not an automated optimizer.
-
-**Borrow for Carleton:** CSV-driven staged release and explicit
-source→destination rows (already mirrored by
-`CarletonCarDriverSchedulerLayer` schedules). BigEvent does **not**
-automate exit assignment; Carleton scenarios 10–12 already go further by
-hand-tuning destinations. This experiment formalizes that search.
-
----
-
-## Proposed approaches
-
-| ID | Approach | Notes |
-|----|----------|--------|
-| **(a)** | OD / destination assignment search | Enumerate lot→{Meadowlands, Brewer} (and optional splits) over P5/P6/P7 (and later P3/P4). Keep P1/P2 on SW unless exploring otherwise. |
-| **(b)** | Lot release sequencing | Vary start times / intervals (scenarios 02–06 style) jointly with (a). Higher dimensional; defer until destination search plateaus. |
-| **(c)** | Exit capacity-aware split (scenario-12 style) | Fix total lot sizes; search split fractions for P6/P7 (and optionally P5) between SW and NE. Closest to the known win. |
-| **(d)** | Greedy / hill-climb | Start from scenario 12; mutate one lot’s exit or split; accept if clearance proxy improves. Evaluate with short sims or a proxy (e.g. assigned demand per exit corridor). |
-
-Objective: minimize **campus clearance time** (last agent leave), with
-secondary metrics from `scripts/analyze_run.py` (per-lot clearance,
-trip-time stats, heatmaps).
-
----
-
-## Scaffold in this branch
-
-- `scripts/optimize_exit_assignment.py` — reads scenario 01/12 schedule
-  patterns, enumerates a small set of P5/P6/P7 exit fractions, writes
-  candidate CSVs under `resources/schedules/opt_candidates/` (or
-  `--dry-run` to print plans only). Does **not** run multi-hour sims.
-- Evaluation is left to existing runners (see below).
-
----
-
-## Next concrete experiment step
-
-1. Generate candidates:
-   ```bash
-   python3 scripts/optimize_exit_assignment.py --write
-   ```
-2. For each written schedule, copy the scenario-12 config pattern, point
-   `CarletonCarDriverSchedulerLayer` at the candidate CSV, and set
-   `csvOptions.outputPath` to e.g. `results/opt_candidates/<name>/`.
-3. Run:
-   ```bash
-   dotnet run --project SOHCarletonDrivingBox.csproj -- <path-to-candidate-config.json>
-   ```
-   or adapt `scripts/run_all_scenarios.py` to accept an explicit config
-   list.
-4. Score with:
-   ```bash
-   python3 scripts/analyze_run.py results/opt_candidates/<name>/
-   ```
-5. Rank by clearance; promote the best schedule into a future scenario
-   **13+** only after review (do not overwrite 01–12).
-
-Optional proxy before full sims: sum assigned vehicles per exit and
-penalize imbalance vs scenario 12’s SW/NE totals as a cheap filter.
+It models post-event egress with CSV-driven staged multimodal release and
+explicit source→destination rows. There is **no** automated lot→exit
+optimizer. Carleton scenarios 10–12 already hand-tune destinations; this
+branch formalizes that search with proxy ranking + optional closed-loop sims.
