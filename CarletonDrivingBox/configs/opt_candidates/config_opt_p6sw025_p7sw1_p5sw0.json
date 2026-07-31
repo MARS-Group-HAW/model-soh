@@ -1,5 +1,5 @@
 {
-  "id": "opt_p6sw1_p7sw05_p5sw0",
+  "id": "opt_p6sw025_p7sw1_p5sw0",
   "globals": {
     "deltaT": 1,
     "startPoint": "2021-10-11T06:00:00",
@@ -7,7 +7,7 @@
     "deltaTUnit": "seconds",
     "console": true,
     "csvOptions": {
-      "outputPath": "results/opt_candidates/opt_p6sw1_p7sw05_p5sw0"
+      "outputPath": "results/opt_candidates/opt_p6sw025_p7sw1_p5sw0"
     }
   },
   "agents": [
@@ -42,7 +42,7 @@
     },
     {
       "name": "CarletonCarDriverSchedulerLayer",
-      "file": "resources/schedules/opt_candidates/opt_p6sw1_p7sw05_p5sw0_schedule.csv"
+      "file": "resources/schedules/opt_candidates/opt_p6sw025_p7sw1_p5sw0_schedule.csv"
     }
   ],
   "entities": [

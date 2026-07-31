@@ -19,10 +19,17 @@ Existing scenarios **01–12** are unchanged. Candidates live only under:
 P3/P4/P5 on the NE side). Only `--eval-sim` / real `evac_end_s` metrics prove
 clearance.
 
-**Scenario 12 is the known-good baseline to beat with real sims.** The seed
-candidate `opt_p6sw1_p7sw05_p5sw0` is always written and evaluated first.
-Use the proxy only to shortlist neighbors around that seed — never treat proxy
-rank #1 as a clearance winner.
+**Search is open** — ranking uses overload / near-soft-cap and imbalance (plus a
+light P5→SW pattern term). Scenario 12
+(`opt_p6sw1_p7sw05_p5sw0`) remains a useful **reference baseline** for
+`--baseline-check` and for comparing real clearance, but it is **not** forced
+to write / display / eval position #1.
+
+Opt-candidate configs use a **shorter 10000s screening horizon**
+(`startPoint` + 10000s; with `2021-10-11T06:00:00` → `endPoint`
+`2021-10-11T08:46:40`). That is for screening only: **full clear still needs
+`remaining≈0`**. If cars are still jammed at 10k, treat the run as
+**failed/incomplete** (extend `endPoint` for a confirmation sim).
 
 ---
 
@@ -45,14 +52,14 @@ Fixed in this optimizer:
 - **P1/P2 → Meadowlands (SW)** always
 - **P3/P4 → Brewer (NE)** always
 - Search **P5/P6/P7** fractions to SW; default coarse grid caps **P5→SW ≤ 0.25**
-- Hill-climb may still probe neighbors of the s12 seed
+- Hill-climb probes neighbors of the top proxy rows
 
 Exit coordinates:
 
 - **Meadowlands / SW:** `45.3675, -75.7040`
 - **Brewer / NE:** `45.387983, -75.690183`
 
-Scenario 12 seed name: `opt_p6sw1_p7sw05_p5sw0`
+Scenario 12 reference name: `opt_p6sw1_p7sw05_p5sw0`
 
 ---
 
@@ -69,35 +76,32 @@ python scripts/optimize_exit_assignment.py --optimize --write-top 10
 This:
 
 1. Scores the coarse grid (P5∈{0,0.25}) with a filter proxy (see below)
-2. Always puts the **s12 seed first** in write / display / eval order
-3. Hill-climbs neighbors of the s12 seed and the best proxy alternative
-4. Writes top-K:
+2. Hill-climbs neighbors of the top proxy rows
+3. Writes top-K by open proxy rank:
    - `resources/schedules/opt_candidates/<name>_schedule.csv`
-   - `configs/opt_candidates/config_<name>.json`
-5. Updates `results/opt_candidates/leaderboard.csv`
+   - `configs/opt_candidates/config_<name>.json` (10k screening `endPoint`)
+4. Updates `results/opt_candidates/leaderboard.csv`
 
 Lower **proxy_score** is better for filtering. It is **not** real clearance.
 
 ### 2. Real MARS evaluation (hours each)
 
-**Always evaluate the scenario-12 seed first**, then optional neighbors.
+Evaluate top proxy rows (or any named candidate). Screening horizon is 10k s;
+confirm full clear with `remaining≈0` (jam at horizon = failed/incomplete).
 
-**Option A — recommended overnight (s12 first, then next proxy rows):**
+**Option A — recommended overnight (top proxy rows):**
 
 ```bash
 python scripts/optimize_exit_assignment.py --optimize --write-top 10 --eval-top 3
 ```
 
-`--eval-top` always runs `opt_p6sw1_p7sw05_p5sw0` first, then remaining by the
-new rank.
-
-**Option B — eval s12 seed alone (start here):**
+**Option B — eval one candidate:**
 
 ```bash
 python scripts/optimize_exit_assignment.py --eval-sim opt_p6sw1_p7sw05_p5sw0
 ```
 
-**Option C — hill-climb with a budget of real sims (starts at s12):**
+**Option C — hill-climb with a budget of real sims (starts at best proxy):**
 
 ```bash
 python scripts/optimize_exit_assignment.py --optimize --max-evals 5
@@ -115,8 +119,8 @@ and records `evac_end_s` on the leaderboard.
 ### 3. Pick the winner
 
 Open `results/opt_candidates/leaderboard.csv`. Rank by **`evac_end_s` ascending**
-(campus clear / last leave). Ignore proxy_score once real sims exist — the
-proxy is only a shortlist filter.
+(campus clear / last leave). Require **remaining≈0**; ignore proxy_score once
+real sims exist — the proxy is only a shortlist filter.
 
 Promote a winner to a future scenario **13+** only after it **beats scenario 12
 clearance** in a real sim — never overwrite 01–12.
@@ -134,23 +138,19 @@ python scripts/optimize_exit_assignment.py --analyze-only opt_p6sw1_p7sw05_p5sw0
 Ranking priority (not raw balance alone):
 
 1. **Low overload / near-soft-cap SW penalty** (prefer)
-2. **Close to scenario-12 seed** (strong weight)
-3. **|SW−NE| imbalance** (weaker term)
+2. **|SW−NE| imbalance** (weaker term)
 
 | Term | Role |
 |------|------|
 | Soft overload if SW > 1800 | Mild penalty |
 | Steep overload if SW > 2000 | Strong penalty (jam region) |
 | Near soft-cap if SW > 1550 | Penalty before hard soft-cap (1600/1600 trap) |
-| Distance to s12 seed | Strong preference for known-good baseline |
 | `|SW_demand − NE_demand|` × 0.15 | Weaker balance filter |
 | P5→SW fraction × weight | Penalize sending P5 west |
-| Triple deviation from s12 | Extra hit when P5/P6/P7 all leave the s12 pattern |
 
-Demand uses lot sizes P1=100 … P7=1100 (3200 total).
-
-The s12 seed is **forced to display/write/eval position #1** regardless of
-scalar proxy ties.
+Demand uses lot sizes P1=100 … P7=1100 (3200 total). Distance to the s12
+reference may still appear on the leaderboard for comparison but is **not**
+used in ranking.
 
 ---
 
@@ -160,14 +160,14 @@ scalar proxy ties.
 # Default useful action (same as --optimize --write-top 10)
 python scripts/optimize_exit_assignment.py --optimize --write-top 10
 
-# Print top proxy rows without writing (s12 always listed first)
+# Print top proxy rows without writing
 python scripts/optimize_exit_assignment.py --list
 
-# Show s12 seed naming / demand
+# Show scenario_12 reference naming / demand
 python scripts/optimize_exit_assignment.py --baseline-check
 
-# Real sims (WARN: hours each) — start with s12 seed
-python scripts/optimize_exit_assignment.py --eval-sim opt_p6sw1_p7sw05_p5sw0
+# Real sims (WARN: hours each; 10k screening horizon)
+python scripts/optimize_exit_assignment.py --eval-sim <name>
 python scripts/optimize_exit_assignment.py --optimize --eval-top 3
 python scripts/optimize_exit_assignment.py --optimize --max-evals 5
 ```
