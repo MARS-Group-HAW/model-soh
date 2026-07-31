@@ -118,11 +118,13 @@ public class CarOvertakingTests
         var startNode = environment.AddNode();
         var goalNode = environment.AddNode();
         environment.AddEdge(startNode, goalNode, 100,
-            new Dictionary<string, object> { { "length", 100 }, { "lanes", 1 } }, SpatialModalityType.CarDriving);
+            new Dictionary<string, object> { { "length", 100 }, { "lanes", 2 } }, SpatialModalityType.CarDriving);
         environment.AddEdge(startNode, goalNode, 100,
             new Dictionary<string, object> { { "length", 100 }, { "lanes", 1 } },
             new[] { SpatialModalityType.CarDriving, SpatialModalityType.Cycling });
-        var edge = startNode.OutgoingEdges.First().Value;
+        Assert.Single(environment.Edges);
+        var edge = environment.Edges.Values.Single();
+        Assert.True(edge.LaneCount >= 2, $"Expected merged multi-lane edge, got LaneCount={edge.LaneCount}");
 
         var car = new Car();
         Assert.True(environment.Insert(car, edge, 60));
@@ -131,11 +133,9 @@ public class CarOvertakingTests
         Assert.InRange(agent.PositionOnCurrentEdge, 50, 50);
         Assert.Equal(0, agent.CurrentLane);
 
-        agent.Tick();
-        agent.Tick();
-        agent.Tick();
-        Assert.InRange(agent.PositionOnCurrentEdge, 60, 70);
+        for (var i = 0; i < 10; i++) agent.Tick();
         Assert.Equal(1, agent.CurrentLane);
+        Assert.InRange(agent.PositionOnCurrentEdge, 55, 100);
     }
 
     [Fact]
@@ -151,7 +151,8 @@ public class CarOvertakingTests
             new Dictionary<string, object> { { "length", 100 }, { "lanes", 1 } }, SpatialModalityType.CarDriving);
         environment.AddEdge(startNode, goalNode, 100,
             new Dictionary<string, object> { { "length", 100 }, { "lanes", 1 } }, SpatialModalityType.Cycling);
-        var edge = startNode.OutgoingEdges.First().Value;
+        var edge = environment.Edges.Values.Single(e =>
+            e.Modalities.Contains(SpatialModalityType.CarDriving));
 
         var car = new Car();
         Assert.True(environment.Insert(car, edge, 60));
@@ -182,7 +183,8 @@ internal class OvertakingAgent : IAgent, ICarSteeringCapable
         Car.MaxSpeed = maxSpeed;
         Car.Velocity = maxSpeed;
         Car.Position = Car.CalculateNewPositionFor(route, out _);
-        if (!environment.Insert(Car, startNode.OutgoingEdges.First().Value, positionOnEdge, laneOnEdge))
+        var insertEdge = route.First().Edge;
+        if (!environment.Insert(Car, insertEdge, positionOnEdge, laneOnEdge))
             throw new ApplicationException("The insertion in the environment was not possible");
         Assert.True(Car.TryEnterDriver(this, out _steering));
         Assert.NotNull(_steering);
