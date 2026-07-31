@@ -24,6 +24,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from mars_agent_outputs import agent_output_path
+
 ROOT = Path(__file__).resolve().parents[1]
 SCHEDULES = ROOT / "resources" / "schedules"
 OUT_SCHEDULES = SCHEDULES / "opt_candidates"
@@ -363,6 +365,7 @@ def write_config(name: str, schedule_rel: str) -> Path:
     cfg["id"] = name
     globals_ = cfg.setdefault("globals", {})
     csv_opts = globals_.setdefault("csvOptions", {})
+    # Relative path is portable in committed configs; run_sim absolutizes for MARS.
     csv_opts["outputPath"] = f"results/opt_candidates/{name}"
     for layer in cfg.get("layers") or []:
         if layer.get("name") == "CarletonCarDriverSchedulerLayer":
@@ -471,10 +474,18 @@ def run_sim(name: str) -> int:
     cfg = OUT_CONFIGS / f"config_{name}.json"
     if not cfg.is_file():
         raise SystemExit(f"Missing config: {cfg}")
-    out_dir = OUT_RESULTS / name
+    out_dir = (OUT_RESULTS / name).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
+    # Absolutize outputPath (and leave a copy under the results dir) so MARS
+    # always writes CSV/trips into <name>/ even if cwd differs.
+    payload = json.loads(cfg.read_text(encoding="utf-8"))
+    globals_ = payload.setdefault("globals", {})
+    csv_opts = globals_.setdefault("csvOptions", {})
+    csv_opts["outputPath"] = str(out_dir)
+    run_cfg = out_dir / "_run_config.json"
+    run_cfg.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     log = out_dir / "sim.log"
-    cmd = ["dotnet", "run", "--project", str(PROJECT), "--", str(cfg)]
+    cmd = ["dotnet", "run", "--project", str(PROJECT), "--", str(run_cfg)]
     print(f"WARNING: full MARS sim for {name} typically takes hours.", flush=True)
     print("+", " ".join(cmd), flush=True)
     with log.open("w", encoding="utf-8") as out:
@@ -492,8 +503,10 @@ def run_sim(name: str) -> int:
 
 def run_analyze(name: str) -> int:
     results_dir = OUT_RESULTS / name
-    # analyze_run accepts a results dir or CSV path; prefer the directory.
-    cmd = [sys.executable, str(ANALYZE_SCRIPT), str(results_dir)]
+    # Pass the agent CSV so output_dir is <name>/ (not its parent). Directory
+    # args also work after analyze_run's dir handling, but CSV is unambiguous.
+    csv_path = agent_output_path(results_dir, ".csv")
+    cmd = [sys.executable, str(ANALYZE_SCRIPT), str(csv_path)]
     print("+", " ".join(cmd), flush=True)
     return subprocess.call(cmd, cwd=ROOT)
 

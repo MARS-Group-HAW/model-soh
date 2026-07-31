@@ -1385,11 +1385,20 @@ def write_outputs(
     plot_lot_completion_and_exits(output_dir, per_lot, trip_stats, scenario_id=scenario_id)
 
 def main():
-    csv_path = resolve_path(
-        sys.argv[1] if len(sys.argv) > 1 else None,
-        agent_output_path(DEFAULT_RESULTS, ".csv"),
-    )
-    output_dir = csv_path.parent
+    # argv[1] may be a run output directory or an agent CSV path.
+    # Directory args must mean that folder is the run output dir (not its parent).
+    arg = sys.argv[1] if len(sys.argv) > 1 else None
+    if arg is None:
+        csv_path = agent_output_path(DEFAULT_RESULTS, ".csv")
+        output_dir = csv_path.parent
+    else:
+        resolved = resolve_path(arg, agent_output_path(DEFAULT_RESULTS, ".csv"))
+        if resolved.is_dir():
+            output_dir = resolved
+            csv_path = agent_output_path(output_dir, ".csv")
+        else:
+            csv_path = resolved
+            output_dir = csv_path.parent
     trips_path = resolve_path(
         sys.argv[2] if len(sys.argv) > 2 else None,
         agent_output_path(output_dir, "_trips.geojson"),
