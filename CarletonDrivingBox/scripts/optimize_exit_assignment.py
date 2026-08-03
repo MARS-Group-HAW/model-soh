@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""Ranked closed-loop optimizer for Carleton lot→exit assignments.
+"""Ranked proxy filter for Carleton P5/P6/P7 → SW exit fractions.
 
-Search space: fractions of P5/P6/P7 sent to Meadowlands (SW). P1/P2 always SW;
-P3/P4 always NE. Default mode ranks by a fast demand-balance *filter* proxy
-(NOT a clearance guarantee). Ranking prefers low SW overload, then weaker
-imbalance — open search (no forced scenario-12 seed). Optional `--eval-sim` /
-`--eval-top` / `--max-evals` run real MARS sims (hours each) — only those
-prove campus clearance. Opt-candidate sims use a short 10000s screening
-horizon; full clear still requires remaining≈0 (jam at 10k = failed/incomplete).
+Prefer the real feedback loop for clearance search:
+  python scripts/optimize_evac_feedback.py --iterations 20 --horizon 14400
+
+This script ranks fractions of P5/P6/P7 sent to Meadowlands (SW). P1/P2 always
+SW; P3/P4 always NE. Default mode uses a fast demand-balance *filter* proxy
+(NOT a clearance guarantee). Optional `--eval-sim` / `--eval-top` / `--max-evals`
+run real MARS sims (hours each). Opt-candidate sims use a short 10000s
+screening horizon; full clear still needs remaining≈0.
 
 Examples:
   python scripts/optimize_exit_assignment.py --optimize --write-top 10
   python scripts/optimize_exit_assignment.py --eval-sim opt_p6sw1_p7sw05_p5sw0
-  python scripts/optimize_exit_assignment.py --optimize --eval-top 3
 
 Scenarios 01–12 are never modified. See docs/evac_route_optimization.md.
 """

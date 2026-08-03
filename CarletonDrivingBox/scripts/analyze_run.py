@@ -72,7 +72,7 @@ def load_lot_coords() -> dict[str, tuple[float, float]]:
 
 
 def _lot_clearance_items(clearance_by_lot: dict | None) -> list[tuple[str, float]]:
-    """Return (lot, clearance_s) for lots with a positive leave-campus clearance time."""
+    """Return (lot, t_s) only for lots that fully left campus (last campus exit)."""
     items: list[tuple[str, float]] = []
     for lot in LOT_ORDER:
         val = (clearance_by_lot or {}).get(lot)
@@ -89,7 +89,7 @@ def _lot_clearance_items(clearance_by_lot: dict | None) -> list[tuple[str, float
 
 
 def annotate_lot_clearances(ax, clearance_by_lot: dict | None) -> None:
-    """Vertical markers on evacuation curve: last campus exit per lot (P1–P7)."""
+    """Dashed markers: last campus exit only when that lot fully left campus."""
     items = _lot_clearance_items(clearance_by_lot)
     if not items:
         return
@@ -113,7 +113,7 @@ def annotate_lot_clearances(ax, clearance_by_lot: dict | None) -> None:
         ax.text(
             t,
             y,
-            f"{lot} cleared",
+            f"{lot} left campus",
             rotation=90,
             va="top",
             ha="right",
@@ -158,11 +158,11 @@ def congestion_note_for_clearances(
     if hot_aisles:
         parts.append(f"hottest aisles: {', '.join(hot_aisles)}")
     if late:
-        parts.append(f"latest clearances: {', '.join(late)}")
+        parts.append(f"latest fully-left lots: {', '.join(late)}")
     overlap = [lot for lot in late if lot in hot_aisles]
     if overlap:
         parts.append(f"overlap (hot + late): {', '.join(overlap)}")
-    note = "Congestion vs clearance - " + "; ".join(parts)
+    note = "Congestion vs lot campus-exit - " + "; ".join(parts)
     print(note)
     return note
 
@@ -262,7 +262,12 @@ def scenario_id_from_path(path: Path) -> str | None:
 
 
 def resolve_scenario_paths(csv_path: Path) -> tuple[Path, Path]:
-    """Pick schedule + config for results/scenario_XX/ or opt_candidates/<name>/ runs."""
+    """Pick schedule + config for results/scenario_XX/ or opt_candidates/<name>/ runs.
+
+    Prefer ``_run_config.json`` next to the agent outputs when present — that is
+    the config MARS actually simulated (endPoint / horizon), not a later rewrite
+    of ``configs/opt_candidates/``.
+    """
     sid = scenario_id_from_path(csv_path)
     if sid:
         schedule = SCHEDULES_DIR / f"scenario_{sid}_schedule.csv"
@@ -275,10 +280,27 @@ def resolve_scenario_paths(csv_path: Path) -> tuple[Path, Path]:
         idx = parts.index("opt_candidates")
         if idx + 1 < len(parts):
             name = parts[idx + 1]
+            # Agent CSV lives in results/opt_candidates/<name>/
+            run_dir = csv_path.resolve().parent
+            if run_dir.name != name:
+                # trips path nested deeper — walk up to the candidate folder
+                for parent in csv_path.resolve().parents:
+                    if parent.name == name and parent.parent.name == "opt_candidates":
+                        run_dir = parent
+                        break
             schedule = SCHEDULES_DIR / "opt_candidates" / f"{name}_schedule.csv"
-            config = CONFIGS_DIR / "opt_candidates" / f"config_{name}.json"
+            run_cfg = run_dir / "_run_config.json"
+            config = (
+                run_cfg
+                if run_cfg.is_file()
+                else CONFIGS_DIR / "opt_candidates" / f"config_{name}.json"
+            )
             if schedule.is_file() and config.is_file():
                 return schedule, config
+    # Any results dir with a sibling _run_config.json (generic MARS output folder).
+    run_cfg = csv_path.parent / "_run_config.json"
+    if run_cfg.is_file():
+        return DEFAULT_SCHEDULE, run_cfg
     return DEFAULT_SCHEDULE, DEFAULT_CONFIG
 
 
@@ -800,12 +822,18 @@ def analyze_csv(path: Path):
     return len(completed_ids), goal_true_rows, curve, csv_rows
 
 
-def trip_time_stats(records: list[dict]) -> dict:
+def trip_time_stats(records: list[dict], per_lot: dict | None = None) -> dict:
     """Mean/median campus-leave travel time and leave time (from t=0).
 
     Finish (destination) stats and finish_exit_usage only include trips that
     left campus. Geojson often still has a Feature for cars stuck inside the
     footprint at endPoint — those must not look like successful finishes.
+
+    clearance_by_lot_s is set only when *all* cars from that lot have a campus
+    exit (no stuck cars; completed exits >= schedule expected, or all trip
+    records from that lot exited). Value is max campus-leave time among that
+    lot's cars — not lot departure, and not last successful exit while others
+    remain stuck.
     """
     empty = {
         "n_trips": 0,
@@ -849,7 +877,7 @@ def trip_time_stats(records: list[dict]) -> dict:
     # Destination arrival only for cars that actually left campus.
     finish_travel = [r["travel_s"] for r in left]
     finish_from_t0 = [r["exit_from_t0_s"] for r in left]
-    clearance: dict[str, int] = {}
+    last_leave: dict[str, int] = {}
     completed_by_lot = Counter()
     remaining_by_lot = Counter()
     exit_usage = Counter()
@@ -857,7 +885,7 @@ def trip_time_stats(records: list[dict]) -> dict:
     for r in left:
         lot = r["lot"]
         if lot in LOT_ORDER:
-            clearance[lot] = max(clearance.get(lot, 0), int(r["campus_exit_from_t0_s"]))
+            last_leave[lot] = max(last_leave.get(lot, 0), int(r["campus_exit_from_t0_s"]))
             completed_by_lot[lot] += 1
         exit_name = r.get("campus_exit", "other")
         if exit_name not in CAMPUS_EXIT_ORDER:
@@ -871,6 +899,22 @@ def trip_time_stats(records: list[dict]) -> dict:
         lot = r.get("lot")
         if lot in LOT_ORDER:
             remaining_by_lot[lot] += 1
+
+    # Only report clearance when the lot fully left campus.
+    clearance_by_lot_s: dict[str, int | None] = {}
+    for lot in LOT_ORDER:
+        done = int(completed_by_lot.get(lot, 0))
+        rem = int(remaining_by_lot.get(lot, 0))
+        expected_lot = int((per_lot or {}).get(lot, 0))
+        records_from_lot = done + rem
+        need = expected_lot if expected_lot > 0 else records_from_lot
+        fully_left = (
+            rem == 0
+            and done > 0
+            and lot in last_leave
+            and (need <= 0 or done >= need)
+        )
+        clearance_by_lot_s[lot] = last_leave[lot] if fully_left else None
 
     out = {
         "n_trips": len(left),
@@ -888,7 +932,7 @@ def trip_time_stats(records: list[dict]) -> dict:
         "median_finish_travel_s": round(median(finish_travel), 2) if finish_travel else None,
         "mean_finish_from_t0_s": round(mean(finish_from_t0), 2) if finish_from_t0 else None,
         "median_finish_from_t0_s": round(median(finish_from_t0), 2) if finish_from_t0 else None,
-        "clearance_by_lot_s": {lot: clearance.get(lot) for lot in LOT_ORDER},
+        "clearance_by_lot_s": clearance_by_lot_s,
         "completed_by_lot": {lot: int(completed_by_lot.get(lot, 0)) for lot in LOT_ORDER},
         "remaining_by_lot": {lot: int(remaining_by_lot.get(lot, 0)) for lot in LOT_ORDER},
         "exit_usage": {name: int(exit_usage.get(name, 0)) for name in CAMPUS_EXIT_ORDER},
@@ -1052,11 +1096,11 @@ def plot_trip_time_charts(
     clearance = [stats["clearance_by_lot_s"].get(lot) or 0 for lot in lots]
     plt.figure(figsize=(7, 4.2))
     bars = plt.bar(lots, clearance, color="#dd8452")
-    plt.ylabel("Clearance time (s from t=0)")
+    plt.ylabel("Last campus-exit time (s from t=0)")
     plt.xlabel("Parking lot")
     plt.title(
         scenario_chart_title(
-            "Clearance time by lot (last car to leave university)",
+            "Lot fully left campus (last campus exit; blank if stuck remain)",
             scenario_id,
         )
     )
@@ -1109,15 +1153,22 @@ def build_metrics_payload(
         else trip_stats.get("remaining_on_campus") or max(0, BASELINE_TARGET - campus_exits)
     )
     features = int(geojson_features if geojson_features is not None else campus_exits)
-    rate = round((campus_exits / expected * 100.0), 2) if expected else None
+    # Never report 100% while anyone remains on campus (schedule N0 / exits).
+    denom = max(int(expected) or 0, campus_exits + remaining, 1)
+    rate = round((campus_exits / denom * 100.0), 2)
+    if remaining > 0 and rate >= 100.0:
+        rate = round((campus_exits / (campus_exits + remaining) * 100.0), 2) if (
+            campus_exits + remaining
+        ) else 0.0
     clearance = trip_stats.get("clearance_by_lot_s") or {}
+    campus_cleared = remaining == 0 and campus_exits > 0
     warning = None
     if remaining > 0:
         t_label = f"t={config_end_s}s" if config_end_s else "endPoint"
         warning = (
-            f"{remaining} cars never left campus by {t_label} "
+            f"INCOMPLETE — {remaining} cars still on campus at {t_label} "
             f"(geojson_features={features}, campus_exits={campus_exits}). "
-            "Extend globals.endPoint and re-sim, or treat as jammed."
+            "Treat as failed/jammed candidate unless a longer endPoint re-sim clears."
         )
     return {
         "schema_version": 2,
@@ -1134,10 +1185,12 @@ def build_metrics_payload(
             "campus_exits": campus_exits,
             "geojson_features": features,
             "remaining_on_campus": remaining,
+            "campus_cleared": campus_cleared,
             "completed_unique_ids_csv": int(completed_csv),
             "goal_reached_rows_csv": int(goal_rows),
             "completion_rate_pct": rate,
             "csv_tick_rows": int(csv_rows),
+            # Last campus-leave time among leavers; only a clearance time if campus_cleared.
             "evac_end_s": int(evac_end_s) if evac_end_s else None,
             "peak_on_campus": peak_on_campus(on_campus_curve),
             "mean_trip_s": trip_stats.get("mean_campus_exit_travel_s"),
@@ -1223,7 +1276,16 @@ def write_outputs(
         if remaining_on_campus is not None
         else trip_stats.get("remaining_on_campus") or 0
     )
-    rate = (campus_exits / expected * 100.0) if expected else 0.0
+    denom = max(int(expected) or 0, campus_exits + remaining, 1)
+    rate = campus_exits / denom * 100.0
+    if remaining > 0 and rate >= 100.0:
+        rate = (
+            campus_exits / (campus_exits + remaining) * 100.0
+            if (campus_exits + remaining)
+            else 0.0
+        )
+    # Keep chart/lot helpers aligned with the authoritative remaining count.
+    trip_stats = {**trip_stats, "remaining_on_campus": remaining, "campus_exits": campus_exits}
 
     with (output_dir / "summary.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(
@@ -1388,16 +1450,19 @@ def write_outputs(
 
     plt.figure(figsize=(6, 4))
     completed = int(trip_stats.get("campus_exits") or trips)
+    remaining = int(trip_stats.get("remaining_on_campus") or 0)
     plt.bar(
         ["Expected\n(schedule)", "Baseline\ntarget", "Campus\nexits"],
         [int(expected), int(BASELINE_TARGET), completed],
         color=["#4c72b0", "#8172b2", "#c44e52"],
     )
     plt.ylabel("Vehicles")
-    plt.title(scenario_chart_title("Deployment vs campus exits", scenario_id))
+    summary_title = "Deployment vs campus exits"
+    if remaining > 0:
+        summary_title = f"INCOMPLETE — {remaining} still on campus | {summary_title}"
+    plt.title(scenario_chart_title(summary_title, scenario_id))
     if completed == 0:
         plt.text(2, max(int(expected), int(BASELINE_TARGET)) * 0.05, "0 — check trips geojson path", ha="center", fontsize=8)
-    remaining = int(trip_stats.get("remaining_on_campus") or 0)
     if remaining > 0:
         plt.text(
             2,
@@ -1423,24 +1488,30 @@ def write_outputs(
         )
         start_n = int(cars[0]) if cars else 0
         end_n = int(cars[-1]) if cars else 0
+        n0 = max(int(expected) or 0, int(BASELINE_TARGET), start_n)
         ax.plot(times, cars, label="Left to evacuate", color="#4c72b0", linewidth=1.5)
-        # Match scenario 01: always show full 0..N0 scale so curves start at 3200.
-        ax.set_ylim(0, max(BASELINE_TARGET, start_n) * 1.02)
+        # Always show full 0..N0 scale so curves start at schedule deployment.
+        ax.set_ylim(0, n0 * 1.02)
         annotate_lot_clearances(ax, clearance)
 
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Cars left to evacuate")
-        ax.set_title(
-            scenario_chart_title(
-                "Evacuation curve — cars that have not yet left campus",
-                scenario_id,
+        curve_title = "Evacuation curve — cars that have not yet left campus"
+        if remaining > 0:
+            curve_title = (
+                f"INCOMPLETE — {remaining} still on campus at endPoint\n{curve_title}"
             )
-        )
+        ax.set_title(scenario_chart_title(curve_title, scenario_id))
         subtitle = (
-            f"Start={start_n} (N0={BASELINE_TARGET})   End={end_n}   "
+            f"Start={start_n} (N0={n0})   End={end_n}   "
             f"Avg (t≤60s)={avg_early:.2f}   Avg (all)={avg_all:.2f}"
-            "   |   Dashed: lot cleared (last campus exit)"
+            "   |   Dashed: lot fully left campus (last campus exit)"
         )
+        if remaining > 0:
+            subtitle = (
+                f"INCOMPLETE — {remaining} still on campus at endPoint "
+                f"(not a successful clear)\n{subtitle}"
+            )
         if cong_note:
             subtitle = f"{subtitle}\n{cong_note}"
         fig.suptitle(subtitle, fontsize=8, y=0.98)
@@ -1497,7 +1568,7 @@ def main():
         trips_path, sim_start, scenario_id=scenario_id
     )
     spawn_times = spawn_event_times(schedule_path, sim_start)
-    stats = trip_time_stats(trip_records)
+    stats = trip_time_stats(trip_records, per_lot=per_lot)
 
     # CSV GoalReached = destination arrival — useful for completion counts only.
     # On-campus occupancy / evacuation end must use campus LEAVE times, not dest.
@@ -1521,10 +1592,10 @@ def main():
     depart_curve = cumulative_curve(depart_times, max_t)
 
     # Cars left to evacuate = N0 − cumulative campus exits (not destination arrivals).
-    # Always start from the campus deployment target (3200), same as scenario 01 —
-    # includes not-yet-spawned / delayed-lot cars. Do NOT use spawned−exited
+    # N0 is schedule deployment (expected); falls back to baseline 3200.
+    # Includes not-yet-spawned / delayed-lot cars. Do NOT use spawned−exited
     # (that rises with delayed lots and understates remaining at t=0).
-    n0 = int(BASELINE_TARGET)
+    n0 = int(expected) if expected else int(BASELINE_TARGET)
     on_campus_curve = [
         (t, max(0, n0 - exited)) for t, exited in depart_curve
     ]
@@ -1534,12 +1605,13 @@ def main():
         evac_end_s = 0
 
     remaining = max(0, n0 - len(depart_times))
-    if remaining > 0 and config_end_s:
+    if remaining > 0:
+        t_label = f"t={config_end_s}s" if config_end_s else "endPoint"
         print(
-            f"WARNING: {remaining} cars never left campus by endPoint "
-            f"(t={config_end_s}s). Geojson still has Features for stuck agents — "
+            f"WARNING: INCOMPLETE — {remaining} cars still on campus at {t_label}. "
+            f"Geojson still has Features for stuck agents — "
             f"completed_trips counts campus exits only ({len(depart_times)}). "
-            f"Extend globals.endPoint and re-run the scenario, or treat as jammed."
+            f"Do NOT treat as 100% clear; jam or extend endPoint and re-sim."
         )
 
     # Evacuation completion = campus leaves. Do NOT inflate with geojson Feature
@@ -1547,10 +1619,10 @@ def main():
     geojson_features = int(trips)
     campus_exits = len(depart_times)
     completed = campus_exits
-    if geojson_features != campus_exits:
+    if geojson_features != campus_exits or remaining > 0:
         print(
             f"NOTE: geojson Features={geojson_features}, campus exits={campus_exits}, "
-            f"remaining_on_campus={remaining}"
+            f"remaining_on_campus={remaining}, campus_cleared={remaining == 0}"
         )
 
     write_outputs(
@@ -1575,13 +1647,18 @@ def main():
     print("=== MARS run summary ===")
     print(f"Expected deployed (schedule) : {expected}")
     print(f"Baseline deployment target   : {BASELINE_TARGET}")
+    print(f"N0 (curve / remaining)       : {n0}")
     print(f"Campus exits (completed)     : {completed}")
     print(f"Geojson Features             : {geojson_features}")
     print(f"Remaining on campus          : {remaining}")
-    print(f"Completion rate (exits/N)    : {completed / expected * 100:.2f}%" if expected else "n/a")
+    print(f"Campus cleared               : {remaining == 0 and completed > 0}")
+    rate_denom = max(int(expected) or 0, completed + remaining, 1)
+    print(f"Completion rate (exits/N)    : {completed / rate_denom * 100:.2f}%")
     print(f"CSV tick rows                : {csv_rows}")
-    if evac_end_s:
+    if remaining == 0 and evac_end_s:
         print(f"Campus clear (last leave)    : t={evac_end_s}s")
+    elif evac_end_s:
+        print(f"Last campus leave (incomplete): t={evac_end_s}s (NOT a clear time)")
     if stats.get("n_trips"):
         print(f"Mean drive to leave campus  : {stats['mean_campus_exit_travel_s']:.1f}s")
         print(f"Median drive to leave campus: {stats['median_campus_exit_travel_s']:.1f}s")
@@ -1589,7 +1666,7 @@ def main():
         print(f"Median leave campus (t=0)   : {stats['median_campus_exit_from_t0_s']:.1f}s")
         if stats.get("mean_finish_from_t0_s") is not None:
             print(f"Mean reach destination (t=0): {stats['mean_finish_from_t0_s']:.1f}s")
-        print("Clearance by lot (last leave campus):")
+        print("Lot fully left campus (last campus exit; n/a if stuck remain):")
         for lot in LOT_ORDER:
             val = stats["clearance_by_lot_s"].get(lot)
             print(f"  {lot}: {val if val is not None else 'n/a'}s")
