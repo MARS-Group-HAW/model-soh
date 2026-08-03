@@ -96,7 +96,7 @@ public class BusDriver : AbstractAgent, IBusSteeringCapable
     private void InitializeBus(string type = "CapaCityL")
     {
         Bus = Layer.EntityManager.Create<Bus>("type", type);
-        Bus.Layer = Layer;
+        Bus.BusLayer = Layer;
         Bus.TryEnterDriver(this, out _steeringHandle);
     }
 

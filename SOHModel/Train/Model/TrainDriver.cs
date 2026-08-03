@@ -92,7 +92,7 @@ public class TrainDriver : AbstractAgent, ITrainSteeringCapable
     private void InitializeTrain(string type = "HHA-Typ-DT5")
     {
         Train = Layer.EntityManager.Create<Train>("type", type);
-        Train.Layer = Layer;
+        Train.TrainLayer = Layer;
         Train.TryEnterDriver(this, out _steeringHandle);
     }
 

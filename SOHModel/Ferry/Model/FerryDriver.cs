@@ -81,7 +81,7 @@ public class FerryDriver : AbstractAgent, IFerrySteeringCapable
     private void InitializeFerry(string type = "Typ2000")
     {
         Ferry = Layer.EntityManager.Create<Ferry>("type", type);
-        Ferry.Layer = Layer;
+        Ferry.FerryLayer = Layer;
         Ferry.TryEnterDriver(this, out _steeringHandle);
     }
 

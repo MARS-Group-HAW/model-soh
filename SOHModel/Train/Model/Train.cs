@@ -1,4 +1,5 @@
-﻿using Mars.Interfaces.Environments;
+using Mars.Interfaces.Annotations;
+using Mars.Interfaces.Environments;
 using SOHModel.Domain.Model;
 using SOHModel.Domain.Steering.Capables;
 using SOHModel.Train.Station;
@@ -14,7 +15,8 @@ public class Train : Vehicle<ITrainSteeringCapable, IPassengerCapable, TrainStee
         ModalityType = SpatialModalityType.TrainDriving;
     }
 
-    public TrainLayer Layer { get; set; }
+    [PropertyDescription(Name = "trainLayer")]
+    public TrainLayer TrainLayer { get; set; }
 
     /// <summary>
     ///     Where the <see cref="Train" /> is located right now. Null if train is not at any station right now.
@@ -28,6 +30,6 @@ public class Train : Vehicle<ITrainSteeringCapable, IPassengerCapable, TrainStee
 
     protected override TrainSteeringHandle CreateSteeringHandle(ITrainSteeringCapable driver)
     {
-        return new TrainSteeringHandle(Layer.GraphEnvironment, driver, this);
+        return new TrainSteeringHandle(TrainLayer.GraphEnvironment, driver, this);
     }
 }
