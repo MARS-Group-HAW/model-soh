@@ -4,16 +4,26 @@ This project simulates cars leaving Carleton University during an evacuation.
 
 Cars start in parking lots **P1-P7**. They drive on the campus road network (GeoJSON files under `resources/`). There are **four** campus exits:
 
-1. **Colonel By** - southwest (Meadowlands / University Dr)
+1. **Colonel By** - southwest campus gate (University Dr → off-campus toward Hogs Back Plaza)
 2. **Bronson Ave & University Dr** - northeast main exit
 3. **Stadium Way** - northeast via Stadium Way @ Bronson
 4. **Raven Rd emergency** - Raven-Bronson link (only in scenarios **07** and **09**)
 
 Which exits are open depends on the scenario (for example, **08** closes Bronson & University Dr; **07**/**09** open the emergency link).
 
-![Campus parking lots P1-P7 and exits](docs/campus_parking_lots.png)
+Off-campus routing sinks (not clearance gates): **Hogs Back Plaza** (SW, 888 Meadowlands Dr) and **Brewer Park** (NE). Evacuation clearance is when cars leave campus at a gate, not when they arrive at a plaza.
+
+![Campus parking lots P1-P7 and four leave exits](docs/campus_lots_and_exits.png)
 
 ![Spawn boxes and parking aisles](docs/parking_lot_spawn_boxes.png)
+
+Regenerate the Methods map with:
+
+```bash
+python3 scripts/plot_campus_lots_and_exits.py
+```
+
+The older GitHub screenshot (`docs/campus_parking_lots.png`) only marked two exits and is superseded by the figure above.
 
 ---
 
@@ -64,8 +74,8 @@ Hand-tuned baselines and variants. Configs: `configs/config_scenario_01.json` �
 | 08 | Bronson & University Dr blocked; P1/P2 → SW; P3-P7 → Brewer Park |
 | 09 | Same as 08, plus Raven-Bronson emergency open |
 | 10 | Base map; P1/P2/P6 → SW; P3-P5/P7 → Brewer Park |
-| 11 | Same as 01, except P7 split 550 → Brewer (NE) + 550 → Meadowlands (SW). All lots still start at 06:01; P5 stays Brewer |
-| 12 | Same as 10 (P6 → Meadowlands/SW), except P7 split 550 → Brewer (NE) + 550 → Meadowlands (SW). All lots early one-shot 06:01 |
+| 11 | Same as 01, except P7 split 550 → Brewer (NE) + 550 → Hogs Back Plaza (SW). All lots still start at 06:01; P5 stays Brewer |
+| 12 | Same as 10 (P6 → Hogs Back Plaza/SW), except P7 split 550 → Brewer (NE) + 550 → Hogs Back Plaza (SW). All lots early one-shot 06:01 |
 
 Spawn times come from schedule CSV files on the **`CarletonCarDriverSchedulerLayer`** (not on the car agent). Example config:
 
@@ -143,6 +153,12 @@ Run all scenarios 01-12:
 python3 scripts/run_all_scenarios.py
 ```
 
+Overnight re-sim + analyze/heatmap + one agent route per lot (02–12):
+
+```bash
+python scripts/rerun_scenarios_02_12.py
+```
+
 Results go to `results/scenario_XX/`. Main files (local-only / gitignored):
 
 - `CarletonCarDriver.csv`
@@ -165,6 +181,7 @@ Activate the same Python environment as above (`source .venv/bin/activate`), the
 | `scripts/plot_heatmap.py` | Heatmap PNG (percentile scale by default; `--comparable` uses fixed vmax=20) |
 | `scripts/plot_agent_routes.py` | Map of each trip's route |
 | `scripts/run_all_scenarios.py` | Run simulations 01-12 |
+| `scripts/rerun_scenarios_02_12.py` | Overnight: re-sim 02–12 + analyze/heatmap + one route per lot |
 | `scripts/optimize_evac_feedback.py` | Closed-loop clearance search |
 
 Examples:
@@ -173,6 +190,7 @@ Examples:
 python3 scripts/analyze_and_heatmap.py results/scenario_01/CarletonCarDriver.csv
 python3 scripts/plot_heatmap.py results/scenario_01/heatmap_matrix.csv
 python3 scripts/plot_heatmap.py results/scenario_01/heatmap_matrix.csv --comparable
+python scripts/rerun_scenarios_02_12.py
 ```
 
 ---

@@ -25,7 +25,7 @@ Mutations are biased by the latest run’s `remaining_by_lot` / `clearance_by_lo
 
 ### Search space (only these knobs)
 
-1. **Destinations** — each of P1–P7 → Meadowlands (SW) or Brewer (NE).  
+1. **Destinations** — each of P1–P7 → Hogs Back Plaza (SW) or Brewer (NE).  
    Defaults: P1/P2 SW, P3/P4 NE; all lots may flip.
 2. **Start times** — one-shot `HH:MM,HH:MM,-1` from  
    `{06:01, 06:30, 07:00, 07:30, 08:00}`. Never `interval=1`; never exact `06:00`.
@@ -67,7 +67,7 @@ Each iteration:
 5. Proposes the next candidate from stuck/late-lot feedback
 
 Candidate name example: `fb_MMBBBNB_0000000`  
-(`M`/`B` = Meadowlands/Brewer for P1…P7; time digits `0`…`4` index the start-time grid).
+(`M`/`B` = Hogs Back Plaza/Brewer for P1…P7; time digits `0`…`4` index the start-time grid).
 
 ### Seeds
 
@@ -96,11 +96,11 @@ python scripts/optimize_evac_feedback.py --write-only s10 --horizon 14400
 | **01** | P1/P2 → SW; P3–P7 → NE | NE corridor overloaded (esp. P6/P7) |
 | **10** | P6 → SW | Moves 900 cars off NE onto SW |
 | **12** | P6 → SW + P7 50/50 | Best early one-shot clearance |
-| Heavy SW | Large SW share (e.g. P5 + half P7 + delays) | Overloads Meadowlands / SW; gridlock |
+| Heavy SW | Large SW share (e.g. P5 + half P7 + delays) | Overloads Hogs Back Plaza / SW; gridlock |
 
-Exit coordinates:
+Exit coordinates (off-campus sinks; clearance = campus gate leave, not dest arrival):
 
-- **Meadowlands / SW:** `45.3675, -75.7040`
+- **Hogs Back Plaza / SW:** `45.367764, -75.702286` (888 Meadowlands Dr E)
 - **Brewer / NE:** `45.387983, -75.690183`
 
 ---

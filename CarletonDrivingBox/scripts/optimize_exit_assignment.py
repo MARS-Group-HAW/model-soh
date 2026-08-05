@@ -4,7 +4,7 @@
 Prefer the real feedback loop for clearance search:
   python scripts/optimize_evac_feedback.py --iterations 20 --horizon 14400
 
-This script ranks fractions of P5/P6/P7 sent to Meadowlands (SW). P1/P2 always
+This script ranks fractions of P5/P6/P7 sent to Hogs Back Plaza (SW). P1/P2 always
 SW; P3/P4 always NE. Default mode uses a fast demand-balance *filter* proxy
 (NOT a clearance guarantee). Optional `--eval-sim` / `--eval-top` / `--max-evals`
 run real MARS sims (hours each). Opt-candidate sims use a short 10000s
@@ -41,7 +41,10 @@ BASE_CONFIG = ROOT / "configs" / "config_scenario_12.json"
 PROJECT = ROOT / "SOHCarletonDrivingBox.csproj"
 ANALYZE_SCRIPT = ROOT / "scripts" / "analyze_run.py"
 
-MEADOWLANDS = (45.3675, -75.7040)
+# Hogs Back Plaza, 888 Meadowlands Dr E (off-campus SW sink). Internal key stays
+# "meadowlands" for candidate IDs (DEST_CODE M); clearance still = campus exit.
+HOGS_BACK_PLAZA = (45.367764, -75.702286)
+MEADOWLANDS = HOGS_BACK_PLAZA  # alias for existing call sites
 BREWER = (45.387983, -75.690183)
 
 LOT_COUNTS = {"P1": 100, "P2": 100, "P3": 200, "P4": 100, "P5": 700, "P6": 900, "P7": 1100}
@@ -140,7 +143,7 @@ def _frac_tag(x: float) -> str:
 
 @dataclass(frozen=True)
 class ExitFrac:
-    """Fraction of a lot sent to Meadowlands (SW); remainder to Brewer (NE)."""
+    """Fraction of a lot sent to Hogs Back Plaza (SW); remainder to Brewer (NE)."""
 
     p5_sw: float
     p6_sw: float
@@ -266,7 +269,7 @@ def plan_rows(
             }
         )
         if exit_name == "meadowlands":
-            row["destLat"], row["destLon"] = "45.3675", "-75.7040"
+            row["destLat"], row["destLon"] = "45.367764", "-75.702286"
         else:
             row["destLat"], row["destLon"] = "45.387983", "-75.690183"
         rows.append(row)

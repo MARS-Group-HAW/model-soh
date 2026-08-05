@@ -4,17 +4,20 @@
 Default:
   - plasma, vmax = 99th percentile of positive densities
   - trailing inactive samples masked
+  - display-only temporal upsample + bilinear (DEVS-like soft streaks)
   - writes ``heatmap_matrix.png``
 
 ``--comparable`` — fixed color scale for side-by-side figures:
   - plasma, vmax=20
   - no trailing mask; optional ``--roads-from`` for shared Y-axis
+  - same display smoothing (matrix CSV unchanged)
   - writes ``heatmap_matrix_comparable.png``
 """
 from __future__ import annotations
 
 import argparse
 import csv
+import math
 import re
 from pathlib import Path
 
@@ -38,6 +41,13 @@ CUSTOM_R28_ROADS = [
 CUSTOM_R28_SET = set(CUSTOM_R28_ROADS)
 
 DEFAULT_VMAX_PERCENTILE = 99.0
+
+# Display-only rendering (matrix CSV / metric unchanged).
+# MARS samples are often dt≈10s; DEVS heatmaps use dt≈1s — upsample + bilinear
+# so coarse bins do not render as solid blocks.
+DISPLAY_TARGET_DT = 1.0
+DISPLAY_INTERPOLATION = "bilinear"
+DISPLAY_TIME_SMOOTH_SIGMA = 0.9  # samples after upsample; 0 disables
 
 
 def scenario_id_from_path(path: Path) -> str | None:
@@ -154,6 +164,85 @@ def auto_vmax(m: np.ndarray, percentile: float = DEFAULT_VMAX_PERCENTILE) -> flo
     return max(float(np.percentile(base, percentile)), 1.0)
 
 
+def _gaussian_kernel1d(sigma: float) -> np.ndarray:
+    """Unit-sum 1D Gaussian; radius ~ 3σ (numpy-only, no scipy)."""
+    if sigma <= 0:
+        return np.array([1.0], dtype=float)
+    radius = max(1, int(math.ceil(3.0 * sigma)))
+    x = np.arange(-radius, radius + 1, dtype=float)
+    k = np.exp(-0.5 * (x / sigma) ** 2)
+    k /= k.sum()
+    return k
+
+
+def _smooth_along_time(data: np.ndarray, sigma: float) -> np.ndarray:
+    """Convolve each road column along time; edges reflect-padded. Display only."""
+    if sigma <= 0 or data.shape[0] < 2:
+        return data
+    kernel = _gaussian_kernel1d(sigma)
+    pad = len(kernel) // 2
+    out = np.empty_like(data, dtype=float)
+    for j in range(data.shape[1]):
+        col = np.pad(data[:, j].astype(float), pad, mode="edge")
+        out[:, j] = np.convolve(col, kernel, mode="valid")
+    return out
+
+
+def prepare_display_matrix(
+    times: np.ndarray,
+    m: np.ndarray | np.ma.MaskedArray,
+    *,
+    target_dt: float = DISPLAY_TARGET_DT,
+    time_smooth_sigma: float = DISPLAY_TIME_SMOOTH_SIGMA,
+) -> tuple[np.ndarray, np.ndarray | np.ma.MaskedArray]:
+    """Upsample + light time-axis smooth for rendering. Does not alter source CSV values.
+
+    Linear interp between real bin centers; optional mild Gaussian only along time
+    (anti-aliases coarse steps). Road ordering / metric unchanged.
+    """
+    times = np.asarray(times, dtype=float)
+    is_masked = np.ma.isMaskedArray(m)
+    data = np.ma.filled(m, 0.0).astype(float) if is_masked else np.asarray(m, dtype=float)
+    mask = np.ma.getmaskarray(m) if is_masked else None
+
+    if times.size < 2 or data.size == 0:
+        return times, m
+
+    native_dt = float(np.median(np.diff(times)))
+    if native_dt <= 0:
+        return times, m
+
+    # Only upsample when bins are coarser than the display target (e.g. 10s → 1s).
+    if native_dt > target_dt * 1.05:
+        n_up = int(math.floor((times[-1] - times[0]) / target_dt)) + 1
+        n_up = max(n_up, times.size)
+        times_up = np.linspace(times[0], times[-1], n_up)
+        data_up = np.empty((n_up, data.shape[1]), dtype=float)
+        for j in range(data.shape[1]):
+            data_up[:, j] = np.interp(times_up, times, data[:, j])
+        if mask is not None:
+            # Nearest-time mask so trailing inactive stays masked (no invented glow).
+            idx = np.clip(
+                np.searchsorted(times, times_up, side="left"),
+                0,
+                len(times) - 1,
+            )
+            # Prefer left bin when equally between samples
+            mid = (times[np.minimum(idx, len(times) - 1)] + times[np.maximum(idx - 1, 0)]) / 2.0
+            use_left = (idx > 0) & (times_up < mid)
+            idx = np.where(use_left, idx - 1, idx)
+            mask_up = mask[idx, :]
+        else:
+            mask_up = None
+        times, data, mask = times_up, data_up, mask_up
+
+    data = _smooth_along_time(data, time_smooth_sigma)
+    # After smooth, keep masked cells at plasma floor via mask (not zero bleed).
+    if mask is not None:
+        return times, np.ma.array(data, mask=mask)
+    return times, data
+
+
 def plot_congestion_heatmap(
     times: np.ndarray,
     roads: list[str],
@@ -172,6 +261,8 @@ def plot_congestion_heatmap(
     if mask_trailing:
         plot_m = mask_trailing_inactive(m)
         cmap.set_bad(cmap(0.0))
+
+    disp_times, plot_m = prepare_display_matrix(times, plot_m)
 
     if comparable:
         fig_w, fig_h = COMPARE_FIG_WIDTH, max(COMPARE_FIG_H_MIN, len(roads) * COMPARE_FIG_H_PER_ROAD)
@@ -192,10 +283,11 @@ def plot_congestion_heatmap(
         cmap=cmap,
         vmin=0.0,
         vmax=vmax,
-        extent=[float(times[0]), float(times[-1]), -0.5, len(roads) - 0.5]
-        if len(times)
+        extent=[float(disp_times[0]), float(disp_times[-1]), -0.5, len(roads) - 0.5]
+        if len(disp_times)
         else None,
-        interpolation="nearest",
+        interpolation=DISPLAY_INTERPOLATION,
+        resample=True,
     )
     ax.set_xlabel("Time (s)")
     ax.set_ylabel(ylabel)
@@ -213,9 +305,9 @@ def plot_congestion_heatmap(
             else:
                 tick.set_color("black")
 
-    if len(times) and times[-1] >= 600 and not comparable:
-        minute_step = 600 if times[-1] >= 3600 else 300
-        xticks = np.arange(0, times[-1] + 1, minute_step)
+    if len(disp_times) and disp_times[-1] >= 600 and not comparable:
+        minute_step = 600 if disp_times[-1] >= 3600 else 300
+        xticks = np.arange(0, disp_times[-1] + 1, minute_step)
         ax.set_xticks(xticks)
         ax.set_xticklabels([f"{int(t // 60)}m" for t in xticks], fontsize=8)
 

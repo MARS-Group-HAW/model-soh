@@ -42,9 +42,10 @@ LOT_MARKER_COLORS = {
 }
 
 # Core campus footprint for exit detection — NOT the expanded OSM routing AOI
-# (that bbox includes Meadowlands / NE destinations, so trips never "leave").
+# (that bbox includes Hogs Back Plaza / Brewer destinations, so trips never "leave").
 # East edge sits on Bronson (~-75.6910): Brewer Park (45.387983, -75.690183)
 # is east of Bronson and must be OUTSIDE so NE/Brewer trips count as campus leave.
+# Hogs Back Plaza (45.367764, -75.702286) is south of the core and must stay OUTSIDE.
 CAMPUS_CORE_BBOX = (45.3785, 45.3917, -75.7030, -75.6910)
 
 
@@ -201,12 +202,14 @@ AT_GATE_EXIT_NAMES = frozenset(
 )
 
 # Final destinations including off-campus landmarks (finish classification only).
-# Brewer Park / Brewer Way are destinations, not primary leave-campus gates.
+# Brewer Park / Hogs Back Plaza are destinations, not primary leave-campus gates.
+# Clearance / evac_end use CAMPUS_EXIT_POINTS + bbox leave — never dest arrival.
+HOGS_BACK_PLAZA_DEST = (45.367764, -75.702286)  # 888 Meadowlands Dr E
 EXIT_POINTS = {
     **CAMPUS_EXIT_POINTS,
     "Bronson Ave & Brewer Way": BRONSON_BREWER_WAY,
     "Brewer Park": BREWER_PARK_DEST,
-    "SW evac (Meadowlands)": (45.3675, -75.7040),
+    "Hogs Back Plaza (SW dest.)": HOGS_BACK_PLAZA_DEST,
     "NE evac box": (45.3925, -75.6875),
 }
 EXIT_ORDER = list(EXIT_POINTS.keys()) + ["other"]

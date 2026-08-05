@@ -7,7 +7,7 @@ proposes the next candidate from latest-run feedback (stuck / last-clearing
 lots) aiming to beat best-so-far.
 
 Search knobs ONLY:
-  1. Destinations: each of P1-P7 -> Meadowlands (SW) or Brewer (NE)
+  1. Destinations: each of P1-P7 -> Hogs Back Plaza (SW) or Brewer (NE)
      Defaults: P1/P2 SW, P3/P4 NE; P5/P6/P7 free (all lots may flip).
   2. Start times: one-shot HH:MM,HH:MM,-1 windows from
      {06:01, 06:30, 07:00, 07:30, 08:00} - never interval=1; never exact 06:00.
@@ -57,7 +57,10 @@ BASE_CONFIG = ROOT / "configs" / "config_scenario_12.json"
 PROJECT = ROOT / "SOHCarletonDrivingBox.csproj"
 ANALYZE_SCRIPT = ROOT / "scripts" / "analyze_run.py"
 
-MEADOWLANDS = ("45.3675", "-75.7040")
+# Hogs Back Plaza (888 Meadowlands Dr E). Internal dest key "meadowlands" keeps
+# candidate codes (M/B) stable; clearance metrics still use campus exits.
+HOGS_BACK_PLAZA = ("45.367764", "-75.702286")
+MEADOWLANDS = HOGS_BACK_PLAZA  # alias
 BREWER = ("45.387983", "-75.690183")
 
 LOT_COUNTS = {"P1": 100, "P2": 100, "P3": 200, "P4": 100, "P5": 700, "P6": 900, "P7": 1100}
@@ -193,7 +196,7 @@ def seed_s01() -> Candidate:
 
 
 def seed_s10() -> Candidate:
-    """Scenario-10 style: P6 -> Meadowlands, others default, all early."""
+    """Scenario-10 style: P6 -> Hogs Back Plaza (SW), others default, all early."""
     dest = dict(DEFAULT_DEST)
     dest["P6"] = "meadowlands"
     return Candidate.from_maps(dest, {lot: "06:01" for lot in LOT_ORDER})
