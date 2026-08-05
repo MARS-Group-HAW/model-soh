@@ -1,0 +1,12 @@
+cwd=C:\Users\doria\Documents\model-soh\CarletonDrivingBox\results\scenario_06
++ dotnet run --no-build --verbosity quiet --project C:\Users\doria\Documents\model-soh\CarletonDrivingBox\SOHCarletonDrivingBox.csproj -- C:\Users\doria\Documents\model-soh\CarletonDrivingBox\results\scenario_06\_parallel_config.json
+[Carleton scheduler] Lot spawn pools loaded: 7 lots, 181 aisle nodes
+...
+Abort and shutdown running simulation
+Unhandled exception. System.ArgumentException: Not suitable type proxy found for entity type SOHCarletonDrivingBox.CarletonCarDriver
+   at Mars.Core.Data.SerializerManagerImpl.DeRegister(IEntity entity, TypeElement type)
+   at Mars.Core.Executor.Implementation.RuntimeModelImpl.DeleteRemovedTickClients()
+   at Mars.Core.Executor.Implementation.StepExecutionUseCase.ExecuteStep(StepParam param)
+   at Mars.Core.Simulation.Implementation.SimulationImpl.StartLoop()
+   at Mars.Core.Simulation.Implementation.SimulationImpl.StartSimulation()
+   at SOHCarletonDrivingBox.Program.Main(String[] args) in C:\Users\doria\Documents\model-soh\CarletonDrivingBox\Program.cs:line 67

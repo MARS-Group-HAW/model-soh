@@ -404,3 +404,6 @@ SOHTruckFuelAlternativeBox/resources/*.geojson
 /CarletonDrivingBox/resources/schedules/fb_candidates/
 /CarletonDrivingBox/configs/opt_candidates/
 /CarletonDrivingBox/resources/schedules/opt_candidates/
+
+# Allow Carleton scenario run logs (global *.log ignore above)
+!CarletonDrivingBox/results/scenario_*/run.log
