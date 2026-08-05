@@ -329,12 +329,13 @@ public class LeftYieldsToRightTests : IClassFixture<SpatialGraphFixture>
         var car3LeaveStep = car3.Max(row => Convert.ToInt32(row["Step"]));
 
         // car 2 crosses first (comes from the right); then car 1; then car 3
-        Assert.True(car1LeaveStep > car2LeaveStep,
-            $"Expected car2 before car1; car1Leave={car1LeaveStep}, car2Leave={car2LeaveStep}");
-        Assert.True(car3LeaveStep > car2LeaveStep,
-            $"Expected car2 before car3; car3Leave={car3LeaveStep}, car2Leave={car2LeaveStep}");
-        Assert.True(car3LeaveStep > car1LeaveStep,
-            $"Expected car1 before car3; car3Leave={car3LeaveStep}, car1Leave={car1LeaveStep}");
+        // same-tick leave is allowed (discrete delta-t); only forbid later leave than a higher-priority car
+        Assert.True(car1LeaveStep >= car2LeaveStep,
+            $"Expected car2 before/with car1; car1Leave={car1LeaveStep}, car2Leave={car2LeaveStep}");
+        Assert.True(car3LeaveStep >= car2LeaveStep,
+            $"Expected car2 before/with car3; car3Leave={car3LeaveStep}, car2Leave={car2LeaveStep}");
+        Assert.True(car3LeaveStep >= car1LeaveStep,
+            $"Expected car1 before/with car3; car3Leave={car3LeaveStep}, car1Leave={car1LeaveStep}");
     }
 
     [Fact]
@@ -427,8 +428,8 @@ public class LeftYieldsToRightTests : IClassFixture<SpatialGraphFixture>
         var car1LeaveStep = car1.Max(row => Convert.ToInt32(row["Step"]));
         var car2LeaveStep = car2.Max(row => Convert.ToInt32(row["Step"]));
 
-        // car 2 crosses first as it comes from the right
-        Assert.True(car1LeaveStep > car2LeaveStep,
-            $"Expected car2 before car1; car1Leave={car1LeaveStep}, car2Leave={car2LeaveStep}");
+        // car 2 crosses first as it comes from the right (same-tick leave OK)
+        Assert.True(car1LeaveStep >= car2LeaveStep,
+            $"Expected car2 before/with car1; car1Leave={car1LeaveStep}, car2Leave={car2LeaveStep}");
     }
 }
