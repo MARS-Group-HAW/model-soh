@@ -226,12 +226,17 @@ def normalize_scenario_id(scenario_id: str | None) -> str | None:
     return m.group(1).zfill(2) if m else s
 
 
-def scenario_chart_title(base: str, scenario_id: str | None) -> str:
-    """Append scenario tag so charts are identifiable, e.g. '… — scenario_01'."""
+def scenario_chart_title(
+    base: str,
+    scenario_id: str | None,
+    *,
+    framework: str = "MARS",
+) -> str:
+    """Title format: '{What it shows} — Scenario XX (MARS)'."""
     sid = normalize_scenario_id(scenario_id)
     if sid:
-        return f"{base} — scenario_{sid}"
-    return base
+        return f"{base} — Scenario {sid} ({framework})"
+    return f"{base} ({framework})"
 
 
 def campus_exit_points_for_scenario(
@@ -970,7 +975,7 @@ def plot_lot_completion_and_exits(
     plt.xticks(x, LOT_ORDER)
     plt.ylabel("Vehicles")
     plt.xlabel("Parking lot")
-    plt.title(scenario_chart_title("Per-lot completion (scheduled vs campus exits detected)", scenario_id))
+    plt.title(scenario_chart_title("Per-lot completion", scenario_id))
     plt.legend()
     for bars in (b1, b2):
         for bar in bars:
@@ -1004,7 +1009,7 @@ def plot_lot_completion_and_exits(
     plt.figure(figsize=(8, 4.5))
     bars = plt.bar([short.get(n, n) for n in labels], values, color="#8172b2")
     plt.ylabel("Campus exits")
-    plt.title(scenario_chart_title("Campus exit usage", scenario_id))
+    plt.title(scenario_chart_title("Exit usage", scenario_id))
     for bar, val in zip(bars, values):
         plt.text(
             bar.get_x() + bar.get_width() / 2,
@@ -1083,12 +1088,7 @@ def plot_trip_time_charts(
     plt.axvline(stats["median_trip_s"], color="#8172b2", linestyle="-", linewidth=1.5, label=f"Median {stats['median_trip_s']:.0f}s")
     plt.xlabel("Trip duration (s) — spawn to leave university")
     plt.ylabel("Trips")
-    plt.title(
-        scenario_chart_title(
-            "Travel-time distribution (to leave campus, not destination)",
-            scenario_id,
-        )
-    )
+    plt.title(scenario_chart_title("Travel-time distribution", scenario_id))
     plt.legend()
     plt.grid(True, axis="y", alpha=0.3)
     plt.tight_layout()
@@ -1101,12 +1101,7 @@ def plot_trip_time_charts(
     bars = plt.bar(lots, clearance, color="#dd8452")
     plt.ylabel("Last campus-exit time (s from t=0)")
     plt.xlabel("Parking lot")
-    plt.title(
-        scenario_chart_title(
-            "Lot fully left campus (last campus exit; blank if stuck remain)",
-            scenario_id,
-        )
-    )
+    plt.title(scenario_chart_title("Clearance by lot", scenario_id))
     for bar, val in zip(bars, clearance):
         if val:
             plt.text(
@@ -1462,7 +1457,7 @@ def write_outputs(
     plt.ylabel("Vehicles")
     summary_title = "Deployment vs campus exits"
     if remaining > 0:
-        summary_title = f"INCOMPLETE — {remaining} still on campus | {summary_title}"
+        summary_title = f"INCOMPLETE — {summary_title}"
     plt.title(scenario_chart_title(summary_title, scenario_id))
     if completed == 0:
         plt.text(2, max(int(expected), int(BASELINE_TARGET)) * 0.05, "0 — check trips geojson path", ha="center", fontsize=8)
@@ -1499,11 +1494,9 @@ def write_outputs(
 
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Cars left to evacuate")
-        curve_title = "Evacuation curve — cars that have not yet left campus"
+        curve_title = "Evacuation curve"
         if remaining > 0:
-            curve_title = (
-                f"INCOMPLETE — {remaining} still on campus at endPoint\n{curve_title}"
-            )
+            curve_title = "INCOMPLETE — Evacuation curve"
         ax.set_title(scenario_chart_title(curve_title, scenario_id))
         subtitle = (
             f"Start={start_n} (N0={n0})   End={end_n}   "
