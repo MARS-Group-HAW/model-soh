@@ -1,0 +1,141 @@
+{
+  "schema_version": 2,
+  "framework": "mars",
+  "scenario_id": "03",
+  "units": {
+    "time": "seconds",
+    "counts": "vehicles"
+  },
+  "metrics": {
+    "expected_deployed": 3200,
+    "baseline_target": 3200,
+    "completed_trips": 3200,
+    "campus_exits": 3200,
+    "geojson_features": 3200,
+    "remaining_on_campus": 0,
+    "campus_cleared": true,
+    "completed_unique_ids_csv": 38552,
+    "goal_reached_rows_csv": 140556,
+    "completion_rate_pct": 100.0,
+    "csv_tick_rows": 13193530,
+    "evac_end_s": 12561,
+    "peak_on_campus": 3200,
+    "mean_trip_s": 3678.73,
+    "median_trip_s": 2914.5,
+    "mean_exit_from_t0_s": 5764.73,
+    "median_exit_from_t0_s": 5660.0,
+    "mean_campus_exit_travel_s": 3678.73,
+    "median_campus_exit_travel_s": 2914.5,
+    "mean_campus_exit_from_t0_s": 5764.73,
+    "median_campus_exit_from_t0_s": 5660.0,
+    "mean_finish_travel_s": 4121.98,
+    "median_finish_travel_s": 3334.0,
+    "mean_finish_from_t0_s": 6207.98,
+    "median_finish_from_t0_s": 6137.0,
+    "n_trips_timed": 3200,
+    "warning": null
+  },
+  "lot_deploy_plan": {
+    "P1": {
+      "schedule_spawns": 100,
+      "baseline_target": 100
+    },
+    "P2": {
+      "schedule_spawns": 100,
+      "baseline_target": 100
+    },
+    "P3": {
+      "schedule_spawns": 200,
+      "baseline_target": 200
+    },
+    "P4": {
+      "schedule_spawns": 100,
+      "baseline_target": 100
+    },
+    "P5": {
+      "schedule_spawns": 700,
+      "baseline_target": 700
+    },
+    "P6": {
+      "schedule_spawns": 900,
+      "baseline_target": 900
+    },
+    "P7": {
+      "schedule_spawns": 1100,
+      "baseline_target": 1100
+    }
+  },
+  "clearance_by_lot_s": {
+    "P1": 476,
+    "P2": 670,
+    "P3": 4046,
+    "P4": 4348,
+    "P5": 3141,
+    "P6": 11236,
+    "P7": 12561
+  },
+  "completed_by_lot": {
+    "P1": {
+      "schedule_spawns": 100,
+      "completed_trips": 100,
+      "remaining_on_campus": 0
+    },
+    "P2": {
+      "schedule_spawns": 100,
+      "completed_trips": 100,
+      "remaining_on_campus": 0
+    },
+    "P3": {
+      "schedule_spawns": 200,
+      "completed_trips": 200,
+      "remaining_on_campus": 0
+    },
+    "P4": {
+      "schedule_spawns": 100,
+      "completed_trips": 100,
+      "remaining_on_campus": 0
+    },
+    "P5": {
+      "schedule_spawns": 700,
+      "completed_trips": 700,
+      "remaining_on_campus": 0
+    },
+    "P6": {
+      "schedule_spawns": 900,
+      "completed_trips": 900,
+      "remaining_on_campus": 0
+    },
+    "P7": {
+      "schedule_spawns": 1100,
+      "completed_trips": 1100,
+      "remaining_on_campus": 0
+    }
+  },
+  "exit_usage": {
+    "Colonel By": 200,
+    "Bronson Ave & University Dr": 2000,
+    "Stadium Way": 1000,
+    "Raven Rd emergency": 0,
+    "other": 0
+  },
+  "finish_exit_usage": {
+    "Colonel By": 0,
+    "Bronson Ave & University Dr": 0,
+    "Stadium Way": 0,
+    "Raven Rd emergency": 0,
+    "Bronson Ave & Brewer Way": 0,
+    "Brewer Park": 3000,
+    "Hogs Back Plaza (SW dest.)": 200,
+    "NE evac box": 0,
+    "other": 0
+  },
+  "artifacts": {
+    "summary_csv": "summary.csv",
+    "evac_curve_csv": "evac_curve.csv",
+    "clearance_by_lot_csv": "clearance_by_lot.csv",
+    "completion_by_lot_csv": "completion_by_lot.csv",
+    "exit_usage_csv": "exit_usage.csv",
+    "campus_exits_csv": "campus_exits.csv",
+    "metrics_json": "metrics.json"
+  }
+}

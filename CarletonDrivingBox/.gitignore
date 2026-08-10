@@ -15,15 +15,39 @@ __pycache__/
 *.user
 *.suo
 
-# Simulation outputs (regenerate locally)
-results/
+# Simulation outputs (regenerate locally).
+# Ignore results/* by default so `git add` never sucks in multi-GB trip CSVs / GeoJSON
+# or optimizer candidate dumps. Selectively un-ignore scenario_01-12 summary artifacts.
+results/*
+!results/scenario_0[1-9]/
+!results/scenario_1[0-2]/
+!results/scenario_0[1-9]/**
+!results/scenario_1[0-2]/**
+
+# Re-ignore heavy artifacts inside committed scenario folders
+results/scenario_*/**/*.geojson
+results/scenario_*/**/CarletonCarDriver.csv
+results/scenario_*/**/CarDriver.csv
+results/scenario_*/**/*_trips.geojson
+
 logs/
 *.log
+!results/scenario_*/run.log
 scheduler_spawn.log
-CarletonCarDriver.csv
-CarletonCarDriver_trips.geojson
-CarDriver.csv
-CarDriver_trips.geojson
+
+# Always ignore heavy agent dumps wherever they appear
+**/CarletonCarDriver.csv
+**/CarletonCarDriver_trips.geojson
+**/CarDriver.csv
+**/CarDriver_trips.geojson
 
 # Office junk
 *.docx
+
+# Bulk optimizer candidate dumps (also covered by results/* and root .gitignore).
+results/fb_candidates/
+results/opt_candidates/
+resources/schedules/fb_candidates/
+configs/fb_candidates/
+resources/schedules/opt_candidates/
+configs/opt_candidates/
