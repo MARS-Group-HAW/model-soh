@@ -7,72 +7,23 @@ CREATE OR REPLACE FUNCTION fix_mars_schema_columns()
 RETURNS event_trigger AS $$
 DECLARE
     obj record;
-    table_name text;
 BEGIN
     FOR obj IN SELECT * FROM pg_event_trigger_ddl_commands()
     LOOP
-        IF obj.object_type = 'table' AND obj.object_identity LIKE '%desiremarkettraveler%' THEN
-            table_name := obj.object_identity;
-            
-            -- ActiveCapability
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN activecapability TO "ActiveCapability"';
-            -- ActualTravelTime
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN actualtraveltime TO "ActualTravelTime"';
-            -- Bearing
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN bearing TO "Bearing"';
-            -- BrakingActivated
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN brakingactivated TO "BrakingActivated"';
-            -- CarRadiusToStartPosition
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN carradiustostartposition TO "CarRadiusToStartPosition"';
-            -- CurrentlyCarDriving
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN currentlycardriving TO "CurrentlyCarDriving"';
-            -- DistanceStartGoal
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN distancestartgoal TO "DistanceStartGoal"';
-            -- ExpectedTravelTime
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN expectedtraveltime TO "ExpectedTravelTime"';
-            -- Gender
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN gender TO "Gender"';
-            -- GoalX
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN goalx TO "GoalX"';
-            -- GoalY
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN goaly TO "GoalY"';
-            -- Mass
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN mass TO "Mass"';
-            -- PerceptionInMeter
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN perceptioninmeter TO "PerceptionInMeter"';
-            -- PreferredSpeed
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN preferredspeed TO "PreferredSpeed"';
-            -- RouteLength
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN routelength TO "RouteLength"';
-            -- RouteMainModalActualTravelTime
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN routemainmodalactualtraveltime TO "RouteMainModalActualTravelTime"';
-            -- RouteMainModality
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN routemainmodality TO "RouteMainModality"';
-            -- RouteMainModalRouteLength
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN routemainmodalroutelength TO "RouteMainModalRouteLength"';
-            -- RouteModalities
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN routemodalities TO "RouteModalities"';
-            -- RouteModalityCount
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN routemodalitycount TO "RouteModalityCount"';
-            -- StableId
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN stableid TO "StableId"';
-            -- StartX
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN startx TO "StartX"';
-            -- StartY
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN starty TO "StartY"';
-            -- StoreTickResult
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN storetickresult TO "StoreTickResult"';
-
-            -- We don't process purely lowercase properties 
-            -- (hunger, thirst, budget, bac, mood, exhaustion, bladder, leaveprobability, despawnonarrivehome, currentstate).
-        ELSIF obj.object_type = 'table' AND obj.object_identity LIKE '%marketanalyticsagent%' THEN
-            table_name := obj.object_identity;
-            
-            -- ActiveVisitors
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN activevisitors TO "ActiveVisitors"';
-            -- MarketStallsJson
-            EXECUTE 'ALTER TABLE ' || table_name || ' RENAME COLUMN marketstallsjson TO "MarketStallsJson"';
-            EXECUTE 'ALTER TABLE ' || table_name || ' ALTER COLUMN "MarketStallsJson" TYPE TEXT';
+        -- Leave output column names exactly as MARS creates them.
+        -- Only retain TEXT storage for the analytics JSON output.
+        IF obj.object_type = 'table'
+           AND obj.command_tag = 'CREATE TABLE'
+           AND EXISTS (
+               SELECT 1
+               FROM pg_catalog.pg_class AS c
+               WHERE c.oid = obj.objid
+                 AND c.relname = 'marketanalyticsagent'
+           ) THEN
+            EXECUTE format(
+                'ALTER TABLE %s ALTER COLUMN marketstallsjson TYPE text',
+                obj.object_identity
+            );
         END IF;
     END LOOP;
 END;
