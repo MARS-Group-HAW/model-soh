@@ -444,9 +444,24 @@ public abstract class MultiCapableAgent<TLayer> : MultimodalAgent<TLayer>,
         if (Bicycle == null) return false;
 
         Bicycle.BicycleParkingLot = null;
-        return EnvironmentLayer.Environment.Entities.ContainsKey(Bicycle) ||
-               EnvironmentLayer.Environment
-                   .Insert(Bicycle, EnvironmentLayer.Environment.NearestNode(MultimodalRoute.Start));
+
+        if (EnvironmentLayer.Environment.Entities.ContainsKey(Bicycle))
+            return true;
+
+        var route = MultimodalRoute?.CurrentRoute;
+
+        if (route == null || route.Stops.Count == 0)
+            throw new InvalidOperationException(
+                "Cannot insert bicycle because current cycling route is empty.");
+
+        var routeStartNode = route.Stops[0].Edge.From;
+
+        var inserted =
+            EnvironmentLayer.Environment.Insert(
+                Bicycle,
+                routeStartNode);
+
+        return inserted;
     }
 
     /// <summary>

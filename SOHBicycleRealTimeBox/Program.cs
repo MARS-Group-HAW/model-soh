@@ -62,6 +62,12 @@ internal static class Program
         watch.Stop();
 
         Console.WriteLine($"Executed iterations {state.Iterations} lasted {watch.Elapsed}");
+
         application.Dispose();
+
+        // Work around the MQTT input connection remaining alive after
+        // the simulation container has been disposed.
+        Environment.Exit(0);
+
     }
 }

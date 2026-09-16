@@ -31,8 +31,12 @@ public class CycleTraveler : Traveler<CycleTravelerLayer>
 
         if (HasBike)
         {
-            Bicycle = _cycleTravelerLayer.EntityManager.Create<RentalBicycle>("type", "city");
+            Bicycle = _cycleTravelerLayer.EntityManager
+                .Create<RentalBicycle>("type", "city");
+
+            Bicycle.Environment = EnvironmentLayer.Environment;
         }
+
     }
 
     protected override MultimodalRoute FindMultimodalRoute()
@@ -51,8 +55,27 @@ public class CycleTraveler : Traveler<CycleTravelerLayer>
         if (HasBike)
         {
             var street = EnvironmentLayer.Environment;
-            var route = street.FindShortestRoute(street.NearestNode(start), street.NearestNode(goal),
-                edge => edge.Modalities.Contains(SpatialModalityType.CarDriving));
+
+            var startNode = street.NearestNode(
+                start,
+                SpatialModalityType.Cycling);
+
+            var goalNode = street.NearestNode(
+                goal,
+                SpatialModalityType.Cycling);
+
+            var route = street.FindShortestRoute(
+                startNode,
+                goalNode,
+                edge => edge.Modalities.Contains(SpatialModalityType.Cycling) ||
+                        edge.Modalities.Contains(SpatialModalityType.CarDriving));
+
+            if (route == null)
+            {
+                throw new ArgumentException(
+                    $"Could not find own-bike route from {startNode.Position} to {goalNode.Position}");
+            }
+
             return new MultimodalRoute(route, ModalChoice.CyclingOwnBike);
         }
 

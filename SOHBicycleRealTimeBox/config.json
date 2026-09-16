@@ -50,14 +50,23 @@
       "name": "SpatialGraphMediatorLayer",
       "inputs": [
         {
+          "file": "resources/harburg_bike_graph.geojson",
+          "inputConfiguration": {
+            "modalities": [
+              "Cycling"
+            ],
+            "isBidirectedGraph": true
+          }
+        },
+        {
           "file": "resources/harburg_walk_graph.geojson",
           "inputConfiguration": {
             "modalities": [
-              "Cycling",
               "Walking"
-            ]
-          }
+            ],
+            "isBidirectedGraph": true
         }
+       }
       ]
     },
     {

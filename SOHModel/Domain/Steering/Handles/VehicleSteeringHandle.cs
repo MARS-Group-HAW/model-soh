@@ -537,9 +537,9 @@ public class VehicleSteeringHandle
         if (desiredLane >= 0) Route.First().DesiredLane = desiredLane;
 
         const int maxLanesAhead = 5;
-        var firstLaneInitRequired = desiredLane < 0 && Vehicle.LaneOnCurrentEdge == -1;
+        var firstLaneInitRequired = desiredLane < 0 && Vehicle.CurrentEdge == null;
         for (var i = firstLaneInitRequired ? 0 : 1;
-             i < maxLanesAhead && i < Route.Stops.Count - 1 && ((SpatialEdge)Route.Stops[i].Edge).LaneCount > 1;
+             i < maxLanesAhead && i < Route.Stops.Count - 1 && ((SpatialEdge)Route.Stops[i].Edge).LaneCount > 0;
              i++)
         {
             var currentStop = Route.Stops[i];
