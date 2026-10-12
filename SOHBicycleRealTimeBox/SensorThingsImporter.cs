@@ -14,7 +14,7 @@ namespace SOHBicycleRealTime;
 
 public static class SensorThingsImporter
 {
-    private const string Host = "http://iot.hamburg.de/v1.1";
+    private const string Host = "https://iot.hamburg.de/v1.1";
     private static SensorThingsClient _client;
     private static readonly GeoJsonReader Reader = new();
 
