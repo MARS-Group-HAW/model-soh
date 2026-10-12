@@ -1,0 +1,14 @@
+cwd=C:\Users\doria\Documents\model-soh\CarletonDrivingBox\results\scenario_04
++ dotnet run --no-build --verbosity quiet --project C:\Users\doria\Documents\model-soh\CarletonDrivingBox\SOHCarletonDrivingBox.csproj -- C:\Users\doria\Documents\model-soh\CarletonDrivingBox\results\scenario_04\_parallel_config.json
+[Carleton scheduler] Lot spawn pools loaded: 7 lots, 181 aisle nodes
+...
+Abort and shutdown running simulation
+Unhandled exception. System.ObjectDisposedException: Cannot access a closed Stream.
+   at System.IO.StreamWriter.Flush(Boolean flushStream, Boolean flushEncoder)
+   at System.IO.StreamWriter.WriteLine(String value)
+   at Mars.Core.Data.Wrapper.File.CsvWrapper.WriteResults(IGeneratedTypeLogger typeLogger, IEnumerable`1 typeGroup)
+   at Mars.Core.Data.DatabaseMediatorImpl.WriteResults(Int64 tick)
+   at Mars.Core.Executor.Implementation.StepExecutionUseCase.ExecuteStep(StepParam param)
+   at Mars.Core.Simulation.Implementation.SimulationImpl.StartLoop()
+   at Mars.Core.Simulation.Implementation.SimulationImpl.StartSimulation()
+   at SOHCarletonDrivingBox.Program.Main(String[] args) in C:\Users\doria\Documents\model-soh\CarletonDrivingBox\Program.cs:line 67

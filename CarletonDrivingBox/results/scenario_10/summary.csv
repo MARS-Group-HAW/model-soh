@@ -1,0 +1,2 @@
+scenario_id,expected_deployed,baseline_target,completed_trips_campus_exits,geojson_features,remaining_on_campus,completed_unique_ids_csv,goal_reached_rows_csv,completion_rate_pct,csv_tick_rows,evac_end_s,peak_on_campus,mean_campus_exit_travel_s,median_campus_exit_travel_s,mean_campus_exit_from_t0_s,median_campus_exit_from_t0_s,mean_finish_travel_s,median_finish_travel_s,mean_finish_from_t0_s,median_finish_from_t0_s
+10,3200,3200,3200,3200,0,37633,139450,100.0,12458133,8689,3200,3323.67,2864.0,3384.67,2925.0,3892.17,3573.5,3953.17,3634.5

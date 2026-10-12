@@ -1,0 +1,8 @@
+file,agent_id,lot,exit_ok,exit_dist_m,spawn_dist_m,path_m,chord_m,path_chord_ratio,n_points
+P6_to_exit.png,823af395-9dbb-4d4d-ae65-1c1310584b29,P6,True,18.9,132.0,3058.5,2506.3,1.22,3991
+P7_to_exit.png,dfe25e00-85cb-4009-96ae-ccd5d8d665b7,P7,True,0.0,99.5,1290.0,690.0,1.87,8261
+P5_to_exit.png,44dda7b5-6691-412b-abb9-22643e26cce0,P5,True,0.0,72.7,562.0,337.2,1.667,2139
+P1_to_exit.png,da9658a8-961d-4d6c-b74d-38f967f63f53,P1,True,18.9,28.4,1896.4,1442.1,1.315,545
+P3_to_exit.png,1739cee5-52a3-4cfa-8d73-81b168848592,P3,True,0.0,18.3,1357.1,383.9,3.535,3432
+P2_to_exit.png,8cec5af0-f023-4f5d-b288-9ff325392301,P2,True,18.9,47.1,2331.6,1786.7,1.305,818
+P4_to_exit.png,c05a5b3a-1fb2-4d31-8c3e-fe5563b2bd7f,P4,True,0.0,41.4,961.9,553.4,1.738,4249

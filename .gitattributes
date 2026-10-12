@@ -1,0 +1,2 @@
+CarletonDrivingBox/results/**/CarletonCarDriver_trips.geojson filter=lfs diff=lfs merge=lfs -text
+CarletonDrivingBox/results/fb_candidates/fb_MBBBMMB_0030201/CarletonCarDriver.csv filter=lfs diff=lfs merge=lfs -text

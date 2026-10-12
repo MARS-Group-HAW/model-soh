@@ -1,0 +1,5 @@
+cwd=C:\Users\doria\Documents\model-soh\CarletonDrivingBox\results\scenario_10
++ dotnet run --no-build --verbosity quiet --project C:\Users\doria\Documents\model-soh\CarletonDrivingBox\SOHCarletonDrivingBox.csproj -- C:\Users\doria\Documents\model-soh\CarletonDrivingBox\results\scenario_10\_parallel_config.json
+[Carleton scheduler] Lot spawn pools loaded: 7 lots, 181 aisle nodes
+...
+Abort and shutdown running simulation

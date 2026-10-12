@@ -397,3 +397,13 @@ SOHTruckFuelAlternativeBox/resources/*.geojson
 # Route cache databases (local cache, not committed)
 **/route_cache.db
 /CarletonWalkingBox
+# Bulk optimizer candidate dumps (local-only; regenerate with optimizer scripts).
+/CarletonDrivingBox/results/fb_candidates/
+/CarletonDrivingBox/results/opt_candidates/
+/CarletonDrivingBox/configs/fb_candidates/
+/CarletonDrivingBox/resources/schedules/fb_candidates/
+/CarletonDrivingBox/configs/opt_candidates/
+/CarletonDrivingBox/resources/schedules/opt_candidates/
+
+# Allow Carleton scenario run logs (global *.log ignore above)
+!CarletonDrivingBox/results/scenario_*/run.log

@@ -1,0 +1,29 @@
+road,peak_cars_in_sample,length_m,peak_cars_per_100m
+Library Rd & P1 to Library Rd & University Dr,69,204.28,33.777
+Library Rd & P1 to Campus Ave & Library Rd,0,699.85,0.0
+Library Rd & University Dr to Library Rd & P1,0,204.28,0.0
+Campus Ave & Library Rd to Library Rd & P1,0,699.85,0.0
+Campus Ave & Library Rd to Campus Ave & P2,0,179.53,0.0
+Campus Ave & P2 to Campus Ave & University Dr,0,166.12,0.0
+Campus Ave & University Dr to Library Rd & University Dr,86,516.86,16.639
+Library Rd & University Dr to Campus Ave & University Dr,0,516.86,0.0
+Campus Ave & University Dr to Raven Rd & University Dr,0,310.06,0.0
+Raven Rd & University Dr to Campus Ave & University Dr,0,310.06,0.0
+Raven Rd & University Dr to P3 & Raven Rd,86,185.44,46.377
+P3 & Raven Rd to Raven Rd & University Dr,0,185.44,0.0
+P3 & Raven Rd to Bronson Ave & Raven Rd,0,132.91,0.0
+Library Rd & University Dr to Colonel By Dr & University Dr,31,34.36,90.225
+Raven Rd & University Dr to P4 & University Dr,57,202.6,28.134
+P4 & University Dr to Raven Rd & University Dr,0,202.6,0.0
+P4 & University Dr to Stadium Way & University Dr,42,218.69,19.205
+Stadium Way & University Dr to P4 & University Dr,0,218.69,0.0
+Stadium Way & University Dr to P5 & Stadium Way,9,58.64,15.348
+P5 & Stadium Way to Stadium Way & University Dr,0,58.64,0.0
+P5 & Stadium Way to Bronson Ave & Stadium Way,331,189.63,174.548
+Stadium Way & University Dr to Roundabout,0,152.94,0.0
+Roundabout to Stadium Way & University Dr,0,151.1,0.0
+Roundabout to Bronson Ave & University Dr,61,141.29,43.173
+Roundabout to Campus Ave & P6,69,92.22,74.818
+Campus Ave & P6 to Roundabout,0,92.22,0.0
+Campus Ave & P6 to Campus Ave & Library Rd,55,347.2,15.841
+Raven Rd & University Dr to Bronson Ave & Raven Rd,0,285.0,0.0

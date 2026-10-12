@@ -26,8 +26,9 @@ VALID_SCENARIOS = tuple(f"{i:02d}" for i in range(1, 13))
 
 COLONEL_BY = (45.3792575, -75.7004525)
 BRONSON = (45.3896198, -75.694494)
-# Scenario 01 off-campus SW box (P1/P2). Legacy NE box kept for old-run labels.
-SW_EVAC_BOX = (45.3675, -75.7040)   # Meadowlands / SW — P1/P2 (s01); P1/P2/P6 (s10/s12); + half P7 (s11/s12)
+# Off-campus SW sink (P1/P2; also P6 / half P7 in s10–s12). Not a campus leave gate.
+HOGS_BACK_PLAZA = (45.367764, -75.702286)  # 888 Meadowlands Dr E / Hogs Back Plaza
+SW_EVAC_BOX = HOGS_BACK_PLAZA
 NE_EVAC_BOX = (45.3925, -75.6875)   # legacy NE box (pre–Brewer Park)
 # NE exit for P3–P7 (s10/s12: P3–P5 + half P7; s11: P3/P4/P6 + half P7): Brewer Park east of Bronson.
 BREWER_PARK = (45.387983, -75.690183)
@@ -36,8 +37,8 @@ BRONSON_RAVEN = (45.3846, -75.6922)
 EXIT_TOL_M = 120.0
 
 LOTS_BASE = {
-    "P1": {"spawn": (45.3813098, -75.7006879), "exit": COLONEL_BY, "color": "#e41a1c"},
-    "P2": {"spawn": (45.3836355, -75.6962699), "exit": COLONEL_BY, "color": "#377eb8"},
+    "P1": {"spawn": (45.3813098, -75.7006879), "exit": HOGS_BACK_PLAZA, "color": "#e41a1c"},
+    "P2": {"spawn": (45.3836355, -75.6962699), "exit": HOGS_BACK_PLAZA, "color": "#377eb8"},
     "P3": {"spawn": (45.384003, -75.694052), "exit": BREWER_PARK, "color": "#4daf4a"},
     "P4": {"spawn": (45.3857, -75.6950), "exit": BREWER_PARK, "color": "#984ea3"},
     "P5": {"spawn": (45.3876035, -75.6950176), "exit": BREWER_PARK, "color": "#ff7f00"},
@@ -72,32 +73,28 @@ def normalize_scenario(value: str) -> str:
 
 
 def lots_for_scenario(scenario_id: str) -> dict:
-    """Expected finish markers: P3–P7 → Brewer Park; s10/s12 P6 → SW; s11 P5+half P7 → SW; s12 half P7 → SW."""
+    """Expected finish markers: P1/P2 → Hogs Back Plaza; P3–P7 → Brewer (scenario variants below)."""
     lots = {k: dict(v) for k, v in LOTS_BASE.items()}
     for lot in ("P3", "P4", "P5", "P6", "P7"):
         lots[lot]["exit"] = BREWER_PARK
-    if scenario_id == "01":
-        for lot in ("P1", "P2"):
-            lots[lot]["exit"] = SW_EVAC_BOX
-    else:
-        for lot in ("P1", "P2"):
-            lots[lot]["exit"] = COLONEL_BY
+    for lot in ("P1", "P2"):
+        lots[lot]["exit"] = HOGS_BACK_PLAZA
     if scenario_id in ("10", "12"):
-        # Match scenario_10/12: P1/P2/P6 → Meadowlands.
+        # Match scenario_10/12: P1/P2/P6 → Hogs Back Plaza (SW).
         for lot in ("P1", "P2", "P6"):
-            lots[lot]["exit"] = SW_EVAC_BOX
+            lots[lot]["exit"] = HOGS_BACK_PLAZA
     if scenario_id == "11":
-        # P1/P2/P5 → Meadowlands; P3/P4/P6 → Brewer; P7 split Brewer|Meadowlands.
+        # P1/P2/P5 → Hogs Back Plaza; P3/P4/P6 → Brewer; P7 split Brewer|Hogs Back.
         for lot in ("P1", "P2", "P5"):
-            lots[lot]["exit"] = SW_EVAC_BOX
+            lots[lot]["exit"] = HOGS_BACK_PLAZA
         for lot in ("P3", "P4", "P6"):
             lots[lot]["exit"] = BREWER_PARK
         lots["P7"]["exit"] = BREWER_PARK
-        lots["P7"]["alt_exit"] = SW_EVAC_BOX
+        lots["P7"]["alt_exit"] = HOGS_BACK_PLAZA
     if scenario_id == "12":
-        # Same destinations as s10, plus P7 split 550 Brewer / 550 Meadowlands.
+        # Same destinations as s10, plus P7 split 550 Brewer / 550 Hogs Back Plaza.
         lots["P7"]["exit"] = BREWER_PARK
-        lots["P7"]["alt_exit"] = SW_EVAC_BOX
+        lots["P7"]["alt_exit"] = HOGS_BACK_PLAZA
     return lots
 
 
