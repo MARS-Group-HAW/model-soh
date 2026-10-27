@@ -79,7 +79,9 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             if (_goingToStop && HasArrivedAtStop(steeringHandle))
             {
                 var pauseDuration = GetPauseDuration(layer, truck);
-                Console.WriteLine($"[{GetStopType()}] Arrived at stop. Starting pause ({pauseDuration.TotalMinutes:F0} min).");
+                Console.WriteLine(pauseDuration > TimeSpan.Zero
+                    ? $"[{GetStopType()}] Arrived at stop. Starting pause ({pauseDuration.TotalMinutes:F0} min)."
+                    : $"[{GetStopType()}] Arrived at stop. Starting pause (duration depends on the process).");
                 PostgresDbLogger.Instance.Log(new RestEntity(driver.ID,
                     layer.Context.CurrentTick,
                     GetStopType(),
@@ -95,30 +97,45 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                 return true;
             }
 
-            // Truck is currently pausing - check if pause is completed
-            if (_isPausing && IsPauseCompleted(layer, truck))
+            // Truck is currently pausing - let the subclass progress its process, then check if it is completed
+            if (_isPausing)
             {
-                Console.WriteLine($"[{GetStopType()}] Pause completed. Resuming route.");
-                PostgresDbLogger.Instance.Log(new RestEntity(driver.ID,
-                    layer.Context.CurrentTick,
-                    GetStopType(),
-                    RestEventType.End,
-                    driver.Position.Latitude,
-                    driver.Position.Longitude, 
-                    driver.FuelCarrierAmount
-                    )
-                );
+                OnPauseTick(layer, truck, fuelTracker, driver);
 
-                OnPauseCompleted(layer, truck, fuelTracker, driver);
+                if (IsPauseCompleted(layer, truck))
+                {
+                    Console.WriteLine($"[{GetStopType()}] Pause completed. Resuming route.");
+                    OnPauseCompleted(layer, truck, fuelTracker, driver);
 
-                _planned = false;
-                _targetNode = null;
-                _isPausing = false;
-                return false;
+                    // logged after OnPauseCompleted so that the event carries the final fuel level
+                    PostgresDbLogger.Instance.Log(new RestEntity(driver.ID,
+                        layer.Context.CurrentTick,
+                        GetStopType(),
+                        RestEventType.End,
+                        driver.Position.Latitude,
+                        driver.Position.Longitude,
+                        driver.FuelCarrierAmount
+                        )
+                    );
+
+                    _planned = false;
+                    _targetNode = null;
+                    _isPausing = false;
+                    return false;
+                }
             }
 
             // Truck is still pausing
             return _isPausing;
+        }
+
+        /// <summary>
+        /// Hook called on every tick while the truck is pausing, before <see cref="IsPauseCompleted"/> is evaluated.
+        /// </summary>
+        protected virtual void OnPauseTick(SemiTruckLayer layer, SemiTruck truck,
+            FuelConsumptionTracker fuelTracker, SemiTruckDriver driver)
+        {
+            // Default: nothing happens while pausing
         }
 
         /// <summary>

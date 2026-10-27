@@ -85,7 +85,8 @@ type,maxAcceleration,maxDeceleration,maxSpeed,length,height,width,trafficCode,
 | `maxFuelCarrierAmount`    | Tank/battery capacity in the native unit (L / kWh / kg)             |
 | `tank2wheel`              | Drivetrain efficiency (0–1); diesel ≈ 0.35, BEV ≈ 0.85, FCEV ≈ 0.50 |
 | `fuelConsumptionPer100km` | Nominal consumption per 100 km in the native unit (linear baseline) |
-| `refuelTimeInMinutes`     | Stop duration at a refuel/recharge station (full-tank model)        |
+| `refuelTimeInMinutes`     | **Legacy, unused.** The refuel duration now emerges from the charging power |
+| `maxChargePowerKw`        | Optional vehicle charge/fill power limit; `<= 0` uses the carrier default |
 | `FuelStrategy`            | `Linear` or `RoadLoad`                                              |
 
 ### Example truck types (from `resources/semi_truck.csv`)
@@ -97,9 +98,21 @@ type,maxAcceleration,maxDeceleration,maxSpeed,length,height,width,trafficCode,
 | SmallElectricTruck   | Battery    | 150 kWh     | 0.85  | 70 kWh      | 45 min | RoadLoad |
 | SmallHydrogenTruck   | Hydrogen   | 10 kg       | 0.50  | 3.25 kg     | 10 min | RoadLoad |
 
-> **Note:** `refuelTimeInMinutes` models the full stop as a fixed pause. In reality, charging/refueling rates differ
-> significantly between technologies. A BEV takes ~45 min for a fast DC charge; a hydrogen truck ~10 min;
-> a diesel truck ~5 min.
+### Refuel / charging model
+
+Refueling is a process, not a fixed pause: every tick `ChargingProfile` transfers energy at
+`min(station power, vehicle power) × taper(SoC)` until the tank is full, and `fuel_consumption` is logged each tick
+(negative `consumedAmount` = energy added). Battery power is constant up to 80 % SoC and then tapers linearly to 10 %
+of the maximum at 100 % (CC-CV approximation); fuel and hydrogen do not taper. Charging losses are not modelled.
+
+| Carrier  | Default station power | Default vehicle power |
+|----------|-----------------------|-----------------------|
+| Battery  | 400 kW                | 350 kW                |
+| Fuel     | 30 000 kW (~3 L/s)    | 30 000 kW             |
+| Hydrogen | 6 000 kW (~0.05 kg/s) | 6 000 kW              |
+
+Station power is currently the carrier default (`RefuelState.StationPowerKw` is the hook for per-station values, as
+`refuel_stations.csv` has no power column yet).
 
 ___
 
@@ -220,8 +233,7 @@ ___
 - **Range estimation with RoadLoad** uses the linear `fuelConsumptionPer100km` as a fallback for routing decisions.
   A more accurate horizon-based or steady-state prediction would improve refueling stop placement (see
   `RoadLoadFuelConsumptionStrategy.cs`).
-- **Refueling is modeled as a fixed-duration full stop** (not a rate). A future improvement would model charging as
-  `energyAmountPerMinute` to allow partial charges and variable stop lengths.
+- **Charging** has no losses, no station queueing and always fills to 100 %. Station power is not yet read from data.
 - **Rolling resistance** is currently a constant (`Crr = 0.006`). In reality it depends on speed and load --
   see the referenced paper in `RoadUser.cs`.
 - **Drag coefficient** defaults to `0.6` for all trucks. Per-type values would improve accuracy.

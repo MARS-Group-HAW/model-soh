@@ -66,6 +66,24 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                 }
             }
             
+            LogState(truck, consumedAmount);
+
+            _lastRemainingDistanceToGoal = currentRemainingDistance;
+        }
+
+        /// <summary>
+        /// Adds energy to the tank during a refuel/recharge stop and logs the new state.
+        /// The logged consumed amount is negative (energy added).
+        /// </summary>
+        public void Charge(SemiTruck truck, double amountAdded)
+        {
+            FuelCarrierAmount += amountAdded;
+            if (FuelCarrierAmount > truck.MaxFuelCarrierAmount - 1e-9) FuelCarrierAmount = truck.MaxFuelCarrierAmount;
+            LogState(truck, -amountAdded);
+        }
+
+        private void LogState(SemiTruck truck, double consumedAmount)
+        {
             PostgresDbLogger.Instance?.Log(new FuelConsumptionEntity(
                 truck.ID,
                 truck.Layer?.GetCurrentTick() ?? -1,
@@ -80,8 +98,6 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                 FuelCarrierEnergyConverter.ToJoules(consumedAmount, truck.FuelCarrierType)
                 )
             );
-
-            _lastRemainingDistanceToGoal = currentRemainingDistance;
         }
 
         /// <summary>

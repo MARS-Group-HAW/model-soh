@@ -13,14 +13,18 @@ namespace SOHModel.SemiTruck.Model.Driver.State
     /// </summary>
     public class RefuelState : StopState
     {
-        private DateTime _refuelStartTime = DateTime.MinValue;
+        private bool _targetReached;
+
+        /// <summary>
+        /// Power in kW-equivalent of the station the truck is currently heading to / standing at.
+        /// <c>null</c> uses the default station power of the truck's fuel carrier type.
+        /// </summary>
+        public double? StationPowerKw { get; set; }
 
         protected override RestStateType GetStopType() => RestStateType.Refuel;
 
-        protected override TimeSpan GetPauseDuration(SemiTruckLayer layer, SemiTruck truck)
-        {
-            return TimeSpan.FromMinutes(truck.RefuelTimeInMinutes);
-        }
+        // The duration emerges from the charging process, there is no fixed pause time.
+        protected override TimeSpan GetPauseDuration(SemiTruckLayer layer, SemiTruck truck) => TimeSpan.Zero;
 
         protected override string[] GetSearchTags() => new[] { "services", "fuel", "charging_station" };
 
@@ -50,17 +54,26 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         protected override void OnPauseCompleted(SemiTruckLayer layer, SemiTruck truck,
             FuelConsumptionTracker fuelTracker, SemiTruckDriver driver)
         {
-            fuelTracker.FuelCarrierAmount = truck.MaxFuelCarrierAmount; // Reset to full
+            _targetReached = false;
         }
 
         protected override void OnArrival(SemiTruckLayer layer)
         {
-            _refuelStartTime = layer._simulationTime;
+            _targetReached = false;
         }
 
-        protected override bool IsPauseCompleted(SemiTruckLayer layer, SemiTruck truck)
+        /// <summary>
+        /// Transfers energy for one tick (power-limited, tapering for batteries) and logs the new fuel level.
+        /// </summary>
+        protected override void OnPauseTick(SemiTruckLayer layer, SemiTruck truck,
+            FuelConsumptionTracker fuelTracker, SemiTruckDriver driver)
         {
-            return layer._simulationTime >= _refuelStartTime + GetPauseDuration(layer, truck);
+            double added = ChargingProfile.AmountAdded(truck, fuelTracker.FuelCarrierAmount,
+                layer._tickDuration.TotalSeconds, StationPowerKw);
+            fuelTracker.Charge(truck, added);
+            _targetReached = fuelTracker.FuelCarrierAmount >= truck.MaxFuelCarrierAmount;
         }
+
+        protected override bool IsPauseCompleted(SemiTruckLayer layer, SemiTruck truck) => _targetReached;
     }
 }

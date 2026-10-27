@@ -1,6 +1,7 @@
 using Xunit;
 using SOHModel.Domain.Model;
 using SOHModel.SemiTruck.Model;
+using SOHModel.SemiTruck.Model.Driver.Utils;
 
 namespace SOHTests
 {
@@ -53,6 +54,57 @@ namespace SOHTests
             double expectedJoules = force * 22.22 / 0.35;
             double expected = FuelCarrierEnergyConverter.FromJoules(expectedJoules, FuelCarrierType.Fuel);
             Assert.Equal(expected, consumedFuelAmount, 6);
+        }
+
+        [Fact]
+        public void TestChargingPowerIsLimitedByWeakerSideAndTapers()
+        {
+            var truck = new SemiTruck { FuelCarrierType = FuelCarrierType.Battery, MaxChargePowerKw = 1000 };
+
+            // station (400 kW default) is the bottleneck below the taper start
+            Assert.Equal(400, ChargingProfile.PowerKw(truck, 0.5), 6);
+
+            // vehicle is the bottleneck
+            truck.MaxChargePowerKw = 150;
+            Assert.Equal(150, ChargingProfile.PowerKw(truck, 0.5), 6);
+            Assert.Equal(150, ChargingProfile.PowerKw(truck, 0.8), 6);
+
+            // linear taper from 80 % to 10 % of the power at 100 %
+            Assert.Equal(150 * 0.55, ChargingProfile.PowerKw(truck, 0.9), 6);
+            Assert.Equal(15, ChargingProfile.PowerKw(truck, 1.0), 6);
+
+            // explicit station power
+            Assert.Equal(100, ChargingProfile.PowerKw(truck, 0.5, 100), 6);
+
+            // liquid fuel does not taper
+            var diesel = new SemiTruck { FuelCarrierType = FuelCarrierType.Fuel };
+            Assert.Equal(30_000, ChargingProfile.PowerKw(diesel, 0.99), 6);
+        }
+
+        [Fact]
+        public void TestBatteryChargesGraduallyToFull()
+        {
+            var truck = new SemiTruck { FuelCarrierType = FuelCarrierType.Battery, MaxFuelCarrierAmount = 150 };
+            double amount = 50; // 33 %
+            int seconds = 0;
+            double previousAdded = double.MaxValue;
+            bool taperSeen = false;
+
+            while (amount < truck.MaxFuelCarrierAmount && seconds < 10_000)
+            {
+                double added = ChargingProfile.AmountAdded(truck, amount, 1.0);
+                Assert.True(added > 0);
+                if (added < previousAdded - 1e-12) taperSeen = true;
+                Assert.True(added <= previousAdded + 1e-12); // power never increases while charging
+                previousAdded = added;
+                amount += added;
+                seconds++;
+            }
+
+            Assert.True(taperSeen);
+            Assert.Equal(150, amount, 6);
+            // 70 kWh at 350 kW (12 min) + 30 kWh tapering from 350 to 35 kW (analytically 13.2 min)
+            Assert.InRange(seconds / 60.0, 24.5, 26);
         }
     }
 }

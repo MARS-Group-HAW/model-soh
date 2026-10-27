@@ -143,11 +143,19 @@ public abstract class RoadUser : ISpatialGraphEntity
 
     /// <summary>
     /// The time it takes to refuel/recharge the vehicle in minutes.
-    /// Note: During a refuel pause, after this time elapses, the tank is reset to its maximum.
-    /// In the future, refueling could be implemented as a rate, like <c>refuelEnergyAmountPerMinute</c>, and set target refuel tank levels.
+    /// Legacy: trucks now refuel gradually at a power-limited rate (see <c>maxChargePowerKw</c>), so the duration emerges
+    /// from the energy to transfer and this value is no longer used by the SemiTruck refuel logic.
     /// </summary>
     [PropertyDescription(Name = "refuelTimeInMinutes", Ignore = true)]
     public double RefuelTimeInMinutes { get; set; } = 5;
+
+    /// <summary>
+    /// Maximum power in kW (kW-equivalent for liquid fuel/hydrogen) the vehicle accepts while refueling/recharging.
+    /// A value &lt;= 0 selects the default of the fuel carrier type (see <c>ChargingProfile</c>).
+    /// The effective power is the minimum of this value and the station power.
+    /// </summary>
+    [PropertyDescription(Name = "maxChargePowerKw", Ignore = true)]
+    public double MaxChargePowerKw { get; set; }
 
     
     
