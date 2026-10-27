@@ -167,7 +167,8 @@ namespace SOHModel.SemiTruck.Model.Driver.Services
                 .ToList()
                 .FindIndex(stop => stop.Edge.From == insertFromNode);
 
-            if (insertIndex == -1)
+            // index 0 would put the detour behind the truck (its current edge is the first one of the route)
+            if (insertIndex < 1)
             {
                 Console.WriteLine("Could not find valid insertion point for detour.");
                 onFailure();
@@ -224,6 +225,8 @@ namespace SOHModel.SemiTruck.Model.Driver.Services
                  i++)
                 newRoute.Add(steeringHandle.Route.Stops[i].Edge, steeringHandle.Route.Stops[i].DesiredLane);
 
+            // Route.Add accounts for the whole current edge, although the truck already travelled part of it.
+            RouteDistanceHelper.Discount(newRoute, _truck.PositionOnCurrentEdge);
             steeringHandle.Route = newRoute;
 
             if (_layer.notifyTrucks)
@@ -232,6 +235,37 @@ namespace SOHModel.SemiTruck.Model.Driver.Services
             Console.WriteLine($"Truck diverts to stop ({stopType}) at ({targetLat}, {targetLon}) and continues.");
 
             onSuccess(destinationNode);
+        }
+    }
+
+    /// <summary>
+    /// Corrects <see cref="Route.RemainingRouteDistanceToGoal"/> for routes that are replaced while the truck is
+    /// already part-way along its current edge (detours to rest/refuel stops).
+    /// </summary>
+    /// <remarks>
+    /// MARS offers no public API for this: <see cref="Route"/> is sealed, <c>Add</c>/<c>InsertFirst</c> only count whole
+    /// edges, and the setter of <c>RemainingRouteDistanceToGoal</c> is internal (only <c>SpatialGraphEnvironment.Move</c>
+    /// decrements it). A rebuilt route therefore overstates the remaining distance by the distance already travelled on
+    /// the first edge. Left uncorrected, <c>GoalReached</c> is never true (the truck stalls on its last edge) and the
+    /// end-of-route braking is wrong.
+    /// The route cannot simply start at the next node either: <c>SpatialGraphEnvironment.Move</c> re-inserts the entity
+    /// at <c>route[0].Edge.From</c> if that edge is not its current one, which teleports the truck.
+    /// The internal setter is therefore called via reflection. Depends on MARS internals; if a MARS update renames or
+    /// removes the setter, the static initializer fails at startup and the regression test
+    /// (<c>RouteDistanceHelperTests</c>) fails.
+    /// </remarks>
+    internal static class RouteDistanceHelper
+    {
+        private static readonly System.Reflection.MethodInfo RemainingDistanceSetter =
+            typeof(Route).GetProperty(nameof(Route.RemainingRouteDistanceToGoal))?.GetSetMethod(true)
+            ?? throw new InvalidOperationException(
+                "MARS Route.RemainingRouteDistanceToGoal setter not found - see RouteDistanceHelper remarks.");
+
+        /// <summary>Reduces the remaining route distance by <paramref name="distance"/> metres (not below 0).</summary>
+        public static void Discount(Route route, double distance)
+        {
+            RemainingDistanceSetter.Invoke(route,
+                new object[] { Math.Max(route.RemainingRouteDistanceToGoal - distance, 0.0) });
         }
     }
 

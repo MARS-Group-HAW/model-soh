@@ -63,9 +63,16 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         /// </summary>
         protected virtual bool HasArrivedAtStop(SemiTruckSteeringHandle steeringHandle)
         {
-            return steeringHandle.Position != null &&
-                   _targetNode != null &&
-                   GeometryHelper.IsOnNode(steeringHandle.Position, _targetNode);
+            if (steeringHandle.Position == null || _targetNode == null)
+                return false;
+
+            if (GeometryHelper.IsOnNode(steeringHandle.Position, _targetNode))
+                return true;
+
+            // At highway speed the truck moves much further than the node tolerance per tick and can skip over the
+            // stop node. Having entered the edge that leaves the stop node (the return leg) means it was reached.
+            return steeringHandle.Route.Count > 0 &&
+                   GeometryHelper.IsOnNode(_targetNode.Position, steeringHandle.Route[0].Edge.From);
         }
 
         /// <summary>
@@ -82,7 +89,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                 Console.WriteLine(pauseDuration > TimeSpan.Zero
                     ? $"[{GetStopType()}] Arrived at stop. Starting pause ({pauseDuration.TotalMinutes:F0} min)."
                     : $"[{GetStopType()}] Arrived at stop. Starting pause (duration depends on the process).");
-                PostgresDbLogger.Instance.Log(new RestEntity(driver.ID,
+                PostgresDbLogger.Instance.Log(new RestEntity(truck.ID,
                     layer.Context.CurrentTick,
                     GetStopType(),
                     RestEventType.Start,
@@ -108,7 +115,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                     OnPauseCompleted(layer, truck, fuelTracker, driver);
 
                     // logged after OnPauseCompleted so that the event carries the final fuel level
-                    PostgresDbLogger.Instance.Log(new RestEntity(driver.ID,
+                    PostgresDbLogger.Instance.Log(new RestEntity(truck.ID,
                         layer.Context.CurrentTick,
                         GetStopType(),
                         RestEventType.End,
@@ -187,14 +194,18 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             var searchTags = GetSearchTags();
 
             // Search along the route for a facility
-            foreach (var routeStep in steeringHandle.Route)
+            // Only look ahead: skip passed edges, and for the edge the truck is on only consider its end node,
+            // otherwise the detour would be inserted behind the truck.
+            bool isCurrentEdge = true;
+            foreach (var routeStep in steeringHandle.Route.Stops.Skip(steeringHandle.Route.PassedStops))
             {
                 var edge = routeStep.Edge;
                 accumulatedDistance += edge.Length;
                 if (accumulatedDistance > searchRadius)
                     break;
 
-                var nodesToCheck = new[] { edge.From, edge.To };
+                var nodesToCheck = isCurrentEdge ? new[] { edge.To } : new[] { edge.From, edge.To };
+                isCurrentEdge = false;
 
                 foreach (ISpatialNode node in nodesToCheck)
                 {

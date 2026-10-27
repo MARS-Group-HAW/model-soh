@@ -1,6 +1,9 @@
+using Mars.Interfaces.Environments;
+using Moq;
 using Xunit;
 using SOHModel.Domain.Model;
 using SOHModel.SemiTruck.Model;
+using SOHModel.SemiTruck.Model.Driver.Services;
 using SOHModel.SemiTruck.Model.Driver.Utils;
 
 namespace SOHTests
@@ -105,6 +108,24 @@ namespace SOHTests
             Assert.Equal(150, amount, 6);
             // 70 kWh at 350 kW (12 min) + 30 kWh tapering from 350 to 35 kW (analytically 13.2 min)
             Assert.InRange(seconds / 60.0, 24.5, 26);
+        }
+
+        // Guards the reflection access to the internal MARS setter (see RouteDistanceHelper remarks)
+        [Fact]
+        public void TestRouteDistanceHelperDiscountsRemainingDistance()
+        {
+            var edge = new Mock<ISpatialEdge>();
+            edge.Setup(e => e.Length).Returns(1000);
+            var route = new Route();
+            route.Add(edge.Object);
+            route.Add(edge.Object);
+            Assert.Equal(2000, route.RemainingRouteDistanceToGoal);
+
+            RouteDistanceHelper.Discount(route, 400);
+            Assert.Equal(1600, route.RemainingRouteDistanceToGoal);
+
+            RouteDistanceHelper.Discount(route, 5000);
+            Assert.Equal(0, route.RemainingRouteDistanceToGoal);
         }
     }
 }
