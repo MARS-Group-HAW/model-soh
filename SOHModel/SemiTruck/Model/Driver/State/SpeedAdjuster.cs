@@ -1,5 +1,4 @@
-using System;
-using System.Linq;
+using System.Globalization;
 using Mars.Interfaces.Environments;
 using NetTopologySuite.Geometries;
 using SOHModel.SemiTruck.Model.Driver.Utils;
@@ -58,42 +57,103 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         }
 
         /// <summary>
-        /// Adjusts speed based on incline of current road segment.
+        /// Adjusts speed based on the local grade at the truck's position on the current edge.
+        /// The grade is derived from the edge's <c>elevation</c> profile (see <see cref="ComputeGradePercent"/>);
+        /// the raw <c>incline</c> tag is only a fallback for edges without elevation data.
         /// </summary>
         public void AdjustForIncline(ISpatialEdge currentEdge, SemiTruck truck, SemiTruckDriver driver, FuelConsumptionTracker fuelTracker)
         {
-            if (currentEdge.Attributes.TryGetValue("incline", out var inclineValue))
-            {
-                double inclineMagnitude = ParseIncline(inclineValue?.ToString());
-                double sign = DetermineElevationSign(currentEdge);
-                double incline = inclineMagnitude * sign;
-                fuelTracker.UpdateIncline(incline);
-                double adjustedSpeed = CalculateMaxSpeedOnIncline(incline, truck, driver.MaxSpeed);
+            double? incline = GetGradeFromElevation(currentEdge, truck.PositionOnCurrentEdge);
 
-                // Backup original speed once
-                if (_originalMaxSpeed < 0)
-                    _originalMaxSpeed = truck.MaxSpeed;
+            if (incline == null && currentEdge.Attributes.TryGetValue("incline", out var inclineValue))
+                incline = ParseIncline(inclineValue?.ToString());
 
-                // Reduce speed if necessary
-                if (adjustedSpeed < _originalMaxSpeed)
-                {
-                    driver.MaxSpeed = adjustedSpeed;
-                }
-                else
-                {
-                    // Reset speed if incline is not present
-                    driver.MaxSpeed = _originalMaxSpeed;
-                }
-            }
-            else
+            if (incline == null)
             {
                 fuelTracker.UpdateIncline(0);
-                // No incline → reset
                 if (_originalMaxSpeed > 0)
-                {
                     driver.MaxSpeed = _originalMaxSpeed;
-                }
+                return;
             }
+
+            fuelTracker.UpdateIncline(incline.Value);
+            double adjustedSpeed = CalculateMaxSpeedOnIncline(incline.Value, truck, driver.MaxSpeed);
+
+            // Backup original speed once
+            if (_originalMaxSpeed < 0)
+                _originalMaxSpeed = truck.MaxSpeed;
+
+            driver.MaxSpeed = adjustedSpeed < _originalMaxSpeed ? adjustedSpeed : _originalMaxSpeed;
+        }
+
+        private readonly Dictionary<ISpatialEdge, double[]> _elevationCache = new();
+
+        private double? GetGradeFromElevation(ISpatialEdge edge, double positionOnEdge)
+        {
+            if (!_elevationCache.TryGetValue(edge, out var profile))
+            {
+                profile = ParseElevationProfile(edge);
+                _elevationCache[edge] = profile;
+            }
+
+            return profile == null ? null : ComputeGradePercent(profile, edge.Length, positionOnEdge);
+        }
+
+        /// <summary>
+        /// Computes the signed grade (percent, positive = uphill in travel direction From→To) at a position
+        /// along an edge from its equally spaced elevation samples. The grade is averaged over a window of
+        /// <see cref="SemiTruckDriverConstants.GradeSmoothingWindowMeters"/> centred on the position
+        /// (shifted at the edge ends) to suppress elevation-model noise, and clamped to
+        /// ±<see cref="SemiTruckDriverConstants.MaxPlausibleGradePercent"/>.
+        /// </summary>
+        internal static double ComputeGradePercent(double[] elevations, double edgeLengthMeters, double positionOnEdge)
+        {
+            if (elevations.Length < 2 || edgeLengthMeters <= 0)
+                return 0.0;
+
+            double window = Math.Min(SemiTruckDriverConstants.GradeSmoothingWindowMeters, edgeLengthMeters);
+            double start = Math.Clamp(positionOnEdge - window / 2, 0, edgeLengthMeters - window);
+            double end = start + window;
+
+            double grade = (ElevationAt(elevations, edgeLengthMeters, end) - ElevationAt(elevations, edgeLengthMeters, start))
+                           / window * 100.0;
+            double max = SemiTruckDriverConstants.MaxPlausibleGradePercent;
+            return Math.Clamp(grade, -max, max);
+        }
+
+        private static double ElevationAt(double[] elevations, double edgeLengthMeters, double position)
+        {
+            double idx = position / edgeLengthMeters * (elevations.Length - 1);
+            int lo = Math.Clamp((int)Math.Floor(idx), 0, elevations.Length - 1);
+            int hi = Math.Min(lo + 1, elevations.Length - 1);
+            return elevations[lo] + (elevations[hi] - elevations[lo]) * (idx - lo);
+        }
+
+        /// <summary>
+        /// Parses the <c>elevation</c> edge attribute, a JSON array string such as "[724.5,723.1,...]".
+        /// Returns null if missing, malformed or containing null entries.
+        /// </summary>
+        internal static double[] ParseElevationProfile(ISpatialEdge edge)
+        {
+            if (!edge.Attributes.TryGetValue("elevation", out var value) || value == null)
+                return null;
+
+            var str = value.ToString()?.Trim();
+            if (string.IsNullOrEmpty(str) || !str.StartsWith('[') || !str.EndsWith(']'))
+                return null;
+
+            var parts = str[1..^1].Split(',', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length < 2)
+                return null;
+
+            var result = new double[parts.Length];
+            for (int i = 0; i < parts.Length; i++)
+            {
+                if (!double.TryParse(parts[i].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out result[i]))
+                    return null;
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -129,8 +189,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         }
 
         /// <summary>
-        /// Parses the magnitude of an incline string attribute from OSM/GeoJSON format.
-        /// Sign is determined separately via <see cref="DetermineElevationSign"/>.
+        /// Parses the magnitude of the OSM <c>incline</c> tag. Fallback only: the tag carries no reliable
+        /// sign or size (often placeholders such as 10 or 26), so it is used when no elevation profile exists.
         /// </summary>
         private static double ParseIncline(string inclineStr)
         {
@@ -143,42 +203,10 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                 return Math.Abs(percent);
 
             if (inclineStr == "up") return 5.0;
-            if (inclineStr == "down") return 5.0;
+            if (inclineStr == "down") return -5.0;
             if (double.TryParse(inclineStr, out double value)) return Math.Abs(value);
 
             return 0.0;
-        }
-
-        /// <summary>
-        /// Determines the sign of an edge's incline (+1 uphill, -1 downhill) by comparing the
-        /// first and last values of the edge's elevation array attribute.
-        /// Travel always proceeds from <c>edge.From</c> to <c>edge.To</c>, which corresponds to
-        /// the first and last entries in the elevation profile.
-        /// Returns +1 when elevation data is unavailable or flat.
-        /// </summary>
-        private static double DetermineElevationSign(ISpatialEdge edge)
-        {
-            if (!edge.Attributes.TryGetValue("elevation", out var elevationValue) || elevationValue == null)
-                return 1.0;
-
-            var elevationStr = elevationValue.ToString()?.Trim();
-            if (string.IsNullOrEmpty(elevationStr))
-                return 1.0;
-
-            // elevation is stored as a JSON array string: "[724.5,723.1,...]"
-            if (elevationStr.StartsWith('[') && elevationStr.EndsWith(']'))
-            {
-                var inner = elevationStr.Substring(1, elevationStr.Length - 2);
-                var parts = inner.Split(',');
-                if (parts.Length >= 2
-                    && double.TryParse(parts[0].Trim(), out double first)
-                    && double.TryParse(parts[^1].Trim(), out double last))
-                {
-                    return last >= first ? 1.0 : -1.0;
-                }
-            }
-            
-            return 1.0;
         }
     }
 }

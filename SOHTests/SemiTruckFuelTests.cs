@@ -1,9 +1,11 @@
+using System.Collections.Generic;
 using Mars.Interfaces.Environments;
 using Moq;
 using Xunit;
 using SOHModel.Domain.Model;
 using SOHModel.SemiTruck.Model;
 using SOHModel.SemiTruck.Model.Driver.Services;
+using SOHModel.SemiTruck.Model.Driver.State;
 using SOHModel.SemiTruck.Model.Driver.Utils;
 
 namespace SOHTests
@@ -126,6 +128,29 @@ namespace SOHTests
 
             RouteDistanceHelper.Discount(route, 5000);
             Assert.Equal(0, route.RemainingRouteDistanceToGoal);
+        }
+
+        [Fact]
+        public void TestGradeFromElevationProfile()
+        {
+            // 1000 m edge, flat for 500 m, then +10 m over the second half (2% there)
+            double[] profile = { 100, 100, 100, 105, 110 };
+            Assert.Equal(0.0, SpeedAdjuster.ComputeGradePercent(profile, 1000, 100), 3);
+            Assert.Equal(2.0, SpeedAdjuster.ComputeGradePercent(profile, 1000, 900), 3);
+            // Reversed profile = downhill, bumpy-but-level edge = ~0 instead of a constant tag value
+            Assert.Equal(-2.0, SpeedAdjuster.ComputeGradePercent(new double[] { 110, 105, 100, 100, 100 }, 1000, 100), 3);
+            Assert.Equal(0.0, SpeedAdjuster.ComputeGradePercent(new double[] { 0, 3, 0, 3, 0 }, 1000, 500), 3);
+        }
+
+        [Fact]
+        public void TestParseElevationProfile()
+        {
+            var edge = new Mock<ISpatialEdge>();
+            edge.Setup(e => e.Attributes).Returns(new Dictionary<string, object> { ["elevation"] = "[1.5, 2.5,3]" });
+            Assert.Equal(new[] { 1.5, 2.5, 3.0 }, SpeedAdjuster.ParseElevationProfile(edge.Object));
+
+            edge.Setup(e => e.Attributes).Returns(new Dictionary<string, object> { ["elevation"] = "[1.5,null]" });
+            Assert.Null(SpeedAdjuster.ParseElevationProfile(edge.Object));
         }
     }
 }
