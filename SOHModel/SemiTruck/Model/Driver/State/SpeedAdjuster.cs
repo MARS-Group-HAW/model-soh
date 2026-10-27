@@ -113,7 +113,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         private double CalculateMaxSpeedOnIncline(double inclinePercent, SemiTruck truck, double currentMaxSpeed)
         {
             double powerWatt = truck.Power * 1000.0; // Convert kW to W
-            double massKg = truck.Mass * 1000.0; // Convert t to kg
+            double massKg = truck.Mass; // kg
             const double minSpeedMps = SemiTruckDriverConstants.MinSpeedKmh / 3.6; // km/h → m/s
 
             if (inclinePercent <= 0.0)

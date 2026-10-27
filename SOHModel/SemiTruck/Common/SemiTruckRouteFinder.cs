@@ -27,9 +27,11 @@ public static class SemiTruckRouteFinder
     /// </summary>
     public static Route Find(ISpatialGraphEnvironment environment, int driveMode,
         double startLat, double startLon, double destLat, double destLon,
-        ISpatialEdge startingEdge, string osmRoute, double truckHeight, double truckWeight, double truckWidth,
+        ISpatialEdge startingEdge, string osmRoute, double truckHeight, double truckWeightKg, double truckWidth,
         double truckLength, int truckMaxIncline, List<ISpatialEdge> RemovedEdges, bool isByPassRoute)
     {
+        // OSM maxweight and the route cache use tonnes; truck mass is given in kg.
+        double truckWeight = truckWeightKg / 1000.0;
         Route route = null;
         ISpatialNode currentNode;
 
@@ -307,7 +309,29 @@ public static class SemiTruckRouteFinder
     }
 
     /// <summary>
-    ///     Checks if an edge is valid based on truck constraints.
+    ///     Parses an OSM maxweight value (tonnes by default; optional "t", "kg" or "lbs" unit) into tonnes.
+    /// </summary>
+    internal static bool TryParseMaxWeightTonnes(string value, out double tonnes)
+    {
+        tonnes = 0;
+        if (string.IsNullOrWhiteSpace(value)) return false;
+
+        var parts = value.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (!double.TryParse(parts[0], System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var number)) return false;
+
+        var unit = parts.Length > 1 ? parts[1].ToLowerInvariant() : "t";
+        switch (unit)
+        {
+            case "t": tonnes = number; return true;
+            case "kg": tonnes = number / 1000.0; return true;
+            case "lbs": tonnes = number * 0.45359237 / 1000.0; return true;
+            default: return false;
+        }
+    }
+
+    /// <summary>
+    ///     Checks if an edge is valid based on truck constraints. <paramref name="truckWeight" /> is in tonnes.
     /// </summary>
     private static bool CheckValidEdge(ISpatialEdge edge, double truckHeight, double truckWeight, double truckWidth,
         double truckLength, int truckMaxIncline)
@@ -341,12 +365,8 @@ public static class SemiTruckRouteFinder
         if (edge.Attributes.TryGetValue("maxweight", out var maxWeightValue) && maxWeightValue != null)
         {
             var maxWeightString = maxWeightValue.ToString().Trim();
-            if (!maxWeightString.Equals("none", StringComparison.OrdinalIgnoreCase) &&
-                !maxWeightString.Equals("unsigned", StringComparison.OrdinalIgnoreCase) &&
-                double.TryParse(GetFirstNumber(maxWeightString), out double maxWeight))
-            {
-                if (maxWeight < truckWeight) return false;
-            }
+            if (TryParseMaxWeightTonnes(maxWeightString, out double maxWeight) && maxWeight < truckWeight)
+                return false;
         }
 
         // Validate maxwidth

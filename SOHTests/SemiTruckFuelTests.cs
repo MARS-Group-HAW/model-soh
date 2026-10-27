@@ -47,6 +47,12 @@ namespace SOHTests
             // Check if incline increases consumption
             double consumedFuelAmountWithIncline = strategy.CalculateFuelCarrierAmountUsed(truck, distanceKm, 1.0, 5.0);
             Assert.True(consumedFuelAmountWithIncline > consumedFuelAmount);
+
+            // 1 s at 22.22 m/s: P = (Crr*m*g + 0.5*rho*Cd*A*v^2) * v, fuel = P / eta * 1 s
+            double force = 0.01 * 40000 * 9.81 + 0.5 * 1.225 * 0.6 * (2.5 * 4.0) * 22.22 * 22.22;
+            double expectedJoules = force * 22.22 / 0.35;
+            double expected = FuelCarrierEnergyConverter.FromJoules(expectedJoules, FuelCarrierType.Fuel);
+            Assert.Equal(expected, consumedFuelAmount, 6);
         }
     }
 }
