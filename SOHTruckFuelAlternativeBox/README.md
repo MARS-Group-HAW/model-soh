@@ -109,7 +109,7 @@ Sources: Mercedes-Benz Trucks eActros 600 specification; ADAC test (Sept 2024).
 | `payload` | 21,300 kg | gives the 40 t gross combination weight of the 500 km claim |
 | `maxSpeed` | 25 m/s | 90 km/h (not officially published) |
 | `length`/`width`/`height` | 16.5 / 2.55 / 4.0 m | frontal area 10.2 m² |
-| `dragCoefficient`, `rollingResistance`, `tank2wheel` | 0.55, 0.006, 0.90 | **literature estimates, not published by Mercedes, not calibrated** |
+| `dragCoefficient`, `rollingResistance`, `tank2wheel` | 0.50, 0.005, 0.90 | **literature estimates, not published by Mercedes, not calibrated** |
 | `fuelConsumptionPer100km` | 90 kWh | nominal value for the refuel range estimate (ADAC measured ≈ 88) |
 
 ### Example truck types (from `resources/semi_truck.csv`)
@@ -155,7 +155,7 @@ Station power is currently the carrier default (`RefuelState.StationPowerKw` is 
 | Strategy             | Behaviour |
 |----------------------|-----------|
 | `LegalMinimum`       | Breaks and rests at rest areas. |
-| `ChargeWhileResting` | Battery trucks that cannot reach the destination with the current charge (range < remaining route + low-fuel threshold) rest at a charging station: the stop lasts at least the required rest and charges to `chargeTargetSoc`, or to 100 % during a daily rest. Otherwise a rest area is used. |
+| `ChargeWhileResting` | Battery trucks that cannot reach the destination with the current charge (range at the observed consumption < remaining route + low-fuel threshold) rest at a charging station: the stop lasts at least the required rest and charges to `chargeTargetSoc`, or to 100 % during a daily rest. Otherwise a rest area is used. |
 
 A combined stop is logged as `Refuel` in the `rests` table.
 
@@ -279,6 +279,6 @@ ___
   A more accurate horizon-based or steady-state prediction would improve refueling stop placement (see
   `RoadLoadFuelConsumptionStrategy.cs`).
 - **Charging** has no losses, no station queueing and ends at the target SoC (default 80 % for batteries). Station power is not yet read from data.
-- **Rolling resistance** is currently a constant (`Crr = 0.006`). In reality it depends on speed and load --
+- **Rolling resistance** is currently a constant (`Crr` (0.005 for the eActros, default 0.006)). In reality it depends on speed and load --
   see the referenced paper in `RoadUser.cs`.
 - **Drag coefficient** defaults to `0.6` for all trucks. Per-type values would improve accuracy.

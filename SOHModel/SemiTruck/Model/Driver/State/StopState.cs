@@ -99,7 +99,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                     RestEventType.Start,
                     driver.Position.Latitude,
                     driver.Position.Longitude, 
-                    driver.FuelCarrierAmount
+                    driver.FuelCarrierAmount,
+                    driver.RemainingRouteDistanceToGoal
                     )
                 );
                 _stopStartTime = layer._simulationTime;
@@ -127,7 +128,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                         RestEventType.End,
                         driver.Position.Latitude,
                         driver.Position.Longitude,
-                        driver.FuelCarrierAmount
+                        driver.FuelCarrierAmount,
+                        driver.RemainingRouteDistanceToGoal
                         )
                     );
 
@@ -181,6 +183,9 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                 return;
 
             // Condition met → plan the stop
+            PostgresDbLogger.Instance?.Log(new RestEntity(truck.ID, layer.Context.CurrentTick, GetStopType(),
+                RestEventType.Planned, steeringHandle.Position.Latitude, steeringHandle.Position.Longitude,
+                fuelTracker.FuelCarrierAmount, steeringHandle.Route.RemainingRouteDistanceToGoal));
             PlanStop(steeringHandle, layer, planStopCallback);
         }
 

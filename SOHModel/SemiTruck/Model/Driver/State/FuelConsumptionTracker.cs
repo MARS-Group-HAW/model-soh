@@ -20,6 +20,17 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         private double _drivenKm;
         private double _consumedTotal;
 
+        /// <summary>Consumption per 100 km to plan with: the larger of the nominal and the observed value.</summary>
+        public double PlanningConsumptionPer100Km(SemiTruck truck) =>
+            Math.Max(truck.FuelConsumptionPer100Km, ObservedConsumptionPer100Km(truck));
+
+        /// <summary>Range in km with the current energy at the planning consumption.</summary>
+        public double PlanningRangeKm(SemiTruck truck)
+        {
+            double per100 = PlanningConsumptionPer100Km(truck);
+            return per100 > 0 ? FuelCarrierAmount / per100 * 100.0 : double.PositiveInfinity;
+        }
+
         /// <summary>
         /// Net consumption per 100 km observed so far (including recuperation), or the truck's nominal value
         /// while too little distance has been driven to be meaningful.

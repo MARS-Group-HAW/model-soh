@@ -48,18 +48,17 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         {
             if (_combinedRest != null) return true;
 
-            // Estimate how far the truck can go with current energy (in km)
-            double availableRangeKm = truck.FuelConsumptionStrategy.EstimateRemainingRangeKm(truck, fuelTracker.FuelCarrierAmount);
+            // The station may be up to the search radius ahead, so the stop must be triggered while the truck can still
+            // reach it: observed (not nominal) consumption, a station-distance allowance and an arrival reserve.
+            double availableRangeKm = fuelTracker.PlanningRangeKm(truck);
+            double triggerRangeKm = SemiTruckDriverConstants.RefuelStationSearchRadius / 1000.0
+                                    + SemiTruckDriverConstants.RouteChargeReserveKm;
 
-            // Check condition: If range is too low and there's distance to go
-            if (availableRangeKm < SemiTruckDriverConstants.LowFuelThreshold)
+            if (availableRangeKm < triggerRangeKm &&
+                steeringHandle.Route.RemainingRouteDistanceToGoal > availableRangeKm * 1000.0)
             {
-                // Only refuel if there's still a long distance to go
-                if (steeringHandle.Route.RemainingRouteDistanceToGoal > SemiTruckDriverConstants.RefuelStationSearchRadius)
-                {
-                    Console.WriteLine($"[Truck {truck.ID}] Energy low: {availableRangeKm:F1} km remaining – searching for refuel station...");
-                    return true;
-                }
+                Console.WriteLine($"[Truck {truck.ID}] Energy low: {availableRangeKm:F1} km remaining – searching for refuel station...");
+                return true;
             }
             return false;
         }
@@ -103,7 +102,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             if (truck.FuelCarrierType != FuelCarrierType.Battery || truck.ChargeTargetSoc > 0 ||
                 truck.MaxFuelCarrierAmount <= 0) return null;
 
-            double perKm = Math.Max(truck.FuelConsumptionPer100Km, fuelTracker.ObservedConsumptionPer100Km(truck)) / 100.0;
+            double perKm = fuelTracker.PlanningConsumptionPer100Km(truck) / 100.0;
             double neededKwh = perKm * (remainingRouteMeters / 1000.0 * SemiTruckDriverConstants.RouteChargeSafetyFactor
                                         + SemiTruckDriverConstants.RouteChargeReserveKm);
             double soc = neededKwh / truck.MaxFuelCarrierAmount;
