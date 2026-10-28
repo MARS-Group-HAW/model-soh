@@ -66,8 +66,11 @@ namespace SOHTests
         {
             var truck = new SemiTruck { FuelCarrierType = FuelCarrierType.Battery, MaxChargePowerKw = 1000 };
 
-            // station (400 kW default) is the bottleneck below the taper start
-            Assert.Equal(400, ChargingProfile.PowerKw(truck, 0.5), 6);
+            // without station data MCS (1000 kW) is assumed; a 1200 kW vehicle is then the weaker side
+            Assert.Equal(1000, ChargingProfile.PowerKw(truck, 0.5), 6);
+            truck.MaxChargePowerKw = 1200;
+            Assert.Equal(1000, ChargingProfile.PowerKw(truck, 0.5), 6);
+            Assert.Equal(200, ChargingProfile.PowerKw(truck, 0.5, 200), 6);
 
             // vehicle is the bottleneck
             truck.MaxChargePowerKw = 150;
@@ -156,6 +159,24 @@ namespace SOHTests
             // an explicit chargeTargetSoc stays fixed
             truck.ChargeTargetSoc = 0.8;
             Assert.Null(RefuelState.RouteBasedTargetSoc(truck, tracker, 200_000));
+        }
+
+        [Fact]
+        public void TestLoadChargingStationsMatchesColumnsByName()
+        {
+            var path = System.IO.Path.GetTempFileName();
+            System.IO.File.WriteAllText(path,
+                "id,name,lat,lon,powerKw,chargePoints\n1,Operator A,53.5,10.0,200,8\n2,Operator B,52.5,13.1,,\n");
+            try
+            {
+                var stations = new SemiTruckLayer().LoadRefuelStations(path);
+                Assert.Equal(2, stations.Count);
+                Assert.Equal("Operator A", stations[0].Name);
+                Assert.Equal(200, stations[0].PowerKw);
+                Assert.Equal(8, stations[0].ChargePoints);
+                Assert.Null(stations[1].PowerKw);
+            }
+            finally { System.IO.File.Delete(path); }
         }
 
         [Fact]

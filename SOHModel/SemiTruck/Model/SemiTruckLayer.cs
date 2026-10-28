@@ -77,7 +77,11 @@ namespace SOHModel.SemiTruck.Model
 
         public List<RestArea> AllRestAreas { get; private set; }
 
+        /// <summary>Fuel and hydrogen stations (<c>refuel_stations.csv</c>).</summary>
         public List<RefuelStation> AllRefuelStations { get; private set; }
+
+        /// <summary>Public charging stations for battery trucks (<c>charging_stations.csv</c>, Deutschlandnetz).</summary>
+        public List<RefuelStation> AllChargingStations { get; private set; }
 
 
         /// <summary>
@@ -107,6 +111,8 @@ namespace SOHModel.SemiTruck.Model
             string fullPath_stations = Path.Combine(AppContext.BaseDirectory, ResourcesConstants.ResourcesFolder, ResourcesConstants.RefuelStationsFile);
             AllRestAreas = LoadRestAreas(fullPath_rest_areas);
             AllRefuelStations = LoadRefuelStations(fullPath_stations);
+            AllChargingStations = LoadRefuelStations(Path.Combine(AppContext.BaseDirectory,
+                ResourcesConstants.ResourcesFolder, ResourcesConstants.ChargingStationsFile));
             // Attempt to initialize the environment from Mapping.Value or file
             if (Mapping.Value is ISpatialGraphEnvironment input)
             {
@@ -501,23 +507,36 @@ namespace SOHModel.SemiTruck.Model
         }
 
         /// <summary>
-        /// Loads a list of refuel stations from a CSV file.
-        /// The CSV is expected to have at least three columns: ID, Latitude, Longitude (in this order).
-        /// The first line (header) will be skipped.
+        /// Loads refuel or charging stations from a comma-separated CSV with a header. Required columns:
+        /// <c>id</c>, <c>lat</c>, <c>lon</c>; optional: <c>name</c>, <c>powerKw</c> (per charge point, empty = unknown),
+        /// <c>chargePoints</c>. Columns are matched by name, so the three-column <c>refuel_stations.csv</c> works too.
         /// </summary>
         /// <param name="path">The file path to the CSV containing station data.</param>
-        /// <returns>A list of RefuelStation objects parsed from the file.</returns>
         public List<RefuelStation> LoadRefuelStations(string path)
         {
-            var lines = File.ReadAllLines(path).Skip(1); // Skip header
-            return lines.Select(line =>
+            var lines = File.ReadAllLines(path);
+            if (lines.Length == 0) return new List<RefuelStation>();
+
+            var header = lines[0].Split(',').Select(h => h.Trim().ToLowerInvariant()).ToList();
+            int Col(string name) => header.IndexOf(name);
+            int id = Col("id"), lat = Col("lat"), lon = Col("lon"),
+                name = Col("name"), power = Col("powerkw"), points = Col("chargepoints");
+
+            string Cell(string[] parts, int column) =>
+                column >= 0 && column < parts.Length ? parts[column].Trim() : "";
+
+            return lines.Skip(1).Where(l => !string.IsNullOrWhiteSpace(l)).Select(line =>
             {
                 var parts = line.Split(',');
-                return new RefuelStation()
+                return new RefuelStation
                 {
-                    Id = int.Parse(parts[0]),
-                    Lat = double.Parse(parts[1], CultureInfo.InvariantCulture),
-                    Lon = double.Parse(parts[2], CultureInfo.InvariantCulture)
+                    Id = Cell(parts, id),
+                    Lat = double.Parse(Cell(parts, lat), CultureInfo.InvariantCulture),
+                    Lon = double.Parse(Cell(parts, lon), CultureInfo.InvariantCulture),
+                    Name = Cell(parts, name),
+                    PowerKw = double.TryParse(Cell(parts, power), NumberStyles.Float, CultureInfo.InvariantCulture,
+                        out var kw) ? kw : null,
+                    ChargePoints = int.TryParse(Cell(parts, points), out var n) ? n : null
                 };
             }).ToList();
         }
@@ -601,9 +620,14 @@ namespace SOHModel.SemiTruck.Model
         /// </summary>
         public class RefuelStation
         {
-            public int Id { get; set; }
+            public string Id { get; set; } = "";
+            public string Name { get; set; } = "";
             public double Lat { get; set; }
             public double Lon { get; set; }
+
+            /// <summary>Power per charge point in kW; <c>null</c> if unknown (battery trucks then assume MCS).</summary>
+            public double? PowerKw { get; set; }
+            public int? ChargePoints { get; set; }
 
             public Coordinate Position => new Coordinate(Lat, Lon);
         }

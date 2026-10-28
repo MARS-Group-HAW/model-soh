@@ -7,5 +7,6 @@ namespace SOHModel.SemiTruck.Common
         public const string RoadClosuresByCoordinatesFile = "road_closures_by_Coordinates.csv";
         public const string RestAreasFile = "rest_areas.csv";
         public const string RefuelStationsFile = "refuel_stations.csv";
+        public const string ChargingStationsFile = "charging_stations.csv";
     }
 }

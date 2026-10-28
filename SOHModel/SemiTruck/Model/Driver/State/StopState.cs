@@ -21,6 +21,11 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         protected ISpatialNode _targetNode;
         protected DateTime _stopStartTime;
 
+        // Facilities from the list that could not be routed to (coordinates not connected to the usable road graph);
+        // they are skipped so that planning moves on to the next candidate instead of retrying every tick.
+        private readonly HashSet<dynamic> _unreachableFacilities = new();
+        private dynamic _lastListFacility;
+
         /// <summary>True while a stop is planned, being approached or in progress.</summary>
         public bool IsActive => _planned || _goingToStop || _isPausing;
 
@@ -227,6 +232,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                             var tagStr = tag?.ToString()?.ToLowerInvariant();
                             if (searchTags.Contains(tagStr))
                             {
+                                OnFacilityChosen(null);
+                                _lastListFacility = null;
                                 var facilityCoord = connectedEdge.To.Position;
                                 planStopCallback(facilityCoord.Latitude, facilityCoord.Longitude, node);
                                 return;
@@ -239,6 +246,14 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             // No facility found on the way → fallback to external list
             Console.WriteLine($"[{GetStopType()}] No facility found along route – fallback to CSV list.");
             FindNearestFromList(steeringHandle, layer, planStopCallback);
+        }
+
+        /// <summary>
+        /// Called when a stop location has been chosen; <paramref name="facility"/> is the entry of the facility list,
+        /// or <c>null</c> if the facility comes from the map (tagged edge) and has no further data.
+        /// </summary>
+        protected virtual void OnFacilityChosen(dynamic facility)
+        {
         }
 
         /// <summary>Whether the stop may take place at a plain route node when no facility is close by.</summary>
@@ -274,6 +289,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
 
                 foreach (var facility in facilityList)
                 {
+                    if (_unreachableFacilities.Contains(facility)) continue;
                     foreach (var (node, alongRoute) in nodes)
                     {
                         double offRoute = GeometryHelper.ApproxDistanceMeters(
@@ -296,6 +312,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                     var node = roadside.Node ?? candidates.LastOrDefault().Node;
                     if (node != null)
                     {
+                        _lastListFacility = null;
                         Console.WriteLine($"[{GetStopType()}] No facility close to the route – stopping at the roadside.");
                         planStopCallback(node.Position.Latitude, node.Position.Longitude, node);
                         return;
@@ -314,6 +331,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             if (nearest != null)
             {
                 Console.WriteLine($"Using fallback {GetStopType()} from CSV – ID: {nearest.Id} @ ({nearest.Lat}, {nearest.Lon})");
+                OnFacilityChosen(nearest);
+                _lastListFacility = nearest;
                 planStopCallback(nearest.Lat, nearest.Lon, insertFromNode);
             }
             else
@@ -336,6 +355,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         /// </summary>
         public void CancelPlanned()
         {
+            if (_lastListFacility != null) _unreachableFacilities.Add(_lastListFacility);
+            _lastListFacility = null;
             _goingToStop = false;
             _planned = false;
         }

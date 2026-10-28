@@ -199,17 +199,46 @@ namespace SOHModel.SemiTruck.Model.Driver.Services
                 _layer.RemovedEdges, false
             );
 
-            // Build return route from stop back to original path
+            if (toStopRoute == null || toStopRoute.Count == 0)
+            {
+                Console.WriteLine("Failed to compute detour or return route.");
+                onFailure();
+                return;
+            }
+
+            // The return route must start where the outbound route ends. Start and goal coordinates are snapped to
+            // different nodes (start: has outgoing edges, goal: has incoming edges), so the outbound route is
+            // recomputed to the node the return route actually starts at; a mismatch would leave a gap in the route.
+            var stopNode = toStopRoute.Stops[^1].Edge.To;
             var backRoute = SemiTruckRouteFinder.Find(
                 _environment, _driveMode,
-                targetLat, targetLon,
+                stopNode.Position.Latitude, stopNode.Position.Longitude,
                 splitNode.Position.Latitude, splitNode.Position.Longitude,
                 null, "", _truck.Height, _truck.Mass,
                 _truck.Width, _truck.Length, _truck.MaxIncline,
                 _layer.RemovedEdges, false
             );
 
-            if (toStopRoute == null || toStopRoute.Count == 0 || backRoute == null || backRoute.Count == 0)
+            if (backRoute != null && backRoute.Count > 0 && backRoute.Stops[0].Edge.From != stopNode)
+            {
+                var backStart = backRoute.Stops[0].Edge.From;
+                toStopRoute = SemiTruckRouteFinder.Find(
+                    _environment, _driveMode,
+                    splitNode.Position.Latitude, splitNode.Position.Longitude,
+                    backStart.Position.Latitude, backStart.Position.Longitude,
+                    null, "", _truck.Height, _truck.Mass,
+                    _truck.Width, _truck.Length, _truck.MaxIncline,
+                    _layer.RemovedEdges, false
+                );
+                if (toStopRoute == null || toStopRoute.Count == 0 || toStopRoute.Stops[^1].Edge.To != backStart)
+                {
+                    Console.WriteLine("Detour to the stop and the way back do not connect.");
+                    onFailure();
+                    return;
+                }
+            }
+
+            if (backRoute == null || backRoute.Count == 0)
             {
                 Console.WriteLine("Failed to compute detour or return route.");
                 onFailure();

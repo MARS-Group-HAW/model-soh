@@ -37,15 +37,29 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         protected override TimeSpan GetPauseDuration(SemiTruckLayer layer, SemiTruck truck) =>
             _combinedRest?.Duration ?? TimeSpan.Zero;
 
-        protected override string[] GetSearchTags() => new[] { "services", "fuel", "charging_station" };
+        // The map only knows fuel stations (tag "fuel"), which cannot charge a battery: those trucks rely on
+        // "charging_station" edges and otherwise on the charging station list.
+        protected override string[] GetSearchTags() => _carrierType == FuelCarrierType.Battery
+            ? new[] { "charging_station" }
+            : new[] { "services", "fuel" };
 
-        protected override IEnumerable<dynamic> GetFacilityList(SemiTruckLayer layer) => layer.AllRefuelStations;
+        // Battery trucks use the charging station list, fuel and hydrogen trucks the fuel station list.
+        protected override IEnumerable<dynamic> GetFacilityList(SemiTruckLayer layer) =>
+            _carrierType == FuelCarrierType.Battery ? layer.AllChargingStations : layer.AllRefuelStations;
+
+        protected override void OnFacilityChosen(dynamic facility)
+        {
+            StationPowerKw = facility?.PowerKw;
+        }
+
+        private FuelCarrierType _carrierType;
 
         protected override double GetSearchRadius() => SemiTruckDriverConstants.RefuelStationSearchRadius;
 
         protected override bool ShouldStop(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
             SemiTruck truck, FuelConsumptionTracker fuelTracker)
         {
+            _carrierType = truck.FuelCarrierType;
             if (_combinedRest != null) return true;
 
             // The station may be up to the search radius ahead, so the stop must be triggered while the truck can still

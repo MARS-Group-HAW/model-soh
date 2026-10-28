@@ -17,10 +17,13 @@ namespace SOHModel.SemiTruck.Model.Driver.Utils
         /// <summary>Fraction of the full power that is still available at 100% SoC.</summary>
         private const double TaperEndPowerFraction = 0.1;
 
+        /// <summary>Power assumed for battery stations without a known power: Megawatt Charging (MCS).</summary>
+        public const double MegawattChargingKw = 1000;
+
         /// <summary>Default power a station delivers if no station-specific value is known.</summary>
         private static double DefaultStationPowerKw(FuelCarrierType type) => type switch
         {
-            FuelCarrierType.Battery => 400,
+            FuelCarrierType.Battery => MegawattChargingKw,
             FuelCarrierType.Fuel => 30_000, // ~50 L/min diesel
             FuelCarrierType.Hydrogen => 6_000, // ~3 kg/min at 350 bar
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
