@@ -9,6 +9,9 @@ namespace SOHModel.SemiTruck.Model.Driver.Utils
     {
         // Fuel/Energy thresholds
         public const double LowFuelThreshold = 100; // km
+        public const double MinObservedDistanceKm = 20; // distance after which the observed consumption is trusted
+        public const double RouteChargeReserveKm = 50; // range that should remain on arrival when charging for the route
+        public const double RouteChargeSafetyFactor = 1.1; // safety margin on the energy needed for the remaining route
 
         // Search radii for finding stops
         public const double RestAreaSearchRadius = 100_000; // 100 km in meters

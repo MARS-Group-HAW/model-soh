@@ -126,7 +126,7 @@ Sources: Mercedes-Benz Trucks eActros 600 specification; ADAC test (Sept 2024).
 Refueling is a process, not a fixed pause: every tick `ChargingProfile` transfers energy at
 `min(station power, vehicle power) × taper(SoC)` until the tank is full, and `fuel_consumption` is logged each tick
 (negative `consumedAmount` = energy added). Battery power is constant up to 80 % SoC and then tapers linearly to 10 %
-of the maximum at 100 % (CC-CV approximation); fuel and hydrogen do not taper. Charging losses are not modelled. A stop ends at `chargeTargetSoc` (default 80 % for batteries, because the CV tail is slow).
+of the maximum at 100 % (CC-CV approximation); fuel and hydrogen do not taper. Charging losses are not modelled. A stop ends at `chargeTargetSoc` (default 80 % for batteries, because the CV tail is slow). Without an explicit `chargeTargetSoc`, battery trucks charge only what the remaining route needs (observed consumption × 1.1 plus a 50 km arrival reserve, at most 100 %); if the route needs more than a full battery, the 80 % default applies and another stop follows.
 
 | Carrier  | Default station power | Default vehicle power |
 |----------|-----------------------|-----------------------|

@@ -143,6 +143,22 @@ namespace SOHTests
         }
 
         [Fact]
+        public void TestRouteBasedChargeTarget()
+        {
+            var truck = new SemiTruck
+                { FuelCarrierType = FuelCarrierType.Battery, MaxFuelCarrierAmount = 600, FuelConsumptionPer100Km = 100 };
+            var tracker = new FuelConsumptionTracker();
+
+            // 200 km * 1.1 + 50 km reserve = 270 km at 1 kWh/km = 270 kWh of 600
+            Assert.Equal(0.45, RefuelState.RouteBasedTargetSoc(truck, tracker, 200_000)!.Value, 6);
+            // needs more than a full battery -> default target (another stop follows)
+            Assert.Null(RefuelState.RouteBasedTargetSoc(truck, tracker, 600_000));
+            // an explicit chargeTargetSoc stays fixed
+            truck.ChargeTargetSoc = 0.8;
+            Assert.Null(RefuelState.RouteBasedTargetSoc(truck, tracker, 200_000));
+        }
+
+        [Fact]
         public void TestParseElevationProfile()
         {
             var edge = new Mock<ISpatialEdge>();

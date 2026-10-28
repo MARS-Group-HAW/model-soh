@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Mars.Interfaces.Environments;
 using SOHModel.Database;
+using SOHModel.Domain.Model;
 using SOHModel.Domain.Steering.Common;
 using SOHModel.SemiTruck.Model.Driver.Utils;
 using SOHModel.SemiTruck.Steering;
@@ -68,6 +69,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         {
             _targetReached = false;
             _combinedRest = null;
+            _chargeTargetOverride = null;
         }
 
         protected override void OnArrival(SemiTruckLayer layer)
@@ -81,13 +83,34 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         protected override void OnPauseTick(SemiTruckLayer layer, SemiTruck truck,
             FuelConsumptionTracker fuelTracker, SemiTruckDriver driver)
         {
+            _chargeTargetOverride = _combinedRest is { IsDailyRest: true }
+                ? 1.0
+                : RouteBasedTargetSoc(truck, fuelTracker, driver.RemainingRouteDistanceToGoal);
             double added = ChargingProfile.AmountAdded(truck, fuelTracker.FuelCarrierAmount,
-                layer._tickDuration.TotalSeconds, StationPowerKw, ChargeTargetOverride);
+                layer._tickDuration.TotalSeconds, StationPowerKw, _chargeTargetOverride);
             fuelTracker.Charge(truck, added);
-            _targetReached = fuelTracker.FuelCarrierAmount >= ChargingProfile.TargetAmount(truck, ChargeTargetOverride) - 1e-9;
+            _targetReached = fuelTracker.FuelCarrierAmount >= ChargingProfile.TargetAmount(truck, _chargeTargetOverride) - 1e-9;
         }
 
-        private double? ChargeTargetOverride => _combinedRest is { IsDailyRest: true } ? 1.0 : null;
+        /// <summary>
+        /// For battery trucks without a fixed <c>chargeTargetSoc</c>: the SoC that just covers the remaining route
+        /// (observed consumption, safety factor and arrival reserve). Charging beyond what the route needs only wastes
+        /// time in the slow CV phase; if the route needs more than a full battery, the default target applies and
+        /// another stop follows. <c>null</c> = use the default target.
+        /// </summary>
+        internal static double? RouteBasedTargetSoc(SemiTruck truck, FuelConsumptionTracker fuelTracker, double remainingRouteMeters)
+        {
+            if (truck.FuelCarrierType != FuelCarrierType.Battery || truck.ChargeTargetSoc > 0 ||
+                truck.MaxFuelCarrierAmount <= 0) return null;
+
+            double perKm = Math.Max(truck.FuelConsumptionPer100Km, fuelTracker.ObservedConsumptionPer100Km(truck)) / 100.0;
+            double neededKwh = perKm * (remainingRouteMeters / 1000.0 * SemiTruckDriverConstants.RouteChargeSafetyFactor
+                                        + SemiTruckDriverConstants.RouteChargeReserveKm);
+            double soc = neededKwh / truck.MaxFuelCarrierAmount;
+            return soc is > 0 and <= 1.0 ? soc : null;
+        }
+
+        private double? _chargeTargetOverride;
 
         protected override bool IsPauseCompleted(SemiTruckLayer layer, SemiTruck truck) =>
             _targetReached && (_combinedRest == null ||

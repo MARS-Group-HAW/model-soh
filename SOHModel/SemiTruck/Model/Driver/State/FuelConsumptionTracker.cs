@@ -1,6 +1,7 @@
 using System;
 using SOHModel.Database;
 using SOHModel.Domain.Model;
+using SOHModel.SemiTruck.Model.Driver.Utils;
 using SOHModel.SemiTruck.Steering;
 
 namespace SOHModel.SemiTruck.Model.Driver.State
@@ -15,6 +16,18 @@ namespace SOHModel.SemiTruck.Model.Driver.State
 
         public double CurrentIncline { get; private set; }
         public double FuelCarrierAmount { get; set; }
+
+        private double _drivenKm;
+        private double _consumedTotal;
+
+        /// <summary>
+        /// Net consumption per 100 km observed so far (including recuperation), or the truck's nominal value
+        /// while too little distance has been driven to be meaningful.
+        /// </summary>
+        public double ObservedConsumptionPer100Km(SemiTruck truck) =>
+            _drivenKm >= SemiTruckDriverConstants.MinObservedDistanceKm && _consumedTotal > 0
+                ? _consumedTotal / _drivenKm * 100.0
+                : truck.FuelConsumptionPer100Km;
 
         /// <summary>
         /// Marks that the route has changed, which affects fuel consumption tracking.
@@ -51,6 +64,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                 double timeStepSeconds = layer._tickDuration.TotalSeconds;
                 consumedAmount = truck.FuelConsumptionStrategy.CalculateFuelCarrierAmountUsed(truck, distanceDrivenKm, timeStepSeconds, CurrentIncline);
                 FuelCarrierAmount -= consumedAmount;
+                _drivenKm += distanceDrivenKm;
+                _consumedTotal += consumedAmount;
 
                 // clamp to max energy level
                 if (FuelCarrierAmount > truck.MaxFuelCarrierAmount)
