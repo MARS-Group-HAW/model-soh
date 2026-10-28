@@ -24,6 +24,12 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         public double PlanningConsumptionPer100Km(SemiTruck truck) =>
             Math.Max(truck.FuelConsumptionPer100Km, ObservedConsumptionPer100Km(truck));
 
+        // TODO instead of the trip-average observed consumption, use a more accurate model
+        // some options:
+        // 1. steady state baseline: assume a=0 and theta=0 to get F_steady
+        // 2. exponential moving average: use historical consumption of last few kilometers to project future
+        // 3. horizon prediction: since we know the whole route (not accounting for stops) we can project segments of the whole route
+        // see https://doi.org/10.1504/IJVD.2024.10062758 for example
         /// <summary>Range in km with the current energy at the planning consumption.</summary>
         public double PlanningRangeKm(SemiTruck truck)
         {

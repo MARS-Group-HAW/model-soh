@@ -23,7 +23,7 @@ namespace SOHTests
             Assert.Equal(2.0, consumedFuelAmount, 3);
             
             // Range estimate: 100 units / 20 units/100km = 500 km
-            double range = strategy.EstimateRemainingRangeKm(truck, 100.0);
+            double range = new FuelConsumptionTracker { FuelCarrierAmount = 100.0 }.PlanningRangeKm(truck);
             Assert.Equal(500.0, range, 3);
         }
 
