@@ -31,7 +31,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
 
         public bool HasCombinedRestRequest => _combinedRest != null;
 
-        protected override RestStateType GetStopType() => RestStateType.Refuel;
+        protected override RestStateType GetStopType() =>
+            _combinedRest != null ? RestStateType.RestAndRefuel : RestStateType.Refuel;
 
         // The duration emerges from the charging process, there is no fixed pause time.
         protected override TimeSpan GetPauseDuration(SemiTruckLayer layer, SemiTruck truck) =>

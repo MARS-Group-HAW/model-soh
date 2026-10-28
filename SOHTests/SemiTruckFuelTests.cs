@@ -339,6 +339,9 @@ namespace SOHTests
             var combined = new ChargeWhileRestingStrategy();
             Assert.Equal(StopFacility.ChargingStation, combined.NextRequirement(t, truck, low, 500_000, margin).Facility);
             Assert.Equal(StopFacility.RestArea, combined.NextRequirement(t, truck, full, 200_000, margin).Facility);
+            // enough for 200 km x 1.1 + 50 km reserve (270 kWh): no charging stop although the range is < route + 100 km
+            var enough = new FuelConsumptionTracker { FuelCarrierAmount = 280 };
+            Assert.Equal(StopFacility.RestArea, combined.NextRequirement(t, truck, enough, 200_000, margin).Facility);
             Assert.Equal(StopFacility.RestArea, new LegalMinimumRestStrategy().NextRequirement(t, truck, low, 500_000, margin).Facility);
 
             // destination reachable within the legal driving time: no stop

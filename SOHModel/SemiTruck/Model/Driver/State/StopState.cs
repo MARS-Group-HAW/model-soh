@@ -122,14 +122,15 @@ namespace SOHModel.SemiTruck.Model.Driver.State
 
                 if (IsPauseCompleted(layer, truck))
                 {
-                    Console.WriteLine($"[{GetStopType()}] Pause completed. Resuming route.");
+                    var stopType = GetStopType(); // the subclass may reset the stop kind in OnPauseCompleted
+                    Console.WriteLine($"[{stopType}] Pause completed. Resuming route.");
                     OnPauseCompleted(layer, truck, fuelTracker, driver);
                     driver.DrivingTime.RegisterStop(layer._simulationTime - _stopStartTime);
 
                     // logged after OnPauseCompleted so that the event carries the final fuel level
                     PostgresDbLogger.Instance.Log(new RestEntity(truck.ID,
                         layer.Context.CurrentTick,
-                        GetStopType(),
+                        stopType,
                         RestEventType.End,
                         driver.Position.Latitude,
                         driver.Position.Longitude,

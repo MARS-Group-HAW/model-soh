@@ -63,8 +63,11 @@ namespace SOHModel.SemiTruck.Model
         {
             if (truck.FuelCarrierType != FuelCarrierType.Battery) return StopFacility.RestArea;
 
-            double rangeKm = fuel.PlanningRangeKm(truck);
-            bool needsCharge = rangeKm < remainingRouteMeters / 1000.0 + SemiTruckDriverConstants.LowFuelThreshold;
+            // Same criterion the charging state applies: charge only if the energy for the rest of the route is missing.
+            var targetSoc = RefuelState.RouteBasedTargetSoc(truck, fuel, remainingRouteMeters);
+            bool needsCharge = targetSoc.HasValue
+                ? fuel.FuelCarrierAmount < targetSoc.Value * truck.MaxFuelCarrierAmount
+                : fuel.PlanningRangeKm(truck) < remainingRouteMeters / 1000.0 + SemiTruckDriverConstants.LowFuelThreshold;
             return needsCharge ? StopFacility.ChargingStation : StopFacility.RestArea;
         }
     }

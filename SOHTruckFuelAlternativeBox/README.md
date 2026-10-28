@@ -171,7 +171,7 @@ NOW GmbH / Nationale Leitstelle Ladeinfrastruktur, licence CC BY 4.0). Columns: 
 | Strategy             | Behaviour |
 |----------------------|-----------|
 | `LegalMinimum`       | Breaks and rests at rest areas. |
-| `ChargeWhileResting` | Battery trucks that cannot reach the destination with the current charge (range at the observed consumption < remaining route + low-fuel threshold) rest at a charging station: the stop lasts at least the required rest and charges to `chargeTargetSoc`, or to 100 % during a daily rest. Otherwise a rest area is used. |
+| `ChargeWhileResting` | Battery trucks that cannot reach the destination with the current charge (the energy for the remaining route × 1.1 plus a 50 km reserve exceeds the current charge) rest at a charging station: the stop lasts at least the required rest and charges to `chargeTargetSoc`, or to 100 % during a daily rest. Otherwise a rest area is used. |
 
 A combined stop is logged as `Refuel` in the `rests` table.
 
