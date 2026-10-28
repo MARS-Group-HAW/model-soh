@@ -153,6 +153,30 @@ namespace SOHTests
             Assert.Null(SpeedAdjuster.ParseElevationProfile(edge.Object));
         }
 
+        // Hand-calculated reference case (not derived from the implementation):
+        // 10 t, Crr 0.01, Cd 0.5, A = 2 m x 3 m, v = 20 m/s, battery efficiency 0.9, 1 s step.
+        // Rolling 0.01*10000*9.81 = 981 N; drag 0.5*1.225*0.5*6*20^2 = 735 N.
+        [Fact]
+        public void TestRoadLoadHandCalculatedFlatUphillDownhill()
+        {
+            var strategy = new RoadLoadFuelConsumptionStrategy();
+            var truck = new SemiTruck
+            {
+                Mass = 10000, Width = 2, Height = 3, DragCoefficient = 0.5, RollingResistance = 0.01,
+                Tank2WheelEfficiency = 0.9, FuelCarrierType = FuelCarrierType.Battery, Velocity = 20, Acceleration = 0
+            };
+            const double km = 0.02;
+
+            // flat: 1716 N * 20 m/s = 34.32 kW at the wheel -> /0.9 = 38.133 kW -> 0.0105926 kWh per second
+            Assert.Equal(0.0105926, strategy.CalculateFuelCarrierAmountUsed(truck, km, 1.0, 0.0), 6);
+
+            // +5 %: gradient force 10000*9.81*sin(atan(0.05)) = 4898.88 N -> 132.298 kW wheel -> 146.997 kW battery
+            Assert.Equal(0.0408326, strategy.CalculateFuelCarrierAmountUsed(truck, km, 1.0, 5.0), 6);
+
+            // -5 %: (1716 - 4898.88) N * 20 m/s = -63.658 kW at the wheel -> recuperated with 0.9 * 0.9 = -51.563 kW
+            Assert.Equal(-0.0143230, strategy.CalculateFuelCarrierAmountUsed(truck, km, 1.0, -5.0), 6);
+        }
+
         [Fact]
         public void TestInclineSpeedLimitRecoversAfterClimb()
         {
