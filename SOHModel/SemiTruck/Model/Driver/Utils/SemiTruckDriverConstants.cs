@@ -17,8 +17,8 @@ namespace SOHModel.SemiTruck.Model.Driver.Utils
 
         // Speed calculations
         public const double MinSpeedKmh = 30.0; // Minimum speed on inclines
-        public const double GradeSmoothingWindowMeters = 200.0; // Window over which the elevation grade is averaged
-        public const double MaxPlausibleGradePercent = 12.0; // Clamp for noisy elevation data
+        public const double GradeSmoothingWindowMeters = 1000.0; // Window over which the elevation grade is averaged
+        public const double MaxPlausibleGradePercent = 6.0; // Clamp for noisy elevation data
         public const double GravityConstant = 9.81; // m/s²
 
         // Spatial calculations

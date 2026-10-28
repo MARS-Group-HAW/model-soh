@@ -133,13 +133,13 @@ namespace SOHTests
         [Fact]
         public void TestGradeFromElevationProfile()
         {
-            // 1000 m edge, flat for 500 m, then +10 m over the second half (2% there)
-            double[] profile = { 100, 100, 100, 105, 110 };
-            Assert.Equal(0.0, SpeedAdjuster.ComputeGradePercent(profile, 1000, 100), 3);
-            Assert.Equal(2.0, SpeedAdjuster.ComputeGradePercent(profile, 1000, 900), 3);
+            // 10 km edge (longer than the smoothing window), flat for 5 km, then +100 m over the second half (2% there)
+            double[] profile = { 100, 100, 100, 150, 200 };
+            Assert.Equal(0.0, SpeedAdjuster.ComputeGradePercent(profile, 10000, 1000), 3);
+            Assert.Equal(2.0, SpeedAdjuster.ComputeGradePercent(profile, 10000, 9000), 3);
             // Reversed profile = downhill, bumpy-but-level edge = ~0 instead of a constant tag value
-            Assert.Equal(-2.0, SpeedAdjuster.ComputeGradePercent(new double[] { 110, 105, 100, 100, 100 }, 1000, 100), 3);
-            Assert.Equal(0.0, SpeedAdjuster.ComputeGradePercent(new double[] { 0, 3, 0, 3, 0 }, 1000, 500), 3);
+            Assert.Equal(-2.0, SpeedAdjuster.ComputeGradePercent(new double[] { 200, 150, 100, 100, 100 }, 10000, 1000), 3);
+            Assert.Equal(0.0, SpeedAdjuster.ComputeGradePercent(new double[] { 0, 3, 0, 3, 0 }, 10000, 5000), 3);
         }
 
         [Fact]
