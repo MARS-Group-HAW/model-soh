@@ -35,6 +35,20 @@ namespace SOHModel.SemiTruck.Model.Driver.Utils
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };
 
+        /// <summary>Default SoC (0-1) at which a battery stops charging; the CV tail above is slow, so trucks leave early.</summary>
+        private const double DefaultBatteryTargetSoc = 0.8;
+
+        /// <summary>
+        /// Amount (L, kWh, kg) at which a stop ends: <c>chargeTargetSoc</c> of the capacity if set (0 &lt; value &lt;= 1),
+        /// otherwise 80% for batteries and 100% for fuel and hydrogen.
+        /// </summary>
+        public static double TargetAmount(SemiTruck truck)
+        {
+            double soc = truck.ChargeTargetSoc is > 0 and <= 1 ? truck.ChargeTargetSoc
+                : truck.FuelCarrierType == FuelCarrierType.Battery ? DefaultBatteryTargetSoc : 1.0;
+            return truck.MaxFuelCarrierAmount * soc;
+        }
+
         /// <summary>Relative power (0-1) at the given state of charge; only batteries taper.</summary>
         public static double TaperFactor(FuelCarrierType type, double soc)
         {
@@ -54,12 +68,12 @@ namespace SOHModel.SemiTruck.Model.Driver.Utils
         }
 
         /// <summary>
-        /// Amount (in the carrier's unit: L, kWh, kg) transferred during one time step, never exceeding the missing amount.
+        /// Amount (in the carrier's unit: L, kWh, kg) transferred during one time step, never exceeding the amount missing to the target.
         /// </summary>
         public static double AmountAdded(SemiTruck truck, double currentAmount, double timeStepSeconds,
             double? stationPowerKw = null)
         {
-            double missing = truck.MaxFuelCarrierAmount - currentAmount;
+            double missing = TargetAmount(truck) - currentAmount;
             if (missing <= 0 || timeStepSeconds <= 0) return 0;
 
             double soc = truck.MaxFuelCarrierAmount > 0 ? currentAmount / truck.MaxFuelCarrierAmount : 1.0;

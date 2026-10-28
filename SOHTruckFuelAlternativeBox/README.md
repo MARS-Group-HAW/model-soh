@@ -90,6 +90,7 @@ type,maxAcceleration,maxDeceleration,maxSpeed,length,height,width,trafficCode,
 | `tareMass`                | Unladen mass in kg (tractor + trailer). If > 0: `mass = tareMass + payload` |
 | `payload`                 | Default cargo mass in kg; override per run via the `Payload` column in `semi_truck_initializer.csv` |
 | `dragCoefficient`, `rollingResistance` | Optional road-load coefficients (defaults 0.6 / 0.006) |
+| `chargeTargetSoc`         | Optional SoC (0–1) at which a stop ends; `<= 0` = default (0.8 battery, 1.0 fuel/hydrogen) |
 | `maxChargePowerKw`        | Optional vehicle charge/fill power limit; `<= 0` uses the carrier default |
 | `FuelStrategy`            | `Linear` or `RoadLoad`                                              |
 
@@ -123,7 +124,7 @@ Sources: Mercedes-Benz Trucks eActros 600 specification; ADAC test (Sept 2024).
 Refueling is a process, not a fixed pause: every tick `ChargingProfile` transfers energy at
 `min(station power, vehicle power) × taper(SoC)` until the tank is full, and `fuel_consumption` is logged each tick
 (negative `consumedAmount` = energy added). Battery power is constant up to 80 % SoC and then tapers linearly to 10 %
-of the maximum at 100 % (CC-CV approximation); fuel and hydrogen do not taper. Charging losses are not modelled.
+of the maximum at 100 % (CC-CV approximation); fuel and hydrogen do not taper. Charging losses are not modelled. A stop ends at `chargeTargetSoc` (default 80 % for batteries, because the CV tail is slow).
 
 | Carrier  | Default station power | Default vehicle power |
 |----------|-----------------------|-----------------------|
@@ -253,7 +254,7 @@ ___
 - **Range estimation with RoadLoad** uses the linear `fuelConsumptionPer100km` as a fallback for routing decisions.
   A more accurate horizon-based or steady-state prediction would improve refueling stop placement (see
   `RoadLoadFuelConsumptionStrategy.cs`).
-- **Charging** has no losses, no station queueing and always fills to 100 %. Station power is not yet read from data.
+- **Charging** has no losses, no station queueing and ends at the target SoC (default 80 % for batteries). Station power is not yet read from data.
 - **Rolling resistance** is currently a constant (`Crr = 0.006`). In reality it depends on speed and load --
   see the referenced paper in `RoadUser.cs`.
 - **Drag coefficient** defaults to `0.6` for all trucks. Per-type values would improve accuracy.

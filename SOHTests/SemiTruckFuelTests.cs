@@ -89,13 +89,13 @@ namespace SOHTests
         [Fact]
         public void TestBatteryChargesGraduallyToFull()
         {
-            var truck = new SemiTruck { FuelCarrierType = FuelCarrierType.Battery, MaxFuelCarrierAmount = 150 };
+            var truck = new SemiTruck { FuelCarrierType = FuelCarrierType.Battery, MaxFuelCarrierAmount = 150, ChargeTargetSoc = 1.0 };
             double amount = 50; // 33 %
             int seconds = 0;
             double previousAdded = double.MaxValue;
             bool taperSeen = false;
 
-            while (amount < truck.MaxFuelCarrierAmount && seconds < 10_000)
+            while (amount < ChargingProfile.TargetAmount(truck) && seconds < 10_000)
             {
                 double added = ChargingProfile.AmountAdded(truck, amount, 1.0);
                 Assert.True(added > 0);
@@ -219,6 +219,21 @@ namespace SOHTests
             adjuster.AdjustForWeather(driver, null);
             adjuster.AdjustForIncline(flat, truck, driver, tracker);
             Assert.Equal(25, truck.MaxSpeed);
+        }
+
+        [Fact]
+        public void TestChargingStopsAtTargetSoc()
+        {
+            var battery = new SemiTruck { FuelCarrierType = FuelCarrierType.Battery, MaxFuelCarrierAmount = 600 };
+            Assert.Equal(480, ChargingProfile.TargetAmount(battery), 6); // battery default 80 %
+            Assert.Equal(0, ChargingProfile.AmountAdded(battery, 480, 1.0));
+            Assert.Equal(0.05, ChargingProfile.AmountAdded(battery, 479.95, 1.0), 6); // capped at the target
+
+            battery.ChargeTargetSoc = 0.9;
+            Assert.Equal(540, ChargingProfile.TargetAmount(battery), 6);
+
+            var diesel = new SemiTruck { FuelCarrierType = FuelCarrierType.Fuel, MaxFuelCarrierAmount = 400 };
+            Assert.Equal(400, ChargingProfile.TargetAmount(diesel), 6);
         }
     }
 }

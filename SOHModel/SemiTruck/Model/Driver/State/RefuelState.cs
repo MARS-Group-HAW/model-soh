@@ -71,7 +71,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             double added = ChargingProfile.AmountAdded(truck, fuelTracker.FuelCarrierAmount,
                 layer._tickDuration.TotalSeconds, StationPowerKw);
             fuelTracker.Charge(truck, added);
-            _targetReached = fuelTracker.FuelCarrierAmount >= truck.MaxFuelCarrierAmount;
+            _targetReached = fuelTracker.FuelCarrierAmount >= ChargingProfile.TargetAmount(truck) - 1e-9;
         }
 
         protected override bool IsPauseCompleted(SemiTruckLayer layer, SemiTruck truck) => _targetReached;

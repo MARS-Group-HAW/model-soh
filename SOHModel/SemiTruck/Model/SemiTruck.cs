@@ -42,6 +42,12 @@ namespace SOHModel.SemiTruck.Model
         public double Payload { get; set; }
 
         /// <summary>
+        /// Fraction (0-1) of capacity at which a stop ends. <c>0</c> selects the default (80% battery, 100% otherwise).
+        /// </summary>
+        [PropertyDescription(Name = "chargeTargetSoc", Ignore = true)]
+        public double ChargeTargetSoc { get; set; }
+
+        /// <summary>
         /// Recomputes <see cref="RoadUser.Mass"/> from tare mass and payload (optionally overriding the payload).
         /// </summary>
         public void ApplyLoad(double? payloadOverrideKg = null)
