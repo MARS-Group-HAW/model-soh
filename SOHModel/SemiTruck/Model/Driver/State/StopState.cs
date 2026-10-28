@@ -241,6 +241,9 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             FindNearestFromList(steeringHandle, layer, planStopCallback);
         }
 
+        /// <summary>Whether the stop may take place at a plain route node when no facility is close by.</summary>
+        protected virtual bool AllowRoadsideStop => false;
+
         /// <summary>
         /// Finds nearest facility from external CSV list.
         /// </summary>
@@ -251,14 +254,67 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             var currentLon = steeringHandle.Position.Longitude;
 
             var facilityList = GetFacilityList(layer);
-            var nearest = facilityList?.MinBy(r =>
-                GeometryHelper.GetSquaredDistance(currentLat, currentLon, r.Lat, r.Lon));
+
+            // Rank by detour, not by distance to the truck: a facility behind the truck or far off the route would send
+            // it on a loop. Cost = distance along the route to the closest route node ahead + twice the way off the route.
+            dynamic nearest = null;
+            ISpatialNode insertFromNode = null;
+            double bestCost = double.MaxValue;
+            double bestOffRoute = double.MaxValue;
+            if (facilityList != null)
+            {
+                var nodes = new List<(ISpatialNode Node, double Along)>();
+                double along = 0;
+                foreach (var step in steeringHandle.Route.Stops.Skip(steeringHandle.Route.PassedStops))
+                {
+                    along += step.Edge.Length;
+                    if (along > GetSearchRadius()) break;
+                    nodes.Add((step.Edge.To, along));
+                }
+
+                foreach (var facility in facilityList)
+                {
+                    foreach (var (node, alongRoute) in nodes)
+                    {
+                        double offRoute = GeometryHelper.ApproxDistanceMeters(
+                            facility.Lat, facility.Lon, node.Position.Latitude, node.Position.Longitude);
+                        double cost = alongRoute + 2 * offRoute;
+                        if (cost >= bestCost) continue;
+                        bestCost = cost;
+                        bestOffRoute = offRoute;
+                        nearest = facility;
+                        insertFromNode = node;
+                    }
+                }
+
+                // The facility lists are sparse; a driver would rather pull over at the roadside than drive a long loop.
+                if (AllowRoadsideStop && bestOffRoute > SemiTruckDriverConstants.MaxFacilityDetourMeters)
+                {
+                    // the stop node needs a following edge on the route, so the last node is excluded
+                    var candidates = nodes.Take(nodes.Count - 1).ToList();
+                    var roadside = candidates.FirstOrDefault(n => n.Along >= SemiTruckDriverConstants.RoadsideStopLookaheadMeters);
+                    var node = roadside.Node ?? candidates.LastOrDefault().Node;
+                    if (node != null)
+                    {
+                        Console.WriteLine($"[{GetStopType()}] No facility close to the route – stopping at the roadside.");
+                        planStopCallback(node.Position.Latitude, node.Position.Longitude, node);
+                        return;
+                    }
+                }
+
+                // nothing within reach ahead: fall back to the facility closest to the truck
+                if (nearest == null)
+                {
+                    nearest = facilityList.MinBy(r =>
+                        GeometryHelper.GetSquaredDistance(currentLat, currentLon, r.Lat, r.Lon));
+                    insertFromNode = steeringHandle.Route.Stops[steeringHandle.Route.PassedStops].Edge.To;
+                }
+            }
 
             if (nearest != null)
             {
                 Console.WriteLine($"Using fallback {GetStopType()} from CSV – ID: {nearest.Id} @ ({nearest.Lat}, {nearest.Lon})");
-                planStopCallback(nearest.Lat, nearest.Lon,
-                    steeringHandle.Route.Stops[steeringHandle.Route.PassedStops].Edge.To);
+                planStopCallback(nearest.Lat, nearest.Lon, insertFromNode);
             }
             else
             {

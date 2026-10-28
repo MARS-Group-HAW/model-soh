@@ -159,6 +159,8 @@ Station power is currently the carrier default (`RefuelState.StationPowerKw` is 
 
 A combined stop is logged as `Refuel` in the `rests` table.
 
+Rest areas come from `source_tag` edges within 100 km ahead, else from `rest_areas.csv`. That list is sparse, so a CSV facility is only used if it is within 10 km of the route ahead; otherwise the driver stops at the roadside on a route node about 5 km ahead (no detour). Charging stations are never replaced by roadside stops.
+
 ___
 
 ## Driver Initializer (`semi_truck_initializer.csv`)

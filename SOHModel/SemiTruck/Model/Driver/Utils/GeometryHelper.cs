@@ -24,6 +24,15 @@ namespace SOHModel.SemiTruck.Model.Driver.Utils
             return dLat * dLat + dLon * dLon;
         }
 
+        /// <summary>Approximate (equirectangular) distance in meters; sufficient for ranking nearby points.</summary>
+        public static double ApproxDistanceMeters(double lat1, double lon1, double lat2, double lon2)
+        {
+            const double metersPerDegree = 111_320.0;
+            double dLat = (lat1 - lat2) * metersPerDegree;
+            double dLon = (lon1 - lon2) * metersPerDegree * Math.Cos((lat1 + lat2) / 2 * Math.PI / 180.0);
+            return Math.Sqrt(dLat * dLat + dLon * dLon);
+        }
+
         /// <summary>
         /// Checks whether a position is on top of a given node (with tolerance).
         /// </summary>

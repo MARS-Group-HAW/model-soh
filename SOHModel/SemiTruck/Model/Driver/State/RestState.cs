@@ -30,6 +30,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
 
         protected override IEnumerable<dynamic> GetFacilityList(SemiTruckLayer layer) => layer.AllRestAreas;
 
+        protected override bool AllowRoadsideStop => true;
+
         protected override double GetSearchRadius() => SemiTruckDriverConstants.RestAreaSearchRadius;
 
         protected override bool ShouldStop(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,

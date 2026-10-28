@@ -178,6 +178,17 @@ namespace SOHModel.SemiTruck.Model.Driver.Services
             var splitStop = steeringHandle.Route.Stops[steeringHandle.Route.PassedStops + insertIndex];
             var splitNode = (splitStop.Edge.From == insertFromNode) ? splitStop.Edge.From : splitStop.Edge.To;
 
+            // Roadside stop: the stop location is a node of the current route, so no detour is needed
+            if (GeometryHelper.ApproxDistanceMeters(targetLat, targetLon,
+                    splitNode.Position.Latitude, splitNode.Position.Longitude) < 1.0)
+            {
+                if (_layer.notifyTrucks)
+                    _layer.RegisterTruckForRoute(driver, steeringHandle.Route);
+                Console.WriteLine($"Truck stops at the roadside ({stopType}) at ({targetLat}, {targetLon}).");
+                onSuccess(splitNode);
+                return;
+            }
+
             // Build route to stop location
             var toStopRoute = SemiTruckRouteFinder.Find(
                 _environment, _driveMode,

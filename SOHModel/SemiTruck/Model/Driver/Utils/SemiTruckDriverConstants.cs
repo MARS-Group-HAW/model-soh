@@ -9,6 +9,8 @@ namespace SOHModel.SemiTruck.Model.Driver.Utils
     {
         // Fuel/Energy thresholds
         public const double LowFuelThreshold = 100; // km
+        public const double MaxFacilityDetourMeters = 10_000; // farther off the route, a rest is taken at the roadside
+        public const double RoadsideStopLookaheadMeters = 5_000; // distance ahead at which a roadside stop is placed
         public const double MinObservedDistanceKm = 20; // distance after which the observed consumption is trusted
         public const double RouteChargeReserveKm = 50; // range that should remain on arrival when charging for the route
         public const double RouteChargeSafetyFactor = 1.1; // safety margin on the energy needed for the remaining route
