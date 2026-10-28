@@ -18,8 +18,15 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         /// </summary>
         public void AdjustForWeather(SemiTruckDriver driver, SemiTruckWeatherLayer weatherLayer)
         {
+            // Without weather the cap must still be restored every tick, otherwise the incline limit of an
+            // earlier climb would persist as the new maximum speed.
             if (weatherLayer == null || driver.Position == null)
+            {
+                if (_originalMaxSpeed < 0)
+                    _originalMaxSpeed = driver.SemiTruck.MaxSpeed;
+                driver.MaxSpeed = _originalMaxSpeed;
                 return;
+            }
 
             var point = new Point(driver.Longitude, driver.Latitude);
             var now = weatherLayer.SemiTruckLayer.Context.CurrentTimePoint ?? DateTime.Now;

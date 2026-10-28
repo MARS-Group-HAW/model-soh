@@ -152,5 +152,34 @@ namespace SOHTests
             edge.Setup(e => e.Attributes).Returns(new Dictionary<string, object> { ["elevation"] = "[1.5,null]" });
             Assert.Null(SpeedAdjuster.ParseElevationProfile(edge.Object));
         }
+
+        [Fact]
+        public void TestInclineSpeedLimitRecoversAfterClimb()
+        {
+            var truck = new SemiTruck { Mass = 40000, Power = 400, MaxSpeed = 25, PositionOnCurrentEdge = 100 };
+            var driver = new SemiTruckDriver { SemiTruck = truck };
+            var adjuster = new SpeedAdjuster();
+            var tracker = new FuelConsumptionTracker();
+
+            ISpatialEdge Edge(double[] elevation)
+            {
+                var edge = new Mock<ISpatialEdge>();
+                edge.Setup(e => e.Length).Returns(1000);
+                edge.Setup(e => e.Attributes).Returns(new Dictionary<string, object>
+                    { ["elevation"] = "[" + string.Join(",", elevation) + "]" });
+                return edge.Object;
+            }
+
+            var climb = Edge(new double[] { 0, 30, 60, 90, 120 }); // ~12 % grade
+            var flat = Edge(new double[] { 100, 100, 100, 100, 100 });
+
+            adjuster.AdjustForWeather(driver, null);
+            adjuster.AdjustForIncline(climb, truck, driver, tracker);
+            Assert.True(truck.MaxSpeed < 25);
+
+            adjuster.AdjustForWeather(driver, null);
+            adjuster.AdjustForIncline(flat, truck, driver, tracker);
+            Assert.Equal(25, truck.MaxSpeed);
+        }
     }
 }
