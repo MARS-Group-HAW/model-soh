@@ -45,6 +45,13 @@ namespace SOHModel.SemiTruck.Scheduling
                 var destLon = dataRow.Data["destinationX"].Value<double>();
                 var driveMode = dataRow.Data.TryGetValue("DriveMode", out var driveModeValue) ? driveModeValue.Value<int>() : 3;
                 
+                double? payloadKg = dataRow.Data.TryGetValue("Payload", out var payloadValue)
+                                    && double.TryParse(payloadValue.Value<string>(),
+                                        System.Globalization.NumberStyles.Float,
+                                        System.Globalization.CultureInfo.InvariantCulture, out var parsedPayload)
+                    ? parsedPayload
+                    : null;
+
                 var agentManager = SemiTruckLayer.Container.Resolve<IAgentManager>();
                 var agents = agentManager.Spawn<SemiTruckDriver, SemiTruckLayer>(
                     dependencies: new List<IModelObject> { SemiTruckLayer, SemiTruckLayer.Environment },
@@ -56,6 +63,7 @@ namespace SOHModel.SemiTruck.Scheduling
                         agent.DestLon = destLon;
                         agent.DriveMode = driveMode;
                         agent.TruckType = semiTruckType;
+                        agent.PayloadKg = payloadKg;
                     });
 
                 

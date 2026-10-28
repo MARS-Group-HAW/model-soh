@@ -29,6 +29,28 @@ namespace SOHModel.SemiTruck.Model
         }
 
         /// <summary>
+        /// Unladen mass in kg (tractor plus trailer). If greater than zero, <see cref="RoadUser.Mass"/> is
+        /// derived as <c>TareMass + Payload</c>; otherwise the legacy <c>mass</c> column is used unchanged.
+        /// </summary>
+        [PropertyDescription(Name = "tareMass", Ignore = true)]
+        public double TareMass { get; set; }
+
+        /// <summary>
+        /// Default cargo mass in kg, used together with <see cref="TareMass"/>.
+        /// </summary>
+        [PropertyDescription(Name = "payload", Ignore = true)]
+        public double Payload { get; set; }
+
+        /// <summary>
+        /// Recomputes <see cref="RoadUser.Mass"/> from tare mass and payload (optionally overriding the payload).
+        /// </summary>
+        public void ApplyLoad(double? payloadOverrideKg = null)
+        {
+            if (payloadOverrideKg is >= 0) Payload = payloadOverrideKg.Value;
+            if (TareMass > 0) Mass = TareMass + Payload;
+        }
+
+        /// <summary>
         /// The fuel consumption strategy used by the truck.
         /// </summary>
         public IFuelConsumptionStrategy FuelConsumptionStrategy { get; private set; }

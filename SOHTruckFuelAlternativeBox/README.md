@@ -86,8 +86,28 @@ type,maxAcceleration,maxDeceleration,maxSpeed,length,height,width,trafficCode,
 | `tank2wheel`              | Drivetrain efficiency (0–1); diesel ≈ 0.35, BEV ≈ 0.85, FCEV ≈ 0.50 |
 | `fuelConsumptionPer100km` | Nominal consumption per 100 km in the native unit (linear baseline) |
 | `refuelTimeInMinutes`     | **Legacy, unused.** The refuel duration now emerges from the charging power |
+| `mass`                    | Total mass in kg (legacy; ignored when `tareMass` > 0)              |
+| `tareMass`                | Unladen mass in kg (tractor + trailer). If > 0: `mass = tareMass + payload` |
+| `payload`                 | Default cargo mass in kg; override per run via the `Payload` column in `semi_truck_initializer.csv` |
+| `dragCoefficient`, `rollingResistance` | Optional road-load coefficients (defaults 0.6 / 0.006) |
 | `maxChargePowerKw`        | Optional vehicle charge/fill power limit; `<= 0` uses the carrier default |
 | `FuelStrategy`            | `Linear` or `RoadLoad`                                              |
+
+### Mercedes-Benz eActros 600 (`MercedesBenzEActros600`)
+
+Sources: Mercedes-Benz Trucks eActros 600 specification; ADAC test (Sept 2024).
+
+| Parameter | Value | Basis |
+|---|---|---|
+| `power` | 400 kW | continuous (600 kW peak) |
+| `maxFuelCarrierAmount` | 600 kWh | usable (621 kWh nominal, ~95 % usable per ADAC) |
+| `maxChargePowerKw` | 400 kW | CCS2 (MCS 1000 kW not yet modelled) |
+| `tareMass` | 18,700 kg | tractor ≈ 11,700 kg + **assumed** 7,000 kg trailer |
+| `payload` | 21,300 kg | gives the 40 t gross combination weight of the 500 km claim |
+| `maxSpeed` | 25 m/s | 90 km/h (not officially published) |
+| `length`/`width`/`height` | 16.5 / 2.55 / 4.0 m | frontal area 10.2 m² |
+| `dragCoefficient`, `rollingResistance`, `tank2wheel` | 0.55, 0.006, 0.90 | **literature estimates, not published by Mercedes, not calibrated** |
+| `fuelConsumptionPer100km` | 90 kWh | nominal value for the refuel range estimate (ADAC measured ≈ 88) |
 
 ### Example truck types (from `resources/semi_truck.csv`)
 

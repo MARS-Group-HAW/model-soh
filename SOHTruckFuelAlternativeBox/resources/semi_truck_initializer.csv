@@ -1,2 +1,2 @@
-TruckType,StartLat,StartLon,DestLat,DestLon,DriveMode
-SmallElectricTruck,53.537079,10.030239,52.375258,13.307587,3
+TruckType,StartLat,StartLon,DestLat,DestLon,DriveMode,Payload
+MercedesBenzEActros600,53.537079,10.030239,47.680491,11.19668,3,

@@ -178,6 +178,21 @@ namespace SOHTests
         }
 
         [Fact]
+        public void TestMassIsTareAndPayload()
+        {
+            var truck = new SemiTruck { Mass = 5000, TareMass = 18700, Payload = 21300 };
+            truck.ApplyLoad();
+            Assert.Equal(40000, truck.Mass);
+
+            truck.ApplyLoad(10000); // per-run override
+            Assert.Equal(28700, truck.Mass);
+
+            var legacy = new SemiTruck { Mass = 5800 };
+            legacy.ApplyLoad(10000);
+            Assert.Equal(5800, legacy.Mass); // no tare mass defined: legacy mass untouched
+        }
+
+        [Fact]
         public void TestInclineSpeedLimitRecoversAfterClimb()
         {
             var truck = new SemiTruck { Mass = 40000, Power = 400, MaxSpeed = 25, PositionOnCurrentEdge = 100 };

@@ -62,6 +62,7 @@ namespace SOHModel.SemiTruck.Model
             SemiTruck.Environment = _environment;
             SemiTruck.Layer = _layer;
             SemiTruck.InitializeFuelStrategy();
+            SemiTruck.ApplyLoad(PayloadKg);
             _fuelTracker.FuelCarrierAmount = SemiTruck.MaxFuelCarrierAmount;
             DefaultAccidentsPerYear = SemiTruck.AccidentsPerYear;
             _accidentState.DefaultAccidentsPerYear = DefaultAccidentsPerYear;
@@ -235,6 +236,9 @@ namespace SOHModel.SemiTruck.Model
         [PropertyDescription] public double DestLon { get; set; }
         [PropertyDescription] public int DriveMode { get; set; }
         [PropertyDescription] public string TruckType { get; set; }
+
+        /// <summary>Optional per-run payload in kg; overrides the truck type's default payload.</summary>
+        public double? PayloadKg { get; set; }
 
         public double FuelCarrierAmount
         {
