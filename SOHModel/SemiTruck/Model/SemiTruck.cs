@@ -68,6 +68,36 @@ namespace SOHModel.SemiTruck.Model
         public FuelStrategyType FuelStrategy { get; set; } = FuelStrategyType.Linear;
 
         /// <summary>
+        /// The strategy used to plan breaks and rests.
+        /// </summary>
+        public IRestStrategy RestPlanningStrategy { get; private set; } = new LegalMinimumRestStrategy();
+
+        /// <summary>
+        /// Selects the rest planning strategy (CSV column <c>restStrategy</c>).
+        /// </summary>
+        [PropertyDescription(Name = "restStrategy", Ignore = true)]
+        public RestStrategyType RestStrategy { get; set; } = RestStrategyType.LegalMinimum;
+
+        /// <summary>
+        /// Minutes of legal driving time left at which the driver starts looking for a stop; <c>0</c> uses the default (30).
+        /// </summary>
+        [PropertyDescription(Name = "restPlanningMarginMinutes", Ignore = true)]
+        public double RestPlanningMarginMinutes { get; set; }
+
+        /// <summary>
+        /// Initializes the rest planning strategy based on <see cref="RestStrategy"/>.
+        /// </summary>
+        public void InitializeRestStrategy()
+        {
+            RestPlanningStrategy = RestStrategy switch
+            {
+                RestStrategyType.LegalMinimum => new LegalMinimumRestStrategy(),
+                RestStrategyType.ChargeWhileResting => new ChargeWhileRestingStrategy(),
+                _ => throw new InvalidOperationException($"Unknown rest strategy: {RestStrategy}")
+            };
+        }
+
+        /// <summary>
         /// Initializes the fuel consumption strategy based on the FuelStrategy type.
         /// </summary>
         public void InitializeFuelStrategy()

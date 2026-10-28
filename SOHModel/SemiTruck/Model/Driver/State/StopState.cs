@@ -19,6 +19,10 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         protected bool _planned;
         protected bool _goingToStop;
         protected ISpatialNode _targetNode;
+        protected DateTime _stopStartTime;
+
+        /// <summary>True while a stop is planned, being approached or in progress.</summary>
+        public bool IsActive => _planned || _goingToStop || _isPausing;
 
         /// <summary>
         /// Gets the type of stop for logging purposes.
@@ -98,6 +102,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                     driver.FuelCarrierAmount
                     )
                 );
+                _stopStartTime = layer._simulationTime;
                 OnArrival(layer);
                 _goingToStop = false;
                 _isPausing = true;
@@ -113,6 +118,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                 {
                     Console.WriteLine($"[{GetStopType()}] Pause completed. Resuming route.");
                     OnPauseCompleted(layer, truck, fuelTracker, driver);
+                    driver.DrivingTime.RegisterStop(layer._simulationTime - _stopStartTime);
 
                     // logged after OnPauseCompleted so that the event carries the final fuel level
                     PostgresDbLogger.Instance.Log(new RestEntity(truck.ID,

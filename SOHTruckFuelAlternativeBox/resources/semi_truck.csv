@@ -1,2 +1,2 @@
-type,maxAcceleration,maxDeceleration,maxSpeed,length,height,width,trafficCode,passengerCapacity,velocity,mass,tareMass,payload,maxIncline,accidentsPerYear,power,fuelCarrierType,maxFuelCarrierAmount,tank2wheel,fuelConsumptionPer100km,refuelTimeInMinutes,FuelStrategy,dragCoefficient,rollingResistance,maxChargePowerKw
-MercedesBenzEActros600,1.0,1.2,25,16.5,4,2.55,german,2,0,40000,18700,21300,25,11169,400,Battery,600,0.9,90,45,RoadLoad,0.55,0.006,400
+type,maxAcceleration,maxDeceleration,maxSpeed,length,height,width,trafficCode,passengerCapacity,velocity,mass,tareMass,payload,maxIncline,accidentsPerYear,power,fuelCarrierType,maxFuelCarrierAmount,tank2wheel,fuelConsumptionPer100km,refuelTimeInMinutes,FuelStrategy,dragCoefficient,rollingResistance,maxChargePowerKw,restStrategy
+MercedesBenzEActros600,1.0,1.2,25,16.5,4,2.55,german,2,0,40000,18700,21300,25,11169,400,Battery,600,0.9,90,45,RoadLoad,0.55,0.006,400,ChargeWhileResting

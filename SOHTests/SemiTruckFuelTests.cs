@@ -235,5 +235,77 @@ namespace SOHTests
             var diesel = new SemiTruck { FuelCarrierType = FuelCarrierType.Fuel, MaxFuelCarrierAmount = 400 };
             Assert.Equal(400, ChargingProfile.TargetAmount(diesel), 6);
         }
+
+        private static void Drive(DrivingTimeTracker t, double hours) => t.AddDriving(System.TimeSpan.FromHours(hours));
+
+        [Fact]
+        public void TestBreakCanBeSplitFifteenThenThirty()
+        {
+            var t = new DrivingTimeTracker();
+            var margin = System.TimeSpan.FromMinutes(30);
+            Drive(t, 4.0);
+            Assert.NotNull(t.DueStop(margin));
+            Assert.Equal(System.TimeSpan.FromMinutes(45), t.RemainingBreak);
+
+            t.RegisterStop(System.TimeSpan.FromMinutes(10)); // too short, ignored
+            Assert.Equal(System.TimeSpan.FromMinutes(45), t.RemainingBreak);
+
+            t.RegisterStop(System.TimeSpan.FromMinutes(20)); // first part
+            Assert.Equal(System.TimeSpan.FromMinutes(30), t.RemainingBreak);
+            Assert.NotNull(t.DueStop(margin)); // not yet complete
+
+            t.RegisterStop(System.TimeSpan.FromMinutes(30)); // second part completes the break
+            Assert.Equal(System.TimeSpan.Zero, t.DrivingSinceBreak);
+            Assert.Null(t.DueStop(margin));
+        }
+
+        [Fact]
+        public void TestThirtyThenFifteenDoesNotCountAsBreak()
+        {
+            var t = new DrivingTimeTracker();
+            Drive(t, 4.0);
+            t.RegisterStop(System.TimeSpan.FromMinutes(30)); // a 30 min part may not come first
+            Assert.True(t.FirstBreakPartTaken); // it still counts as the (>= 15 min) first part
+            t.RegisterStop(System.TimeSpan.FromMinutes(15)); // 15 as second part is not enough
+            Assert.True(t.DrivingSinceBreak > System.TimeSpan.Zero);
+        }
+
+        [Fact]
+        public void TestDailyRestResetsEverything()
+        {
+            var t = new DrivingTimeTracker();
+            Drive(t, 8.7);
+            Assert.Equal(System.TimeSpan.FromHours(9), t.DueStop(System.TimeSpan.FromMinutes(30))!.Value.Duration);
+            Assert.True(t.DueStop(System.TimeSpan.FromMinutes(30))!.Value.IsDailyRest);
+
+            t.RegisterStop(System.TimeSpan.FromHours(9));
+            Assert.Equal(System.TimeSpan.Zero, t.DrivingSinceDailyRest);
+            Assert.Null(t.DueStop(System.TimeSpan.FromMinutes(30)));
+        }
+
+        [Fact]
+        public void TestChargeWhileRestingChoosesChargerOnlyIfChargeIsNeeded()
+        {
+            var truck = new SemiTruck
+            {
+                FuelCarrierType = FuelCarrierType.Battery, MaxFuelCarrierAmount = 600, FuelConsumptionPer100Km = 100,
+                MaxSpeed = 25, FuelStrategy = FuelStrategyType.Linear
+            };
+            truck.InitializeFuelStrategy();
+            var t = new DrivingTimeTracker();
+            Drive(t, 4.2);
+            var margin = System.TimeSpan.FromMinutes(30);
+
+            var low = new FuelConsumptionTracker { FuelCarrierAmount = 100 }; // 100 km range
+            var full = new FuelConsumptionTracker { FuelCarrierAmount = 600 }; // 600 km range
+
+            var combined = new ChargeWhileRestingStrategy();
+            Assert.Equal(StopFacility.ChargingStation, combined.NextRequirement(t, truck, low, 500_000, margin).Facility);
+            Assert.Equal(StopFacility.RestArea, combined.NextRequirement(t, truck, full, 200_000, margin).Facility);
+            Assert.Equal(StopFacility.RestArea, new LegalMinimumRestStrategy().NextRequirement(t, truck, low, 500_000, margin).Facility);
+
+            // destination reachable within the legal driving time: no stop
+            Assert.Null(combined.NextRequirement(t, truck, low, 10_000, margin));
+        }
     }
 }

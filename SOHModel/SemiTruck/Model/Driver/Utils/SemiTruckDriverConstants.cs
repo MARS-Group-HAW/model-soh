@@ -26,8 +26,15 @@ namespace SOHModel.SemiTruck.Model.Driver.Utils
         public const double NodeToleranceMeters = 1.0; // Tolerance for node arrival detection
 
         // Time limits and durations
-        public static readonly TimeSpan DefaultRestDuration = TimeSpan.FromHours(4);
-        public static readonly TimeSpan MaxDrivingTimeLimit = TimeSpan.FromHours(9);
+        // EU Regulation 561/2006 (legal minimum): 45 min break (15 + 30 min) after 4.5 h, daily rest (reduced) after 9 h
+        public static readonly TimeSpan MaxDrivingBeforeBreak = TimeSpan.FromHours(4.5);
+        public static readonly TimeSpan BreakDuration = TimeSpan.FromMinutes(45);
+        public static readonly TimeSpan BreakFirstPart = TimeSpan.FromMinutes(15);
+        public static readonly TimeSpan BreakSecondPart = TimeSpan.FromMinutes(30);
+        public static readonly TimeSpan MaxDailyDriving = TimeSpan.FromHours(9);
+        public static readonly TimeSpan DailyRestDuration = TimeSpan.FromHours(9);
+        public static readonly TimeSpan DefaultRestPlanningMargin = TimeSpan.FromMinutes(30);
+        public const double PlanningSpeedFraction = 0.7; // share of max speed assumed to estimate the remaining drive time
         public static readonly TimeSpan DefaultAccidentDuration = TimeSpan.FromMinutes(41);
         public static readonly TimeSpan ShoulderAccidentDuration = TimeSpan.FromMinutes(2);
 

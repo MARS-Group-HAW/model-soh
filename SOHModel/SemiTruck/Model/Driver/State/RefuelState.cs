@@ -14,6 +14,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
     public class RefuelState : StopState
     {
         private bool _targetReached;
+        private RestRequirement _combinedRest;
 
         /// <summary>
         /// Power in kW-equivalent of the station the truck is currently heading to / standing at.
@@ -21,10 +22,19 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         /// </summary>
         public double? StationPowerKw { get; set; }
 
+        /// <summary>
+        /// Requests a stop at a charging station that also serves as the driver's break or daily rest: the stop lasts
+        /// at least the required rest time, and during a daily rest the battery is charged to 100 %.
+        /// </summary>
+        public void RequestCombinedRest(RestRequirement requirement) => _combinedRest = requirement;
+
+        public bool HasCombinedRestRequest => _combinedRest != null;
+
         protected override RestStateType GetStopType() => RestStateType.Refuel;
 
         // The duration emerges from the charging process, there is no fixed pause time.
-        protected override TimeSpan GetPauseDuration(SemiTruckLayer layer, SemiTruck truck) => TimeSpan.Zero;
+        protected override TimeSpan GetPauseDuration(SemiTruckLayer layer, SemiTruck truck) =>
+            _combinedRest?.Duration ?? TimeSpan.Zero;
 
         protected override string[] GetSearchTags() => new[] { "services", "fuel", "charging_station" };
 
@@ -35,6 +45,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         protected override bool ShouldStop(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
             SemiTruck truck, FuelConsumptionTracker fuelTracker)
         {
+            if (_combinedRest != null) return true;
+
             // Estimate how far the truck can go with current energy (in km)
             double availableRangeKm = truck.FuelConsumptionStrategy.EstimateRemainingRangeKm(truck, fuelTracker.FuelCarrierAmount);
 
@@ -55,6 +67,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             FuelConsumptionTracker fuelTracker, SemiTruckDriver driver)
         {
             _targetReached = false;
+            _combinedRest = null;
         }
 
         protected override void OnArrival(SemiTruckLayer layer)
@@ -69,11 +82,15 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             FuelConsumptionTracker fuelTracker, SemiTruckDriver driver)
         {
             double added = ChargingProfile.AmountAdded(truck, fuelTracker.FuelCarrierAmount,
-                layer._tickDuration.TotalSeconds, StationPowerKw);
+                layer._tickDuration.TotalSeconds, StationPowerKw, ChargeTargetOverride);
             fuelTracker.Charge(truck, added);
-            _targetReached = fuelTracker.FuelCarrierAmount >= ChargingProfile.TargetAmount(truck) - 1e-9;
+            _targetReached = fuelTracker.FuelCarrierAmount >= ChargingProfile.TargetAmount(truck, ChargeTargetOverride) - 1e-9;
         }
 
-        protected override bool IsPauseCompleted(SemiTruckLayer layer, SemiTruck truck) => _targetReached;
+        private double? ChargeTargetOverride => _combinedRest is { IsDailyRest: true } ? 1.0 : null;
+
+        protected override bool IsPauseCompleted(SemiTruckLayer layer, SemiTruck truck) =>
+            _targetReached && (_combinedRest == null ||
+                               layer._simulationTime >= _stopStartTime + _combinedRest.Duration);
     }
 }

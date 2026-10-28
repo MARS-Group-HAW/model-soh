@@ -6,6 +6,7 @@ using SOHModel.Domain.Steering.Common;
 using SOHModel.SemiTruck.Common;
 using SOHModel.SemiTruck.Model.Driver.Services;
 using SOHModel.SemiTruck.Model.Driver.State;
+using SOHModel.SemiTruck.Model.Driver.Utils;
 using SOHModel.SemiTruck.RealTimeData;
 using SOHModel.SemiTruck.Steering;
 using Position = Mars.Interfaces.Environments.Position;
@@ -37,6 +38,9 @@ namespace SOHModel.SemiTruck.Model
         public double DefaultAccidentsPerYear { get; set; }
         public SemiTruck SemiTruck { get; set; }
 
+        /// <summary>Driving time and break bookkeeping according to EU 561/2006.</summary>
+        public DrivingTimeTracker DrivingTime { get; } = new();
+
         // Constructor
         public SemiTruckDriver()
         {
@@ -62,6 +66,7 @@ namespace SOHModel.SemiTruck.Model
             SemiTruck.Environment = _environment;
             SemiTruck.Layer = _layer;
             SemiTruck.InitializeFuelStrategy();
+            SemiTruck.InitializeRestStrategy();
             SemiTruck.ApplyLoad(PayloadKg);
             _fuelTracker.FuelCarrierAmount = SemiTruck.MaxFuelCarrierAmount;
             DefaultAccidentsPerYear = SemiTruck.AccidentsPerYear;
@@ -107,9 +112,6 @@ namespace SOHModel.SemiTruck.Model
             // Register the agent
             layer.RegisterAgent.Invoke(layer, this);
 
-            // Initialize rest state
-            _restState.Initialize(_layer._simulationTime);
-
             // log initial state at tick 0 (fuel consumption, physics, and decision data)
             _steeringHandle.LogInitialState();
             _fuelTracker.UpdateConsumption(_steeringHandle, _layer, SemiTruck);
@@ -131,6 +133,9 @@ namespace SOHModel.SemiTruck.Model
             if (_accidentState.HandleOngoing(this, _layer, RemoveFromSimulation)) return;
             if (_accidentState.HandleChance(_steeringHandle, _layer, SemiTruck, _layer.amountOfTrucks)) return;
 
+            DrivingTime.AddDriving(_layer._tickDuration);
+            RequestDueRest();
+
             // Update fuel and check refueling
             _fuelTracker.UpdateConsumption(_steeringHandle, _layer, SemiTruck);
             _refuelState.CheckAndPlan(_steeringHandle, _layer, SemiTruck, _fuelTracker, PlanRefuelStop);
@@ -151,7 +156,7 @@ namespace SOHModel.SemiTruck.Model
                 _speedAdjuster.AdjustForIncline(edge, SemiTruck, this, _fuelTracker);
             }
 
-            // Check rest requirements
+            // Plan the requested rest stop
             _restState.CheckAndPlan(_steeringHandle, _layer, SemiTruck, _fuelTracker, PlanRestStop);
 
             // Move and check goal
@@ -185,6 +190,27 @@ namespace SOHModel.SemiTruck.Model
 
             _environment.Remove(SemiTruck);
             _unregister.Invoke(_layer, this);
+        }
+
+        /// <summary>
+        /// Asks the rest strategy whether a break or daily rest is due and hands the request to the state that
+        /// serves the chosen facility. Only one stop is in flight at a time; a stop that is already under way
+        /// is credited towards the break when it ends.
+        /// </summary>
+        private void RequestDueRest()
+        {
+            if (_restState.IsActive || _refuelState.IsActive || _restState.HasRequest || _refuelState.HasCombinedRestRequest)
+                return;
+
+            var margin = SemiTruck.RestPlanningMarginMinutes > 0
+                ? TimeSpan.FromMinutes(SemiTruck.RestPlanningMarginMinutes)
+                : SemiTruckDriverConstants.DefaultRestPlanningMargin;
+            var requirement = SemiTruck.RestPlanningStrategy.NextRequirement(DrivingTime, SemiTruck, _fuelTracker,
+                _steeringHandle.Route.RemainingRouteDistanceToGoal, margin);
+            if (requirement == null) return;
+
+            if (requirement.Facility == StopFacility.ChargingStation) _refuelState.RequestCombinedRest(requirement);
+            else _restState.Request(requirement);
         }
 
         private void PlanRestStop(double lat, double lon, ISpatialNode insertFromNode)

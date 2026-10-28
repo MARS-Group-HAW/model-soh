@@ -93,6 +93,8 @@ type,maxAcceleration,maxDeceleration,maxSpeed,length,height,width,trafficCode,
 | `chargeTargetSoc`         | Optional SoC (0–1) at which a stop ends; `<= 0` = default (0.8 battery, 1.0 fuel/hydrogen) |
 | `maxChargePowerKw`        | Optional vehicle charge/fill power limit; `<= 0` uses the carrier default |
 | `FuelStrategy`            | `Linear` or `RoadLoad`                                              |
+| `restStrategy`            | `LegalMinimum` (default) or `ChargeWhileResting`, see below         |
+| `restPlanningMarginMinutes` | Optional: legal driving time left at which the stop search starts (default 30) |
 
 ### Mercedes-Benz eActros 600 (`MercedesBenzEActros600`)
 
@@ -134,6 +136,28 @@ of the maximum at 100 % (CC-CV approximation); fuel and hydrogen do not taper. C
 
 Station power is currently the carrier default (`RefuelState.StationPowerKw` is the hook for per-station values, as
 `refuel_stations.csv` has no power column yet).
+
+### Breaks and rests (EU 561/2006, legal minimum)
+
+`DrivingTimeTracker` counts driving time (ticks in which the truck is not stopped by a rest, refuel or accident):
+
+- 45 min break after 4.5 h of driving; it may be split into **15 min followed by 30 min**, never 30 then 15.
+- Daily rest (reduced, 9 h) after 9 h of driving. A daily rest also resets the break.
+- Every stationary stop, including charging stops, is credited. A charging stop therefore also counts as break or
+  rest if it is long enough; the driver is assumed to rest while the truck charges.
+- The driver starts looking for a stop `restPlanningMarginMinutes` before the limit, since the facility has to be
+  reached in time. No stop is planned if the destination is reached within the legal time. If the nearest facility is
+  further away than the margin allows, the limit is exceeded (no violation is logged).
+- Not modelled: 10 h driving days, split daily rest, weekly limits.
+
+`restStrategy` selects where the required stop takes place (`IRestStrategy`, analogous to `FuelStrategy`):
+
+| Strategy             | Behaviour |
+|----------------------|-----------|
+| `LegalMinimum`       | Breaks and rests at rest areas. |
+| `ChargeWhileResting` | Battery trucks that cannot reach the destination with the current charge (range < remaining route + low-fuel threshold) rest at a charging station: the stop lasts at least the required rest and charges to `chargeTargetSoc`, or to 100 % during a daily rest. Otherwise a rest area is used. |
+
+A combined stop is logged as `Refuel` in the `rests` table.
 
 ___
 

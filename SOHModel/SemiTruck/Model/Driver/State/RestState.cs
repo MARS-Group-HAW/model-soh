@@ -14,21 +14,17 @@ namespace SOHModel.SemiTruck.Model.Driver.State
     /// </summary>
     public class RestState : StopState
     {
-        private DateTime _lastBreakTime;
-        private DateTime _restStartTime = DateTime.MinValue;
-        private readonly TimeSpan _maxDrivingTimeWithoutBreak = SemiTruckDriverConstants.MaxDrivingTimeLimit;
+        private RestRequirement _requirement;
 
-        /// <summary>
-        /// Initializes the rest state with the current simulation time.
-        /// </summary>
-        public void Initialize(DateTime simulationTime)
-        {
-            _lastBreakTime = simulationTime;
-        }
+        /// <summary>Requests a stop at a rest area; planning starts with the next <c>CheckAndPlan</c>.</summary>
+        public void Request(RestRequirement requirement) => _requirement = requirement;
+
+        public bool HasRequest => _requirement != null;
 
         protected override RestStateType GetStopType() => RestStateType.Rest;
 
-        protected override TimeSpan GetPauseDuration(SemiTruckLayer layer, SemiTruck truck) => SemiTruckDriverConstants.DefaultRestDuration;
+        protected override TimeSpan GetPauseDuration(SemiTruckLayer layer, SemiTruck truck) =>
+            _requirement?.Duration ?? SemiTruckDriverConstants.BreakDuration;
 
         protected override string[] GetSearchTags() => new[] { "rest_area", "services" };
 
@@ -37,25 +33,17 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         protected override double GetSearchRadius() => SemiTruckDriverConstants.RestAreaSearchRadius;
 
         protected override bool ShouldStop(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
-            SemiTruck truck, FuelConsumptionTracker fuelTracker)
-        {
-            return ShouldRest(layer._simulationTime, steeringHandle.Route.RemainingRouteDistanceToGoal);
-        }
+            SemiTruck truck, FuelConsumptionTracker fuelTracker) => _requirement != null;
 
         protected override void OnPauseCompleted(SemiTruckLayer layer, SemiTruck truck,
             FuelConsumptionTracker fuelTracker, SemiTruckDriver driver)
         {
-            _lastBreakTime = layer._simulationTime;
-        }
-
-        protected override void OnArrival(SemiTruckLayer layer)
-        {
-            _restStartTime = layer._simulationTime;
+            _requirement = null;
         }
 
         protected override bool IsPauseCompleted(SemiTruckLayer layer, SemiTruck truck)
         {
-            return layer._simulationTime >= _restStartTime + GetPauseDuration(layer, truck);
+            return layer._simulationTime >= _stopStartTime + GetPauseDuration(layer, truck);
         }
 
         /// <summary>
@@ -65,15 +53,6 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             SemiTruckDriver semiTruckDriver)
         {
             return HandlePause(steeringHandle, layer, semiTruckDriver.SemiTruck, null, semiTruckDriver);
-        }
-
-        /// <summary>
-        /// Checks whether the truck needs to take a mandatory rest break.
-        /// </summary>
-        public bool ShouldRest(DateTime simulationTime, double remainingDistance)
-        {
-            return (simulationTime - _lastBreakTime) > _maxDrivingTimeWithoutBreak &&
-                   remainingDistance > SemiTruckDriverConstants.RestAreaSearchRadius;
         }
     }
 }
