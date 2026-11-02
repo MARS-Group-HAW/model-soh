@@ -96,6 +96,54 @@ The full export and preprocessing pipeline is implemented in Python and can be f
   - `gas_stations.csv`
 ---
 
+### Neighbouring Countries (Transeuropean Transport)
+
+To simulate transport with Germany at the centre, a **second graph file** with the road network of the neighbouring
+countries is loaded *in addition* to the German map. MARS merges several graph inputs and joins nodes with identical
+coordinates, so trucks can cross borders. This was verified with Frankfurt → Vienna (542 km), Berlin → Prague, Hamburg → Brussels, Hamburg → Copenhagen, Munich → Zurich, Berlin → Warsaw, Cologne → Amsterdam, Stuttgart → Paris.
+`SemiTruckLayer` builds the environment from **all** inputs of the layer if more than one is configured.
+
+Why a second file instead of one merged file: edge IDs of the German file are index based (`start_edge_ids.json`,
+`road_closures_by_ID.csv`, `route_cache.db`), so the German file must stay untouched.
+
+Steps (scripts in `resources/Scripts/GeoJSON/`; the Overpass API was far too slow/at capacity for country-sized
+queries, so the data comes from local Geofabrik `.osm.pbf` extracts parsed with pyosmium; python deps: osmnx,
+geopandas, shapely, requests, numpy, tqdm, osmium):
+
+1. **`export_Neighbor_Countries.py --pbf-dir <cache dir> --german-geojson <german.geojson> --output neighbors_raw.geojson`**  
+   Downloads (and caches in `--pbf-dir`) the Geofabrik extracts of AT, BE, CH, CZ, DK, FR (Alsace, Lorraine,
+   Champagne-Ardenne, Nord-Pas-de-Calais, Picardie, Ile-de-France), LU, NL, PL; `osm_pbf_extract.py` filters them to
+   `highway` ways for `osmnx`. Per country only these areas are kept: motorway/trunk within 50 km of the German
+   border, motorway/trunk/primary within a 5 km border band, 25 km wide motorway/trunk corridors from the border to
+   each city (Vienna, Prague, Brussels, Antwerp, Amsterdam, Rotterdam, Copenhagen, Warsaw, Poznan, Wroclaw, Paris,
+   Strasbourg, Bern, Zurich, Basel, Luxembourg; Copenhagen uses waypoints `CITY_VIA` over Jutland/Funen/Great Belt) and
+   20 km city discs with primary roads. Nodes coinciding with German nodes are kept as join points. Because Geofabrik
+   extracts are clipped at the border, many crossings do not share a node with the German map; dead ends and the
+   closest node of every unconnected component within 1.5 km of a German node are therefore joined to it by a
+   connector edge. Components without connection to Germany are dropped. Every node/edge has a `country` attribute,
+   edges a `border_crossing` flag. Without `--pbf-dir` the script falls back to Overpass (`--overpass-url`).
+2. **`enrich_Neighbor_Map.py --input neighbors_raw.geojson --output neighbors_elevation.geojson --tile-dir <dir>`**  
+   Adds elevation (local SRTM sampling, no API quota), incline, `capacity_fe` and the German schema.
+3. **`export_Neighbor_Stations.py --pbf-dir <cache dir>`**  
+   Exports fuel stations and rest areas of the neighbours from the same extracts and tags every row with its
+   `country` (`refuel_stations_neighbors.csv`, `rest_areas_neighbors.csv`, IDs start at 100001). Not yet read by the
+   model.
+4. Add the file as a second input of `SemiTruckLayer` in the config:
+   ```json
+   "inputs": [
+     {"file": "resources/autobahn_und_bundesstrassen_deutschland_elevation_21.geojson",
+      "inputConfiguration": {"modalities": ["CarDriving"], "isBidirectedGraph": true}},
+     {"file": "resources/neighbors_elevation.geojson",
+      "inputConfiguration": {"modalities": ["CarDriving"], "isBidirectedGraph": true}}
+   ]
+   ```
+
+Known limitations: speed limits without an OSM value use per-country defaults (`DEFAULT_SPEEDS`); the maximum
+incline is capped at 12 %; entry/exit nodes and the lookup table are still Germany-only; charging data is only
+available for Germany (Deutschlandnetz).
+
+---
+
 ### File Information
 
 The current final output is a file named:

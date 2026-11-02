@@ -10,6 +10,7 @@ using Mars.Interfaces.Data;
 using Mars.Interfaces.Environments;
 using Mars.Interfaces.Layers;
 using Mars.Interfaces.Model;
+using Mars.Interfaces.Model.Options;
 using ServiceStack.Text;
 using SOHModel.Domain.Graph;
 using System.Threading.Tasks;
@@ -117,6 +118,14 @@ namespace SOHModel.SemiTruck.Model
             if (Mapping.Value is ISpatialGraphEnvironment input)
             {
                 Environment = input;
+            }
+            else if (Mapping.Inputs.Count > 1)
+            {
+                // Several graph files (e.g. Germany + neighbouring countries): MARS joins nodes with identical coordinates
+                Environment = new SpatialGraphEnvironment(new SpatialGraphOptions
+                {
+                    GraphImports = Mapping.Inputs.ToList()
+                });
             }
             else if (!string.IsNullOrEmpty(Mapping.File))
             {

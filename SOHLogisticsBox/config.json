@@ -43,6 +43,13 @@
             "modalities": ["CarDriving"],
             "isBidirectedGraph": true
           }
+        },
+        {
+          "file": "resources/neighbors_elevation.geojson",
+          "inputConfiguration": {
+            "modalities": ["CarDriving"],
+            "isBidirectedGraph": true
+          }
         }
       ]
     },

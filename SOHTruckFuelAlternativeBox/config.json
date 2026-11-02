@@ -2,8 +2,8 @@
   "id": "soh_truck_fuel_alternative",
   "globals": {
     "deltaT": 1,
-    "startPoint": "2026-01-08T06:00:00",
-    "endPoint": "2026-01-09T06:00:00",
+    "startPoint": "2026-01-08T10:00:00",
+    "endPoint": "2026-01-09T10:00:00",
     "deltaTUnit": "seconds",
     "console": true,
     "npgSqlOptions": {
@@ -42,6 +42,13 @@
           "inputConfiguration": {
             "modalities": ["CarDriving"],
             "isBidirectedGraph": false
+          }
+        },
+        {
+          "file": "resources/neighbors_elevation.geojson",
+          "inputConfiguration": {
+            "modalities": ["CarDriving"],
+            "isBidirectedGraph": true
           }
         }
       ]
