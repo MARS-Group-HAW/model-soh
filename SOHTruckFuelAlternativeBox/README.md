@@ -10,6 +10,9 @@ The box reuses the full `SemiTruck` / `SemiTruckDriver` / `SemiTruckLayer` stack
 - A **`FuelCarrierType`** enum (`Fuel`, `Battery`, `Hydrogen`) that makes the carrier unit explicit.
 - A **`FuelCarrierEnergyConverter`** utility for consistent Joule-based conversions across all carrier types.
 
+The driver's decisions about when and where to charge, break and rest are documented with diagrams in
+[`docs/driving-behaviour.md`](docs/driving-behaviour.md).
+
 ___
 
 ## Fuel Consumption Strategies
