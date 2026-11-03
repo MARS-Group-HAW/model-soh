@@ -62,6 +62,15 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         protected abstract void OnPauseCompleted(SemiTruckLayer layer, SemiTruck truck,
             FuelConsumptionTracker fuelTracker, SemiTruckDriver driver);
 
+        // Set when planning starts: how far ahead the stop may be placed; null = take the first facility found.
+        private double? _reachLimitMeters;
+
+        /// <summary>
+        /// Distance ahead up to which the truck can still reach a stop. If set, the farthest facility within it is
+        /// chosen (as late as possible), otherwise the nearest one.
+        /// </summary>
+        protected virtual double? GetReachLimitMeters(SemiTruck truck, FuelConsumptionTracker fuelTracker) => null;
+
         /// <summary>
         /// Gets the search radius for this stop type.
         /// </summary>
@@ -188,6 +197,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             if (!ShouldStop(steeringHandle, layer, truck, fuelTracker))
                 return;
 
+            _reachLimitMeters = GetReachLimitMeters(truck, fuelTracker);
+
             // Condition met → plan the stop
             PostgresDbLogger.Instance?.Log(new RestEntity(truck.ID, layer.Context.CurrentTick, GetStopType(),
                 RestEventType.Planned, steeringHandle.Position.Latitude, steeringHandle.Position.Longitude,
@@ -207,8 +218,11 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                 return;
 
             double accumulatedDistance = 0;
-            var searchRadius = GetSearchRadius();
+            var searchRadius = _reachLimitMeters.HasValue
+                ? Math.Min(GetSearchRadius(), _reachLimitMeters.Value)
+                : GetSearchRadius();
             var searchTags = GetSearchTags();
+            (double Lat, double Lon, ISpatialNode Node)? farthest = null;
 
             // Search along the route for a facility
             // Only look ahead: skip passed edges, and for the edge the truck is on only consider its end node,
@@ -233,15 +247,29 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                             var tagStr = tag?.ToString()?.ToLowerInvariant();
                             if (searchTags.Contains(tagStr))
                             {
-                                OnFacilityChosen(null);
-                                _lastListFacility = null;
                                 var facilityCoord = connectedEdge.To.Position;
-                                planStopCallback(facilityCoord.Latitude, facilityCoord.Longitude, node);
-                                return;
+                                if (!_reachLimitMeters.HasValue)
+                                {
+                                    OnFacilityChosen(null);
+                                    _lastListFacility = null;
+                                    planStopCallback(facilityCoord.Latitude, facilityCoord.Longitude, node);
+                                    return;
+                                }
+                                farthest = (facilityCoord.Latitude, facilityCoord.Longitude, node);
+                                goto nextStep;
                             }
                         }
                     }
                 }
+                nextStep:;
+            }
+
+            if (farthest.HasValue)
+            {
+                OnFacilityChosen(null);
+                _lastListFacility = null;
+                planStopCallback(farthest.Value.Lat, farthest.Value.Lon, farthest.Value.Node);
+                return;
             }
 
             // No facility found on the way → fallback to external list
@@ -284,7 +312,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                 foreach (var step in steeringHandle.Route.Stops.Skip(steeringHandle.Route.PassedStops))
                 {
                     along += step.Edge.Length;
-                    if (along > GetSearchRadius()) break;
+                    if (along > (_reachLimitMeters.HasValue
+                            ? Math.Min(GetSearchRadius(), _reachLimitMeters.Value) : GetSearchRadius())) break;
                     nodes.Add((step.Edge.To, along));
                 }
 
@@ -295,7 +324,10 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                     {
                         double offRoute = GeometryHelper.ApproxDistanceMeters(
                             facility.Lat, facility.Lon, node.Position.Latitude, node.Position.Longitude);
-                        double cost = alongRoute + 2 * offRoute;
+                        // with a reach limit the farthest facility is preferred: the detour is a penalty, not the distance
+                        double cost = _reachLimitMeters.HasValue && offRoute <= SemiTruckDriverConstants.MaxFacilityDetourMeters
+                            ? -alongRoute + 2 * offRoute
+                            : alongRoute + 2 * offRoute;
                         if (cost >= bestCost) continue;
                         bestCost = cost;
                         bestOffRoute = offRoute;

@@ -57,11 +57,28 @@ namespace SOHModel.SemiTruck.Model.Driver.State
 
         protected override double GetSearchRadius() => SemiTruckDriverConstants.RefuelStationSearchRadius;
 
+        // Drive as far as the range allows (keeping the arrival reserve) before charging, unless a legal rest is due.
+        protected override double? GetReachLimitMeters(SemiTruck truck, FuelConsumptionTracker fuelTracker)
+        {
+            if (_combinedRest != null && _combinedRest.MaxReachMeters == null) return null;
+            double reachKm = fuelTracker.PlanningRangeKm(truck) - SemiTruckDriverConstants.RouteChargeReserveKm;
+            double reach = Math.Max(reachKm * 1000.0, SemiTruckDriverConstants.RoadsideStopLookaheadMeters);
+            return _combinedRest?.MaxReachMeters is { } legalReach
+                ? Math.Max(Math.Min(reach, legalReach), SemiTruckDriverConstants.RoadsideStopLookaheadMeters)
+                : reach;
+        }
+
         protected override bool ShouldStop(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
             SemiTruck truck, FuelConsumptionTracker fuelTracker)
         {
             _carrierType = truck.FuelCarrierType;
-            if (_combinedRest != null) return true;
+            return _combinedRest != null || IsChargeDue(steeringHandle, truck, fuelTracker);
+        }
+
+        /// <summary>True if the energy left calls for a stop (ignoring legal rests).</summary>
+        public bool IsChargeDue(SemiTruckSteeringHandle steeringHandle, SemiTruck truck, FuelConsumptionTracker fuelTracker)
+        {
+            _carrierType = truck.FuelCarrierType;
 
             // The station may be up to the search radius ahead, so the stop must be triggered while the truck can still
             // reach it: observed (not nominal) consumption, a station-distance allowance and an arrival reserve.

@@ -138,6 +138,7 @@ namespace SOHModel.SemiTruck.Model
 
             // Update fuel and check refueling
             _fuelTracker.UpdateConsumption(_steeringHandle, _layer, SemiTruck);
+            RequestRestAtCharge();
             _refuelState.CheckAndPlan(_steeringHandle, _layer, SemiTruck, _fuelTracker, PlanRefuelStop);
 
             // Route management
@@ -213,6 +214,19 @@ namespace SOHModel.SemiTruck.Model
             else _restState.Request(requirement);
         }
 
+        private void RequestRestAtCharge()
+        {
+            if (_restState.IsActive || _refuelState.IsActive || _restState.HasRequest || _refuelState.HasCombinedRestRequest ||
+                !_refuelState.IsChargeDue(_steeringHandle, SemiTruck, _fuelTracker)) return;
+
+            var margin = SemiTruck.RestPlanningMarginMinutes > 0
+                ? TimeSpan.FromMinutes(SemiTruck.RestPlanningMarginMinutes)
+                : SemiTruckDriverConstants.DefaultRestPlanningMargin;
+            var requirement = SemiTruck.RestPlanningStrategy.RequirementAtCharge(DrivingTime, SemiTruck, _fuelTracker,
+                _steeringHandle.Route.RemainingRouteDistanceToGoal, margin);
+            if (requirement != null) _refuelState.RequestCombinedRest(requirement);
+        }
+
         private void PlanRestStop(double lat, double lon, ISpatialNode insertFromNode)
         {
             _routeManager.PlanRouteWithStop(lat, lon, insertFromNode, _steeringHandle, this, StopType.Rest,
@@ -264,7 +278,15 @@ namespace SOHModel.SemiTruck.Model
         [PropertyDescription] public string TruckType { get; set; }
 
         /// <summary>Optional per-run payload in kg; overrides the truck type's default payload.</summary>
-        public double? PayloadKg { get; set; }
+        public double? PayloadKg
+        {
+            get => Payload >= 0 ? Payload : null;
+            set => Payload = value ?? -1;
+        }
+
+        /// <summary>Initializer column <c>Payload</c> (kg); negative or absent means "use the truck type default".</summary>
+        [PropertyDescription(Name = "Payload")]
+        public double Payload { get; set; } = -1;
 
         public double FuelCarrierAmount
         {

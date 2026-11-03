@@ -44,6 +44,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             ? SemiTruckDriverConstants.BreakSecondPart
             : SemiTruckDriverConstants.BreakDuration;
 
+        public TimeSpan DailyDrivingLeft => SemiTruckDriverConstants.MaxDailyDriving - DrivingSinceDailyRest;
+
         public TimeSpan LegalDrivingLeft => TimeSpan.FromTicks(Math.Min(
             (SemiTruckDriverConstants.MaxDrivingBeforeBreak - DrivingSinceBreak).Ticks,
             (SemiTruckDriverConstants.MaxDailyDriving - DrivingSinceDailyRest).Ticks));

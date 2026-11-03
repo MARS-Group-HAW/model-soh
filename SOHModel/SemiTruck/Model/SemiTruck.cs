@@ -32,19 +32,19 @@ namespace SOHModel.SemiTruck.Model
         /// Unladen mass in kg (tractor plus trailer). If greater than zero, <see cref="RoadUser.Mass"/> is
         /// derived as <c>TareMass + Payload</c>; otherwise the legacy <c>mass</c> column is used unchanged.
         /// </summary>
-        [PropertyDescription(Name = "tareMass", Ignore = true)]
+        [PropertyDescription(Name = "tareMass")]
         public double TareMass { get; set; }
 
         /// <summary>
         /// Default cargo mass in kg, used together with <see cref="TareMass"/>.
         /// </summary>
-        [PropertyDescription(Name = "payload", Ignore = true)]
+        [PropertyDescription(Name = "payload")]
         public double Payload { get; set; }
 
         /// <summary>
         /// Fraction (0-1) of capacity at which a stop ends. <c>0</c> selects the default (80% battery, 100% otherwise).
         /// </summary>
-        [PropertyDescription(Name = "chargeTargetSoc", Ignore = true)]
+        [PropertyDescription(Name = "chargeTargetSoc")]
         public double ChargeTargetSoc { get; set; }
 
         /// <summary>
@@ -54,6 +54,7 @@ namespace SOHModel.SemiTruck.Model
         {
             if (payloadOverrideKg is >= 0) Payload = payloadOverrideKg.Value;
             if (TareMass > 0) Mass = TareMass + Payload;
+            Console.WriteLine($"[SemiTruck] mass={Mass} kg (tare={TareMass}, payload={Payload})");
         }
 
         /// <summary>
@@ -75,13 +76,13 @@ namespace SOHModel.SemiTruck.Model
         /// <summary>
         /// Selects the rest planning strategy (CSV column <c>restStrategy</c>).
         /// </summary>
-        [PropertyDescription(Name = "restStrategy", Ignore = true)]
+        [PropertyDescription(Name = "restStrategy")]
         public RestStrategyType RestStrategy { get; set; } = RestStrategyType.LegalMinimum;
 
         /// <summary>
         /// Minutes of legal driving time left at which the driver starts looking for a stop; <c>0</c> uses the default (30).
         /// </summary>
-        [PropertyDescription(Name = "restPlanningMarginMinutes", Ignore = true)]
+        [PropertyDescription(Name = "restPlanningMarginMinutes")]
         public double RestPlanningMarginMinutes { get; set; }
 
         /// <summary>
