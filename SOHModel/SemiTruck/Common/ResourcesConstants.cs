@@ -8,5 +8,6 @@ namespace SOHModel.SemiTruck.Common
         public const string RestAreasFile = "rest_areas.csv";
         public const string RefuelStationsFile = "refuel_stations.csv";
         public const string ChargingStationsFile = "charging_stations.csv";
+        public const string NeighborChargingStationsFile = "charging_stations_neighbors.csv";
     }
 }

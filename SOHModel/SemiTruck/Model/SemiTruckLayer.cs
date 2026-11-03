@@ -114,6 +114,10 @@ namespace SOHModel.SemiTruck.Model
             AllRefuelStations = LoadRefuelStations(fullPath_stations);
             AllChargingStations = LoadRefuelStations(Path.Combine(AppContext.BaseDirectory,
                 ResourcesConstants.ResourcesFolder, ResourcesConstants.ChargingStationsFile));
+            string neighborChargingPath = Path.Combine(AppContext.BaseDirectory,
+                ResourcesConstants.ResourcesFolder, ResourcesConstants.NeighborChargingStationsFile);
+            if (File.Exists(neighborChargingPath))
+                AllChargingStations.AddRange(LoadRefuelStations(neighborChargingPath));
             // Attempt to initialize the environment from Mapping.Value or file
             if (Mapping.Value is ISpatialGraphEnvironment input)
             {

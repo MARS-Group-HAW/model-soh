@@ -153,6 +153,15 @@ NOW GmbH / Nationale Leitstelle Ladeinfrastruktur, licence CC BY 4.0). Columns: 
 - The data does not say whether a site has truck-suitable bays.
 - A listed station is only used if the road graph can route to it; unreachable ones are skipped.
 
+#### Charging stations in neighbouring countries
+`resources/charging_stations_neighbors.csv` (same columns plus `country`) is appended to the German list by
+`SemiTruckLayer.InitLayer` if present. Built by `tools/build_neighbor_charging_stations.py --country AT --pbf <Geofabrik extract>`
+(re-running a country replaces only its rows; ids start at 200000 for AT, see `ID_OFFSETS`).
+- Source: OpenStreetMap `amenity=charging_station`, **public only** (`access` absent/yes/permissive, not `hgv=no`), with at
+  least one DC socket of 150-1500 kW (matches the Deutschlandnetz HPC level); sites within 100 m are merged.
+  `powerKw` is the highest DC output per point, `chargePoints` the DC point count or `capacity`.
+- Done: AT (442 sites). Pending: BE, CH, CZ, DK, FR, LU, NL, PL. Neighbour rest areas/refuel stations are not yet loaded.
+
 ### Breaks and rests (EU 561/2006, legal minimum)
 
 `DrivingTimeTracker` counts driving time (ticks in which the truck is not stopped by a rest, refuel or accident):

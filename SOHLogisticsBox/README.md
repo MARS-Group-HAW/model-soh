@@ -117,11 +117,17 @@ geopandas, shapely, requests, numpy, tqdm, osmium):
    border, motorway/trunk/primary within a 5 km border band, 25 km wide motorway/trunk corridors from the border to
    each city (Vienna, Prague, Brussels, Antwerp, Amsterdam, Rotterdam, Copenhagen, Warsaw, Poznan, Wroclaw, Paris,
    Strasbourg, Bern, Zurich, Basel, Luxembourg; Copenhagen uses waypoints `CITY_VIA` over Jutland/Funen/Great Belt) and
-   20 km city discs with primary roads. Nodes coinciding with German nodes are kept as join points. Because Geofabrik
-   extracts are clipped at the border, many crossings do not share a node with the German map; dead ends and the
-   closest node of every unconnected component within 1.5 km of a German node are therefore joined to it by a
-   connector edge. Components without connection to Germany are dropped. Every node/edge has a `country` attribute,
-   edges a `border_crossing` flag. Without `--pbf-dir` the script falls back to Overpass (`--overpass-url`).
+   20 km city discs with primary roads. For AT, CZ, PL and FR (`FULL_TRUNK_NETWORK`) the complete motorway/trunk
+   network is taken, because the straight corridors miss the real motorways there (e.g. the A1 via Linz) and left
+   Vienna, Prague, Warsaw and Paris disconnected. Nodes coinciding with German nodes are kept as join points. Because
+   Geofabrik extracts are clipped at the border, many crossings do not share a node with the German map; dead ends
+   within 1.5 km (`SNAP_M`) and the closest node outside Germany of every unconnected component (up to 5 km,
+   `COMP_SNAP_M`, for components with at least `COMP_MIN_NODES` nodes, e.g. the Czech D5 that ends ~2.7 km before the
+   German A6) are therefore joined to the nearest German node by a connector edge. Components without connection to
+   Germany are dropped. Always check the result with the nearest-node distance of each city: routing snaps the
+   destination to the nearest node, so a missing city silently ends the trip elsewhere. Every node/edge has a
+   `country` attribute, edges a `border_crossing` flag. Without `--pbf-dir` the script falls back to Overpass
+   (`--overpass-url`).
 2. **`enrich_Neighbor_Map.py --input neighbors_raw.geojson --output neighbors_elevation.geojson --tile-dir <dir>`**  
    Adds elevation (local SRTM sampling, no API quota), incline, `capacity_fe` and the German schema.
 3. **`export_Neighbor_Stations.py --pbf-dir <cache dir>`**  

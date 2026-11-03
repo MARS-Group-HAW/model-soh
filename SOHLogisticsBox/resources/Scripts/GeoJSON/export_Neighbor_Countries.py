@@ -51,6 +51,8 @@ CORRIDOR_KM = 25
 STRIP_KM = 4
 BORDER_BAND_KM = 5
 SNAP_M = 1500
+COMP_SNAP_M = 5000
+COMP_MIN_NODES = 100
 METRIC_CRS = "EPSG:3035"
 
 COUNTRIES = {
@@ -90,6 +92,11 @@ CITIES = [
 CITY_VIA = {
     "Copenhagen": [(55.49, 9.47), (55.40, 10.39), (55.33, 11.14), (55.46, 11.80)],
 }
+
+# Countries whose complete motorway|trunk network is taken instead of relying on the straight corridors alone.
+# The corridors miss the real motorways there (e.g. the A1 via Linz, the Polish expressways, the A4 to Paris),
+# which left Vienna, Prague, Warsaw and Paris disconnected and dropped as "unreachable".
+FULL_TRUNK_NETWORK = {"AT", "CZ", "PL", "FR"}
 
 # Fallback speed limits (km/h) when OSM has no usable maxspeed, by country and highway type
 DEFAULT_SPEEDS = {
@@ -158,6 +165,8 @@ def build_jobs(polys):
             german_end = de.intersection(start.buffer(STRIP_KM * 1000))
             parts.append((unary_union([corridor.intersection(country), german_end]), "motorway|trunk"))
             parts.append((disc, "motorway|trunk|primary"))
+        if iso in FULL_TRUNK_NETWORK:
+            parts.append((country, "motorway|trunk"))
         jobs[iso] = [(gpd.GeoSeries([p], crs=METRIC_CRS).to_crs("EPSG:4326").iloc[0], f) for p, f in parts]
     return jobs
 
@@ -247,26 +256,40 @@ def snap_dead_ends(G, german_index, de):
     (both directions) and the German node is added as `protected` node.
     """
     tree, coords = german_index
+    de_prep = prep(de)
     # dead ends, plus the closest node of every component that has no German connection yet
     cand = set(n for n in G.nodes if not G.nodes[n].get("protected")
                and len(set(G.predecessors(n)) | set(G.successors(n))) == 1)
+    comp_cands = set()
     for comp in nx.weakly_connected_components(G):
         if any(G.nodes[n].get("protected") for n in comp):
             continue
         comp = list(comp)
         cp = gpd.GeoSeries([Point(G.nodes[n]["x"], G.nodes[n]["y"]) for n in comp], crs="EPSG:4326").to_crs(METRIC_CRS)
-        pair, d = tree.query_nearest(list(cp.values), max_distance=SNAP_M, return_distance=True, all_matches=False)
+        # nodes on the German side cannot be snapped (see below), so only consider nodes outside Germany
+        outside = [i for i, p in enumerate(cp.values) if not de_prep.contains(p)]
+        if not outside:
+            continue
+        comp = [comp[i] for i in outside]
+        cp = cp.iloc[outside]
+        pair, d = tree.query_nearest(list(cp.values), max_distance=COMP_SNAP_M, return_distance=True,
+                                     all_matches=False)
         if len(d):
-            cand.add(comp[int(pair[0][int(d.argmin())])])
+            best = int(d.argmin())
+            # the long reach is only for substantial networks (e.g. the Czech D5 ends ~2.7 km before the German A6)
+            if d[best] <= SNAP_M or len(comp) >= COMP_MIN_NODES:
+                cand.add(comp[int(pair[0][best])])
+                comp_cands.add(comp[int(pair[0][best])])
     dead = list(cand)
     if not dead:
         return 0
     pts = gpd.GeoSeries([Point(G.nodes[n]["x"], G.nodes[n]["y"]) for n in dead], crs="EPSG:4326").to_crs(METRIC_CRS)
-    idx, dist = tree.query_nearest(list(pts.values), max_distance=SNAP_M, return_distance=True, all_matches=False)
+    idx, dist = tree.query_nearest(list(pts.values), max_distance=COMP_SNAP_M, return_distance=True,
+                                   all_matches=False)
     count = 0
     for q, t, d in zip(idx[0], idx[1], dist):
         n = dead[q]
-        if de.contains(pts.iloc[q]):
+        if d > (COMP_SNAP_M if n in comp_cands else SNAP_M) or de.contains(pts.iloc[q]):
             continue
         x, y = coords[t]
         g = f"de_{x}_{y}"
