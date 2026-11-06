@@ -37,7 +37,7 @@ namespace SOHModel.SemiTruck.Model.Driver.Utils
         public static readonly TimeSpan BreakFirstPart = TimeSpan.FromMinutes(15);
         public static readonly TimeSpan BreakSecondPart = TimeSpan.FromMinutes(30);
         public static readonly TimeSpan MaxDailyDriving = TimeSpan.FromHours(9);
-        public static readonly TimeSpan DailyRestDuration = TimeSpan.FromHours(9);
+        public static readonly TimeSpan DailyRestDuration = TimeSpan.FromHours(11); // daily rest may reduced to 9h, twice a week (not modeled)
         public static readonly TimeSpan DefaultRestPlanningMargin = TimeSpan.FromMinutes(30);
         public const double PlanningSpeedFraction = 0.7; // share of max speed assumed to estimate the remaining drive time
         public static readonly TimeSpan DefaultAccidentDuration = TimeSpan.FromMinutes(41);
