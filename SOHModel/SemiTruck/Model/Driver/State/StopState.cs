@@ -97,6 +97,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         /// Handles the pause logic when the truck is at a stop.
         /// Template method that orchestrates the pause workflow.
         /// </summary>
+        private ISpatialNode? _parkedAtNode;
+
         public bool HandlePause(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
             SemiTruck truck, FuelConsumptionTracker fuelTracker, SemiTruckDriver driver)
         {
@@ -121,6 +123,10 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                 OnArrival(layer);
                 _goingToStop = false;
                 _isPausing = true;
+                // A parked truck sits in a bay of the facility, not in the lane: take it out of the traffic so that
+                // trucks passing by or stopping at the same facility neither queue behind it nor see it as occupied.
+                _parkedAtNode = _targetNode;
+                truck.Environment.Remove(truck);
                 return true;
             }
 
@@ -131,6 +137,11 @@ namespace SOHModel.SemiTruck.Model.Driver.State
 
                 if (IsPauseCompleted(layer, truck))
                 {
+                    if (_parkedAtNode != null)
+                    {
+                        truck.Environment.Insert(truck, _parkedAtNode);
+                        _parkedAtNode = null;
+                    }
                     var stopType = GetStopType(); // the subclass may reset the stop kind in OnPauseCompleted
                     Console.WriteLine($"[{stopType}] Pause completed. Resuming route.");
                     OnPauseCompleted(layer, truck, fuelTracker, driver);

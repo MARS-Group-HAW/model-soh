@@ -312,10 +312,10 @@ namespace SOHTests
         {
             var t = new DrivingTimeTracker();
             Drive(t, 8.7);
-            Assert.Equal(System.TimeSpan.FromHours(9), t.DueStop(System.TimeSpan.FromMinutes(30))!.Value.Duration);
+            Assert.Equal(SOHModel.SemiTruck.Model.Driver.Utils.SemiTruckDriverConstants.DailyRestDuration, t.DueStop(System.TimeSpan.FromMinutes(30))!.Value.Duration);
             Assert.True(t.DueStop(System.TimeSpan.FromMinutes(30))!.Value.IsDailyRest);
 
-            t.RegisterStop(System.TimeSpan.FromHours(9));
+            t.RegisterStop(SOHModel.SemiTruck.Model.Driver.Utils.SemiTruckDriverConstants.DailyRestDuration);
             Assert.Equal(System.TimeSpan.Zero, t.DrivingSinceDailyRest);
             Assert.Null(t.DueStop(System.TimeSpan.FromMinutes(30)));
         }

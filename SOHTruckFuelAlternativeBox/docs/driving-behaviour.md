@@ -37,6 +37,8 @@ flowchart TD
 
 Only one stop is in flight at a time (`IsActive`, `HasRequest`, `HasCombinedRestRequest`).
 
+While pausing, the truck is removed from the road network and re-inserted at the stop node when it resumes. Facilities have no capacity limit: any number of trucks can use the same rest area or charging station, and a parked truck never blocks the lane or makes a facility look occupied to others.
+
 ## 2. Stop types
 
 | `RestStateType` | Facility | Ends when | Created by |
