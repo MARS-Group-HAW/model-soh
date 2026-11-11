@@ -15,6 +15,8 @@ public class SemiTruckRouteCacheManager
 {
     private readonly string _dbPath;
     private readonly SqliteConnection _connection;
+    // SqliteConnection and its commands/readers must not be shared by parallel truck ticks.
+    private readonly object _connectionLock = new();
 
     /// <summary>
     /// Initializes the route cache manager and opens a connection to the SQLite database.
@@ -92,61 +94,64 @@ public class SemiTruckRouteCacheManager
         out bool wasSuboptimal,
         out bool constraintsMatchExactly)
     {
-        edgeIds = null;
-        wasSuboptimal = false;
-        constraintsMatchExactly = false;
+        lock (_connectionLock)
+        {
+            edgeIds = null;
+            wasSuboptimal = false;
+            constraintsMatchExactly = false;
 
-        using var cmd = _connection.CreateCommand();
-        cmd.CommandText = @"
+            using var cmd = _connection.CreateCommand();
+            cmd.CommandText = @"
             SELECT edge_ids, max_weight, max_height, max_width, max_length, max_incline, suboptimal
             FROM routes 
             WHERE start_edge = @start AND end_edge = @end;
             ORDER BY suboptimal ASC, max_weight ASC, max_height ASC, max_width ASC, max_length ASC, max_incline ASC;
         ";
-        cmd.Parameters.AddWithValue("@start", startEdge);
-        cmd.Parameters.AddWithValue("@end", endEdge);
+            cmd.Parameters.AddWithValue("@start", startEdge);
+            cmd.Parameters.AddWithValue("@end", endEdge);
 
-        using var reader = cmd.ExecuteReader();
-        while (reader.Read())
-        {
-            // Read route constraints from the database
-            double maxWeight = reader.GetDouble(1);
-            double maxHeight = reader.GetDouble(2);
-            double maxWidth = reader.GetDouble(3);
-            double maxLength = reader.GetDouble(4);
-            int maxRouteIncline = reader.GetInt32(5);
-            bool suboptimal = reader.GetInt32(6) == 1;
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                // Read route constraints from the database
+                double maxWeight = reader.GetDouble(1);
+                double maxHeight = reader.GetDouble(2);
+                double maxWidth = reader.GetDouble(3);
+                double maxLength = reader.GetDouble(4);
+                int maxRouteIncline = reader.GetInt32(5);
+                bool suboptimal = reader.GetInt32(6) == 1;
 
-            // Check whether the current route satisfies the query constraints
-            bool fits =
-                weight <= maxWeight &&
-                height <= maxHeight &&
-                width <= maxWidth &&
-                length <= maxLength &&
-                maxIncline <= maxRouteIncline;
+                // Check whether the current route satisfies the query constraints
+                bool fits =
+                    weight <= maxWeight &&
+                    height <= maxHeight &&
+                    width <= maxWidth &&
+                    length <= maxLength &&
+                    maxIncline <= maxRouteIncline;
 
-            if (!fits)
-                continue;
+                if (!fits)
+                    continue;
 
-            // Check for exact constraint match
-            bool exactMatch =
-                Math.Abs(weight - maxWeight) < 0.001 &&
-                Math.Abs(height - maxHeight) < 0.001 &&
-                Math.Abs(width - maxWidth) < 0.001 &&
-                Math.Abs(length - maxLength) < 0.001 &&
-                maxIncline == maxRouteIncline;
+                // Check for exact constraint match
+                bool exactMatch =
+                    Math.Abs(weight - maxWeight) < 0.001 &&
+                    Math.Abs(height - maxHeight) < 0.001 &&
+                    Math.Abs(width - maxWidth) < 0.001 &&
+                    Math.Abs(length - maxLength) < 0.001 &&
+                    maxIncline == maxRouteIncline;
 
-            constraintsMatchExactly = exactMatch;
-            wasSuboptimal = suboptimal;
+                constraintsMatchExactly = exactMatch;
+                wasSuboptimal = suboptimal;
 
-            // Deserialize the list of edge IDs
-            string edgeJson = reader.GetString(0);
-            edgeIds = JsonSerializer.Deserialize<List<string>>(edgeJson);
-            
-            return true;
+                // Deserialize the list of edge IDs
+                string edgeJson = reader.GetString(0);
+                edgeIds = JsonSerializer.Deserialize<List<string>>(edgeJson);
+
+                return true;
+            }
+
+            return false;
         }
-
-        return false;
     }
 
     /// <summary>
@@ -166,8 +171,10 @@ public class SemiTruckRouteCacheManager
     {
         string edgeJson = JsonSerializer.Serialize(edgeIds);
 
-        using var cmd = _connection.CreateCommand();
-        cmd.CommandText = @"
+        lock (_connectionLock)
+        {
+            using var cmd = _connection.CreateCommand();
+            cmd.CommandText = @"
             INSERT OR REPLACE INTO routes 
             (start_edge, end_edge, edge_ids, 
              max_weight, max_height, max_width, max_length, max_incline, suboptimal) 
@@ -176,17 +183,18 @@ public class SemiTruckRouteCacheManager
              @weight, @height, @width, @length, @incline, @suboptimal);
         ";
 
-        cmd.Parameters.AddWithValue("@start", startEdge);
-        cmd.Parameters.AddWithValue("@end", endEdge);
-        cmd.Parameters.AddWithValue("@edges", edgeJson);
-        cmd.Parameters.AddWithValue("@weight", maxWeight);
-        cmd.Parameters.AddWithValue("@height", maxHeight);
-        cmd.Parameters.AddWithValue("@width", maxWidth);
-        cmd.Parameters.AddWithValue("@length", maxLength);
-        cmd.Parameters.AddWithValue("@incline", maxIncline);
-        cmd.Parameters.AddWithValue("@suboptimal", wasSuboptimal ? 1 : 0);
+            cmd.Parameters.AddWithValue("@start", startEdge);
+            cmd.Parameters.AddWithValue("@end", endEdge);
+            cmd.Parameters.AddWithValue("@edges", edgeJson);
+            cmd.Parameters.AddWithValue("@weight", maxWeight);
+            cmd.Parameters.AddWithValue("@height", maxHeight);
+            cmd.Parameters.AddWithValue("@width", maxWidth);
+            cmd.Parameters.AddWithValue("@length", maxLength);
+            cmd.Parameters.AddWithValue("@incline", maxIncline);
+            cmd.Parameters.AddWithValue("@suboptimal", wasSuboptimal ? 1 : 0);
 
-        cmd.ExecuteNonQuery();
+            cmd.ExecuteNonQuery();
+        }
     }
 
     /// <summary>
@@ -194,6 +202,9 @@ public class SemiTruckRouteCacheManager
     /// </summary>
     public void Close()
     {
-        _connection?.Close();
+        lock (_connectionLock)
+        {
+            _connection.Close();
+        }
     }
 }
