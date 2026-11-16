@@ -19,9 +19,13 @@ namespace SOHModel.SemiTruck.Model.Driver.State
 
         public void AddDriving(TimeSpan duration)
         {
+            if (duration < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(duration));
+            if (!CanDrive(duration)) throw new InvalidOperationException("Legal driving time would be exceeded.");
             DrivingSinceBreak += duration;
             DrivingSinceDailyRest += duration;
         }
+
+        public bool CanDrive(TimeSpan duration) => duration >= TimeSpan.Zero && duration <= LegalDrivingLeft;
 
         /// <summary>Credits a stationary period of the given length towards break and daily rest.</summary>
         public void RegisterStop(TimeSpan duration)

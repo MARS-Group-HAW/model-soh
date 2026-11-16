@@ -30,6 +30,19 @@ namespace SOHModel.SemiTruck.Steering
         }
 
         private Model.SemiTruck SemiTruck => (Model.SemiTruck)Vehicle;
+        public ISpatialNode? StopAtNode { get; set; }
+
+        public override void Move(bool performMovement)
+        {
+            if (performMovement && Vehicle.Driver is Model.SemiTruckDriver driver &&
+                (driver.FuelCarrierAmount <= 0 ||
+                 !driver.DrivingTime.CanDrive(((Model.SemiTruckLayer)SemiTruck.Layer)._tickDuration)))
+            {
+                Stop();
+                return;
+            }
+            base.Move(performMovement);
+        }
 
         // TODO properly inject layer
         /// <summary>Simulation tick duration in seconds.</summary>
@@ -48,15 +61,28 @@ namespace SOHModel.SemiTruck.Steering
         /// </summary>
         protected override double CalculateDrivingDistance(double biggestDeceleration)
         {
-            if (Route.RemainingRouteDistanceToGoal < 3)
-                return Route.RemainingRouteDistanceToGoal;
+            double remaining = DistanceToNextStop();
+            if (remaining < 3)
+                return remaining;
 
             var v0      = Vehicle.Velocity;
             var vTarget = ResolveTargetVelocity(biggestDeceleration);
             var vNew    = ApplyPhysicsConstraints(v0, vTarget);
             // Cap to remaining route distance: with large deltaT the trapezoidal distance can
             // exceed the route length, causing the MARS framework to overshoot the route end.
-            return Math.Min(KinematicDistance(v0, vNew), Route.RemainingRouteDistanceToGoal);
+            return Math.Min(KinematicDistance(v0, vNew), remaining);
+        }
+
+        private double DistanceToNextStop()
+        {
+            if (StopAtNode == null) return Route.RemainingRouteDistanceToGoal;
+            double distance = -Vehicle.PositionOnCurrentEdge;
+            foreach (var stop in Route.Stops.Skip(Route.PassedStops))
+            {
+                distance += stop.Edge.Length;
+                if (stop.Edge.To == StopAtNode) return Math.Max(0, distance);
+            }
+            return Route.RemainingRouteDistanceToGoal;
         }
 
         /// <summary>

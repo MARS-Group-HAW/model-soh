@@ -90,6 +90,12 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             _routeChanged = true;
         }
 
+        public void BeginMovement(SemiTruckSteeringHandle steeringHandle)
+        {
+            _routeChanged = false;
+            _lastRemainingDistanceToGoal = steeringHandle.Route.RemainingRouteDistanceToGoal;
+        }
+
         /// <summary>
         /// Calculates and updates the fuel consumption based on the distance driven since the last tick.
         /// </summary>
@@ -120,8 +126,6 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                 _drivenKm += distanceDrivenKm;
                 _consumedWheelJoules += EnergyStore.WheelJoules(Store.Type, consumedAmount, Store.Efficiency);
 
-                // Truck has no energy left once its stores are empty; it will stop moving until refueled
-                //TODO What should happen when a truck runs out of energy?
             }
 
             LogState(truck, consumedAmount);

@@ -312,7 +312,9 @@ namespace SOHTests
         public void TestDailyRestResetsEverything()
         {
             var t = new DrivingTimeTracker();
-            Drive(t, 8.7);
+            Drive(t, 4.5);
+            t.RegisterStop(SemiTruckDriverConstants.BreakDuration);
+            Drive(t, 4.2);
             Assert.Equal(SOHModel.SemiTruck.Model.Driver.Utils.SemiTruckDriverConstants.DailyRestDuration, t.DueStop(System.TimeSpan.FromMinutes(30))!.Value.Duration);
             Assert.True(t.DueStop(System.TimeSpan.FromMinutes(30))!.Value.IsDailyRest);
 
@@ -342,7 +344,7 @@ namespace SOHTests
             Assert.Equal(StopFacility.ChargingStation, charging.Facility);
             // 0.3 h of legal driving left at 0.7 x 25 m/s: the charger must be placed within this distance
             Assert.InRange(charging.MaxReachMeters!.Value, 18_000, 20_000);
-            Assert.Null(combined.NextRequirement(t, truck, full, 200_000, margin).MaxReachMeters);
+            Assert.InRange(combined.NextRequirement(t, truck, full, 200_000, margin).MaxReachMeters!.Value, 18_000, 20_000);
             Assert.Equal(StopFacility.RestArea, combined.NextRequirement(t, truck, full, 200_000, margin).Facility);
             // enough for 200 km x 1.1 + 50 km reserve (270 kWh): no charging stop although the range is < route + 100 km
             var enough = new FuelConsumptionTracker(truck) { FuelCarrierAmount = 280 };
