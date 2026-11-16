@@ -76,13 +76,13 @@ namespace SOHModel.SemiTruck.Model
 
         private readonly Dictionary<ISpatialEdge, HashSet<SemiTruckDriver>> _edgeToTrucks = new();
 
-        public List<RestArea> AllRestAreas { get; private set; }
+        public List<RestArea> AllRestAreas { get; private set; } = new();
 
         /// <summary>Fuel and hydrogen stations (<c>refuel_stations.csv</c>).</summary>
-        public List<RefuelStation> AllRefuelStations { get; private set; }
+        public List<RefuelStation> AllRefuelStations { get; private set; } = new();
 
         /// <summary>Public charging stations for battery trucks (<c>charging_stations.csv</c>, Deutschlandnetz).</summary>
-        public List<RefuelStation> AllChargingStations { get; private set; }
+        public List<RefuelStation> AllChargingStations { get; private set; } = new();
 
 
         /// <summary>

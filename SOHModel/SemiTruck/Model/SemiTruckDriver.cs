@@ -10,6 +10,7 @@ using SOHModel.SemiTruck.Model.Driver.Utils;
 using SOHModel.SemiTruck.RealTimeData;
 using SOHModel.SemiTruck.Steering;
 using Position = Mars.Interfaces.Environments.Position;
+using SOHModel.Database;
 
 namespace SOHModel.SemiTruck.Model
 {
@@ -40,6 +41,8 @@ namespace SOHModel.SemiTruck.Model
 
         /// <summary>Driving time and break bookkeeping according to EU 561/2006.</summary>
         public DrivingTimeTracker DrivingTime { get; } = new();
+        internal FuelConsumptionTracker FuelTracker => _fuelTracker;
+        public TruckTripOutcome? TripOutcome { get; private set; }
 
         // Constructor
         public SemiTruckDriver()
@@ -95,6 +98,7 @@ namespace SOHModel.SemiTruck.Model
             if (route == null || route.Count == 0)
             {
                 Console.WriteLine($"No valid route found for truck {ID}. Removing from simulation.");
+                LogOutcome(TruckTripOutcome.NoRoute);
                 _layer.UnregisterAgent?.Invoke(_layer, this);
                 return;
             }
@@ -121,7 +125,7 @@ namespace SOHModel.SemiTruck.Model
         /// </summary>
         public void Tick()
         {
-            if (_steeringHandle == null)
+            if (_steeringHandle == null || TripOutcome.HasValue)
                 return;
 
             // Handle pauses (early returns)
@@ -132,14 +136,11 @@ namespace SOHModel.SemiTruck.Model
             if (_accidentState.HandleOngoing(this, _layer, RemoveFromSimulation)) return;
             if (_accidentState.HandleChance(_steeringHandle, _layer, SemiTruck, _layer.amountOfTrucks)) return;
 
-            DrivingTime.AddDriving(_layer._tickDuration);
-            RequestDueRest();
-
-            // Update fuel and check refueling
-            _fuelTracker.UpdateConsumption(_steeringHandle, _layer, SemiTruck);
-            RequestRestAtCharge();
-            _refuelState.CheckAndPlan(_steeringHandle, _layer, SemiTruck, _fuelTracker, PlanRefuelStop);
-
+            if (_fuelTracker.FuelCarrierAmount <= 0)
+            {
+                FinishTrip(TruckTripOutcome.ZeroEnergy);
+                return;
+            }
             // Route management
             if (!_layer.notifyTrucks)
             {
@@ -156,14 +157,45 @@ namespace SOHModel.SemiTruck.Model
                 _speedAdjuster.AdjustForIncline(edge, SemiTruck, this, _fuelTracker);
             }
 
+            _restState.ValidateApproach(_steeringHandle, _layer, SemiTruck, _fuelTracker, DrivingTime);
+            _refuelState.ValidateApproach(_steeringHandle, _layer, SemiTruck, _fuelTracker, DrivingTime);
+            RequestDueRest();
+            RequestRestAtCharge();
+            if (!_restState.IsActive && !_restState.HasRequest)
+                _refuelState.CheckAndPlan(_steeringHandle, _layer, SemiTruck, _fuelTracker, PlanRefuelStop, DrivingTime);
+
+            if (_refuelState.TakeRestAreaFallback() is { } restFallback)
+            {
+                Console.WriteLine("[RestAndRefuel] No feasible refuel/recharge facility found. Planning a legal rest area stop instead.");
+                _restState.Request(restFallback);
+            }
+
             // Plan the requested rest stop
-            _restState.CheckAndPlan(_steeringHandle, _layer, SemiTruck, _fuelTracker, PlanRestStop);
+            if (!_refuelState.IsActive)
+                _restState.CheckAndPlan(_steeringHandle, _layer, SemiTruck, _fuelTracker, PlanRestStop, DrivingTime);
+
+            if (_restState.PlanningFailed || _refuelState.PlanningFailed ||
+                !DrivingTime.CanDrive(_layer._tickDuration))
+            {
+                FinishTrip(_refuelState.PlanningFailed && !_refuelState.HasCombinedRestRequest
+                    ? TruckTripOutcome.NoReachableFuel : TruckTripOutcome.NoLegalStop);
+                return;
+            }
 
             // Move and check goal
+            _steeringHandle.StopAtNode = _refuelState.TargetNode ?? _restState.TargetNode;
+            _fuelTracker.BeginMovement(_steeringHandle);
             _steeringHandle.Move();
+            DrivingTime.AddDriving(_layer._tickDuration);
+            _fuelTracker.UpdateConsumption(_steeringHandle, _layer, SemiTruck);
             if (GoalReached)
             {
-                RemoveFromSimulation();
+                FinishTrip(TruckTripOutcome.Completed);
+            }
+            else if (_fuelTracker.FuelCarrierAmount <= 0 &&
+                     !_refuelState.IsAtTarget(_steeringHandle))
+            {
+                FinishTrip(TruckTripOutcome.ZeroEnergy);
             }
         }
 
@@ -190,6 +222,24 @@ namespace SOHModel.SemiTruck.Model
 
             _environment.Remove(SemiTruck);
             _unregister.Invoke(_layer, this);
+        }
+
+        private void LogOutcome(TruckTripOutcome outcome)
+        {
+            TripOutcome = outcome;
+            PostgresDbLogger.Instance?.Log(new TruckTripEntity(SemiTruck.ID, _layer.GetCurrentTick(),
+                _layer._simulationTime, outcome, FuelCarrierType, FuelCarrierAmount, RemainingRouteDistanceToGoal,
+                DrivingTime.DrivingSinceBreak.TotalSeconds,
+                DrivingTime.DrivingSinceDailyRest.TotalSeconds, Latitude, Longitude));
+        }
+
+        private void FinishTrip(TruckTripOutcome outcome)
+        {
+            _steeringHandle.Stop();
+            LogOutcome(outcome);
+            if (outcome != TruckTripOutcome.Completed)
+                Console.WriteLine($"Truck {ID} could not complete its trip: {outcome}.");
+            RemoveFromSimulation();
         }
 
         /// <summary>

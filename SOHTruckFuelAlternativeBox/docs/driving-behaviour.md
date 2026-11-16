@@ -20,20 +20,19 @@ flowchart TD
     B -- yes --> B1["progress the pause: charge / wait"] --> Z([end of tick])
     B -- no --> C{"Accident?"}
     C -- yes --> Z
-    C -- no --> D["DrivingTime.AddDriving"]
+    C -- no --> D["check energy, bypass / speed adjustment, validate planned approach"]
     D --> E["RequestDueRest: legal break or daily rest due?"]
-    E --> F["UpdateConsumption: energy of this tick (physics)"]
+    E --> F["reject facilities beyond legal time or energy range"]
     F --> G["RequestRestAtCharge: charge due and a rest unavoidable?"]
     G --> H["RefuelState.CheckAndPlan: charge due? find station, re-route"]
-    H --> I["bypass / speed adjustment"]
+    H --> I["check planned facility remains reachable"]
     I --> J["RestState.CheckAndPlan: rest requested? find rest area, re-route"]
-    J --> K["move, goal reached?"]
+    J --> K["guard legal tick; move only as far as the stop; add driving time; debit energy; check outcome"]
     K --> Z
 ```
 
-> `RequestRestAtCharge` must run **after** the consumption update and **before** `RefuelState.CheckAndPlan`:
-> the tick in which the range falls below the trigger is also the tick in which the stop is planned, so a rest that
-> should be merged into the charge has to be requested first.
+Consumption is debited immediately after each movement. `RequestRestAtCharge` runs before
+`RefuelState.CheckAndPlan`, so an unavoidable rest can be merged into the charge.
 
 Only one stop is in flight at a time (`IsActive`, `HasRequest`, `HasCombinedRestRequest`).
 
@@ -43,7 +42,7 @@ While pausing, the truck is removed from the road network and re-inserted at the
 
 | `RestStateType` | Facility | Ends when | Created by |
 |---|---|---|---|
-| `Rest` | rest area (or roadside) | fixed duration (break 45 min / daily rest 9 h) | `RestState` |
+| `Rest` | rest area | fixed duration (break 45 min / daily rest 11 h) | `RestState` |
 | `Refuel` | charging / fuel station | target energy reached | `RefuelState` |
 | `RestAndRefuel` | charging station | target energy reached **and** the rest duration is over | `RefuelState` with a combined rest |
 
@@ -58,12 +57,15 @@ During a `RestAndRefuel` that is a daily rest, the battery is charged to 100 %. 
 | Break after | 4.5 h driving | `MaxDrivingBeforeBreak` |
 | Break length | 45 min (15 + 30 split allowed, in that order) | `BreakDuration`, `BreakFirstPart`, `BreakSecondPart` |
 | Daily driving | 9 h | `MaxDailyDriving` |
-| Daily rest | 9 h | `DailyRestDuration` |
+| Daily rest | 11 h | `DailyRestDuration` |
 
-Any stationary period, including a charge, is credited via `RegisterStop(duration)`: 9 h or more resets the daily rest and the break, 45 min or more resets the break, and so on.
+Any stationary period, including a charge, is credited via `RegisterStop(duration)`: 11 h or more resets the daily rest and the break, 45 min or more resets the break, and so on.
 Not modelled: the two 10 h driving days per week, split daily rest, weekly limits.
 
-A stop is **due** when the legal driving time left is at most the planning margin (`restPlanningMarginMinutes`, default 30 min).
+A stop is **due** when the legal driving time left is at most the larger of the planning margin
+(`restPlanningMarginMinutes`, default 30 min) and the estimated time to cover the 100 km facility-search horizon.
+The complete routed approach must fit the legal time left, including road speed limits, detours and tick rounding.
+It is rechecked every driving tick. If no feasible facility exists, the trip fails explicitly; no roadside rest is created.
 
 ## 4. Rest strategies (`restStrategy` column)
 
@@ -71,7 +73,7 @@ A stop is **due** when the legal driving time left is at most the planning margi
 
 ```mermaid
 flowchart TD
-    S([RequestDueRest]) --> D{"stop due? at most 30 min legal driving left"}
+    S([RequestDueRest]) --> D{"stop due? within planning margin or facility-search horizon"}
     D -- no --> N([nothing])
     D -- yes --> R{"destination reachable within the legal time? remaining / (0.7 x maxSpeed) <= time left"}
     R -- yes --> N
@@ -86,6 +88,10 @@ flowchart TD
 |---|---|
 | `LegalMinimum` | Rests as late as legally possible, always at a rest area. |
 | `ChargeWhileResting` | Like `LegalMinimum`, but rests at a charging station if the truck has to charge anyway (same criterion as section 5). Additionally merges a rest into the last charge, see section 6. |
+
+If no charger can be reached legally with the available energy, a combined-stop request falls back to a rest area.
+Charging is deferred, not the required rest. The optional energy arrival reserve does not exclude a charger
+that is needed for a legal combined stop.
 
 Planning speed: `PlanningSpeedFraction` (0.7) times `maxSpeed`, deliberately pessimistic.
 
@@ -117,7 +123,7 @@ The charging power follows `ChargingProfile` (station power, truck `maxChargePow
 
 Two entry points create a combined rest (`RefuelState.RequestCombinedRest`):
 
-1. **Rest due, charge needed anyway** (section 4): the rest becomes a charging stop. The station is the *nearest* one ahead, because the legal limit is close.
+1. **Rest due, charge needed anyway** (section 4): the rest becomes a charging stop, bounded by the legal reach.
 2. **Charge due, rest unavoidable** (`ChargeWhileRestingStrategy.RequirementAtCharge`, called from `RequestRestAtCharge`):
 
 ```mermaid
@@ -130,7 +136,7 @@ flowchart TD
     L -- yes --> T{"destination reachable in the legal time left after the station, incl. margin?"}
     T -- yes --> N
     T -- no --> K{"which limit binds?"}
-    K -- "daily driving" --> DR["combined daily rest: 9 h, charge to 100 %"]
+    K -- "daily driving" --> DR["combined daily rest: 11 h, charge to 100 %"]
     K -- break --> BR["combined break: 45 min or 30 min"]
     DR --> C(["RestAndRefuel at the farthest station within the legal reach"])
     BR --> C
@@ -142,7 +148,7 @@ Reasoning: a driver who knows that the rest limit will be hit before the destina
 
 ```mermaid
 flowchart TD
-    S([stop needed]) --> RL["reach limit: refuel = min(100 km, range - 50 km); combined due rest = none"]
+    S([stop needed]) --> RL["reach limit: legal driving time and available energy; prefer arrival reserve for refuel"]
     RL --> M["scan the route ahead up to the limit for edges tagged charging_station / services / fuel / rest_area"]
     M --> F{"found on the map?"}
     F -- "yes, reach limit set" --> FAR["take the farthest"]
@@ -151,13 +157,14 @@ flowchart TD
     CSV --> RANK["rank by detour, at most 10 km off the route; reach limit set: farthest wins, otherwise nearest wins"]
     RANK --> OK{"any within reach?"}
     OK -- yes --> PL["re-route via the facility"]
-    OK -- "no (rest)" --> RS["roadside stop 5 km ahead"]
-    OK -- "no (charging)" --> CL["facility closest to the truck"]
+    OK -- no --> COMBO{"combined rest and charging request?"}
+    COMBO -- yes --> REST["retry at a rest area; defer charging"]
+    COMBO -- no --> RS["explicit trip failure; never a roadside rest"]
     FAR --> PL
     NEAR --> PL
-    PL --> FAIL{"route to the stop and back connects?"}
+    PL --> FAIL{"route connects and approach fits legal time and energy?"}
     FAIL -- yes --> GO([drive to the stop])
-    FAIL -- no --> SKIP["mark facility unreachable, plan again next tick"]
+    FAIL -- no --> SKIP["exclude this approach; try other approaches and facilities before moving"]
 ```
 
 Facility lists: battery trucks use the charging list, other carriers the fuel list, rests use the rest area list.
@@ -167,7 +174,7 @@ Neighbour-country charging stations are appended if `resources/charging_stations
 
 | What you want to change | Where | Effect |
 |---|---|---|
-| Start energy | `SemiTruckDriver.Init` (currently 90 %, marked `TEST`) | timing of all stops |
+| Start energy | `FuelConsumptionTracker` (currently full) | timing of all stops |
 | Arrival reserve at a stop | `RouteChargeReserveKm` (50) | later or earlier trigger, safer or riskier arrival |
 | How far ahead a station is searched | `RefuelStationSearchRadius`, `RestAreaSearchRadius` (100 km) | trigger range and maximum reach |
 | Safety margin on the route energy | `RouteChargeSafetyFactor` (1.1) | charge target |
@@ -175,7 +182,7 @@ Neighbour-country charging stations are appended if `resources/charging_stations
 | Pessimism of the arrival check | `PlanningSpeedFraction` (0.7) | when a rest is judged unavoidable |
 | Rest planning margin | `restPlanningMarginMinutes` column (default 30) | how early a rest is planned |
 | Rest strategy | `restStrategy` column: `LegalMinimum`, `ChargeWhileResting` | sections 4 and 6 |
-| Detour tolerance | `MaxFacilityDetourMeters` (10 km), `RoadsideStopLookaheadMeters` (5 km) | CSV facility ranking |
+| Detour tolerance | `MaxFacilityDetourMeters` (10 km) | CSV facility ranking, never roadside fallback |
 | Consumption floor for planning | `fuelConsumptionPer100km` column | section 5 |
 
 New strategies: implement `IRestStrategy` (`NextRequirement`, `RequirementAtCharge`), add a `RestStrategyType` value and map it in `SemiTruck.InitializeRestStrategy`.
@@ -183,6 +190,8 @@ New strategies: implement `IRestStrategy` (`NextRequirement`, `RequirementAtChar
 ## 9. Reading a run
 
 The `rests` table logs every stop (`Planned`, `Start`, `End`) with tick, position, energy and remaining route; `road_load` and `fuel_consumption` hold the micro layer.
+`truck_trips` records completion/failure.
+See `facility_metrics.sql` for stop and stranded-truck counts.
 
 ```sql
 select tick, statetype, eventtype, round(currentfuel::numeric,1) as kwh, round(remainingroutemeters::numeric) as remaining_m

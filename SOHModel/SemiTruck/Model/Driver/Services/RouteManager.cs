@@ -178,13 +178,21 @@ namespace SOHModel.SemiTruck.Model.Driver.Services
             var splitStop = steeringHandle.Route.Stops[steeringHandle.Route.PassedStops + insertIndex];
             var splitNode = (splitStop.Edge.From == insertFromNode) ? splitStop.Edge.From : splitStop.Edge.To;
 
-            // Roadside stop: the stop location is a node of the current route, so no detour is needed
+            // A known facility can itself be a route node; no detour is needed in that case.
             if (GeometryHelper.ApproxDistanceMeters(targetLat, targetLon,
                     splitNode.Position.Latitude, splitNode.Position.Longitude) < 1.0)
             {
+                var approach = steeringHandle.Route.Stops.Skip(steeringHandle.Route.PassedStops)
+                    .Take(insertIndex).Select(s => s.Edge);
+                if (!StopReachability.CanReach(approach, _truck.PositionOnCurrentEdge, _truck,
+                        driver.FuelTracker, driver.DrivingTime, _layer._tickDuration))
+                {
+                    onFailure();
+                    return;
+                }
                 if (_layer.notifyTrucks)
                     _layer.RegisterTruckForRoute(driver, steeringHandle.Route);
-                Console.WriteLine($"Truck stops at the roadside ({stopType}) at ({targetLat}, {targetLon}).");
+                Console.WriteLine($"Truck stops at facility ({stopType}) at ({targetLat}, {targetLon}).");
                 onSuccess(splitNode);
                 return;
             }
@@ -247,6 +255,16 @@ namespace SOHModel.SemiTruck.Model.Driver.Services
 
             // Remember destination node (done via callback/onSuccess)
             var destinationNode = toStopRoute.Stops[^1].Edge.To;
+
+            var approachEdges = steeringHandle.Route.Stops.Skip(steeringHandle.Route.PassedStops)
+                .Take(insertIndex).Select(s => s.Edge).Concat(toStopRoute.Select(s => s.Edge));
+            if (!StopReachability.CanReach(approachEdges, _truck.PositionOnCurrentEdge, _truck,
+                    driver.FuelTracker, driver.DrivingTime, _layer._tickDuration))
+            {
+                Console.WriteLine("Facility cannot be reached within the remaining legal driving time or energy.");
+                onFailure();
+                return;
+            }
 
             // Merge routes: pre-stop Route + detour + return-detour + remaining Route
             var newRoute = new Route();

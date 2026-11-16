@@ -174,12 +174,13 @@ NOW GmbH / Nationale Leitstelle Ladeinfrastruktur, licence CC BY 4.0). Columns: 
 `DrivingTimeTracker` counts driving time (ticks in which the truck is not stopped by a rest, refuel or accident):
 
 - 45 min break after 4.5 h of driving; it may be split into **15 min followed by 30 min**, never 30 then 15.
-- Daily rest (reduced, 9 h) after 9 h of driving. A daily rest also resets the break.
+- Daily rest (11 h) after 9 h of driving. A daily rest also resets the break.
 - Every stationary stop, including charging stops, is credited. A charging stop therefore also counts as break or
   rest if it is long enough; the driver is assumed to rest while the truck charges.
-- The driver starts looking for a stop `restPlanningMarginMinutes` before the limit, since the facility has to be
-  reached in time. No stop is planned if the destination is reached within the legal time. If the nearest facility is
-  further away than the margin allows, the limit is exceeded (no violation is logged).
+- The driver starts looking at least one facility-search horizon before the limit, or
+  `restPlanningMarginMinutes` if larger. No stop is planned if the destination is reached within the legal time.
+  The full routed approach, including the detour, road speed limits and tick rounding, must fit the remaining
+  legal time and energy. The approach is rechecked as conditions change.
 - Not modelled: 10 h driving days, split daily rest, weekly limits.
 
 `restStrategy` selects where the required stop takes place (`IRestStrategy`, analogous to `FuelStrategy`):
@@ -189,9 +190,26 @@ NOW GmbH / Nationale Leitstelle Ladeinfrastruktur, licence CC BY 4.0). Columns: 
 | `LegalMinimum`       | Breaks and rests at rest areas. |
 | `ChargeWhileResting` | Battery trucks that cannot reach the destination with the current charge (the energy for the remaining route × 1.1 plus a 50 km reserve exceeds the current charge) rest at a charging station: the stop lasts at least the required rest and charges to `chargeTargetSoc`, or to 100 % during a daily rest. Otherwise a rest area is used. |
 
-A combined stop is logged as `Refuel` in the `rests` table.
+A combined stop is logged as `RestAndRefuel` in the `rests` table.
+Combining charging with rest is an optimization, not a prerequisite for taking a legal break.
+If no charger has a feasible approach, the driver tries a rest area and defers charging.
+Combined stops may use the optional energy arrival reserve, but never exceed the available energy or legal time.
+Rejecting one routed approach does not exclude other approaches to the same facility.
 
-Rest areas come from `source_tag` edges within 100 km ahead, else from `rest_areas.csv`. That list is sparse, so a CSV facility is only used if it is within 10 km of the route ahead; otherwise the driver stops at the roadside on a route node about 5 km ahead (no detour). Charging stations are never replaced by roadside stops.
+Rest areas come from `source_tag` edges within 100 km ahead, else from `rest_areas.csv`, within 10 km of the route.
+There is **no roadside/hard-shoulder rest fallback**. If no feasible facility can be reached, the trip ends with an
+explicit `NoLegalStop` or `NoReachableFuel` outcome rather than driving illegally or resting on the shoulder.
+An empty energy store prevents further movement and ends the trip with `ZeroEnergy`, unless the truck has already
+arrived at its planned charging/refueling facility. Consumption is debited immediately after movement, including
+the final movement to the destination; exhaustion is resolved at simulation-tick granularity.
+
+### Trip metrics
+
+`truck_trips` records terminal outcomes, including `Completed` and `ZeroEnergy`.
+The box flushes pending database records on normal shutdown.
+
+Run [`docs/facility_metrics.sql`](docs/facility_metrics.sql) against the output database for stop counts and
+failed-trip counts.
 
 ___
 

@@ -6,6 +6,7 @@ using SOHModel.Domain.Model;
 using SOHModel.Domain.Steering.Common;
 using SOHModel.SemiTruck.Model.Driver.Utils;
 using SOHModel.SemiTruck.Steering;
+using SOHModel.SemiTruck.Model.Driver.Services;
 
 namespace SOHModel.SemiTruck.Model.Driver.State
 {
@@ -15,7 +16,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
     public class RefuelState : StopState
     {
         private bool _targetReached;
-        private RestRequirement _combinedRest;
+        private RestRequirement? _combinedRest;
 
         /// <summary>
         /// Power in kW-equivalent of the station the truck is currently heading to / standing at.
@@ -30,6 +31,16 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         public void RequestCombinedRest(RestRequirement requirement) => _combinedRest = requirement;
 
         public bool HasCombinedRestRequest => _combinedRest != null;
+
+        public RestRequirement? TakeRestAreaFallback()
+        {
+            if (!PlanningFailed || IsActive || _combinedRest == null) return null;
+            var rest = _combinedRest with { Facility = StopFacility.RestArea };
+            _combinedRest = null;
+            // After a legal rest, previously time-limited charging approaches can become reachable again.
+            ResetFacilitySearch();
+            return rest;
+        }
 
         protected override RestStateType GetStopType() =>
             _combinedRest != null ? RestStateType.RestAndRefuel : RestStateType.Refuel;
@@ -60,11 +71,12 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         // Drive as far as the range allows (keeping the arrival reserve) before charging, unless a legal rest is due.
         protected override double? GetReachLimitMeters(SemiTruck truck, FuelConsumptionTracker fuelTracker)
         {
-            if (_combinedRest != null && _combinedRest.MaxReachMeters == null) return null;
-            double reachKm = fuelTracker.PlanningRangeKm(truck) - SemiTruckDriverConstants.RouteChargeReserveKm;
-            double reach = Math.Max(reachKm * 1000.0, SemiTruckDriverConstants.RoadsideStopLookaheadMeters);
+            double range = fuelTracker.PlanningRangeKm(truck);
+            double reachKm = _combinedRest == null && range > SemiTruckDriverConstants.RouteChargeReserveKm
+                ? range - SemiTruckDriverConstants.RouteChargeReserveKm : range;
+            double reach = Math.Max(reachKm * 1000.0, 0);
             return _combinedRest?.MaxReachMeters is { } legalReach
-                ? Math.Max(Math.Min(reach, legalReach), SemiTruckDriverConstants.RoadsideStopLookaheadMeters)
+                ? Math.Min(reach, legalReach)
                 : reach;
         }
 
@@ -114,6 +126,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         protected override void OnPauseTick(SemiTruckLayer layer, SemiTruck truck,
             FuelConsumptionTracker fuelTracker, SemiTruckDriver driver)
         {
+            if (_targetReached) return;
             _chargeTargetOverride = _combinedRest is { IsDailyRest: true }
                 ? 1.0
                 : RouteBasedTargetSoc(truck, fuelTracker, driver.RemainingRouteDistanceToGoal);

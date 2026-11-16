@@ -30,7 +30,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
 
         protected override IEnumerable<dynamic> GetFacilityList(SemiTruckLayer layer) => layer.AllRestAreas;
 
-        protected override bool AllowRoadsideStop => true;
+        protected override double? GetReachLimitMeters(SemiTruck truck, FuelConsumptionTracker fuelTracker) =>
+            _requirement?.MaxReachMeters;
 
         protected override double GetSearchRadius() => SemiTruckDriverConstants.RestAreaSearchRadius;
 

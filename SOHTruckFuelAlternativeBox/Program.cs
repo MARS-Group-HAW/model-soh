@@ -19,6 +19,7 @@ internal static class Program
         // Initialize PostgreSQL logger for simulation data
         PostgresDbLogger.Instance = new PostgresDbLogger()
             .Register<RestEntity>("rests")
+            .Register<TruckTripEntity>("truck_trips")
             .Register<VehicleSteeringDecisionEntity>("vehicle_steering_decision")
             .Register<VehicleSteeringPhysicsEntity>("vehicle_steering_physics")
             .Register<FuelConsumptionEntity>("fuel_consumption")
@@ -64,5 +65,7 @@ internal static class Program
 
         Console.WriteLine($"Executed iterations {state.Iterations} lasted {watch.Elapsed}");
         application.Dispose();
+        PostgresDbLogger.Instance.FlushAsync().GetAwaiter().GetResult();
+        PostgresDbLogger.Instance.Dispose();
     }
 }

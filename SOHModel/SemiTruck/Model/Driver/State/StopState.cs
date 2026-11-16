@@ -6,6 +6,7 @@ using SOHModel.Database;
 using SOHModel.Domain.Steering.Common;
 using SOHModel.SemiTruck.Model.Driver.Utils;
 using SOHModel.SemiTruck.Steering;
+using SOHModel.SemiTruck.Model.Driver.Services;
 
 namespace SOHModel.SemiTruck.Model.Driver.State
 {
@@ -21,10 +22,16 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         protected ISpatialNode _targetNode;
         protected DateTime _stopStartTime;
 
-        // Facilities from the list that could not be routed to (coordinates not connected to the usable road graph);
-        // they are skipped so that planning moves on to the next candidate instead of retrying every tick.
+        // A failed route only excludes that approach to the site.
         private readonly HashSet<dynamic> _unreachableFacilities = new();
         private dynamic _lastListFacility;
+        private readonly HashSet<(string Location, ISpatialNode Approach)> _rejectedApproaches = new();
+        private ISpatialNode? _lastApproachNode;
+        protected double FacilityLat;
+        protected double FacilityLon;
+        public bool PlanningFailed { get; private set; }
+        public bool IsPausing => _isPausing;
+        public ISpatialNode? TargetNode => _goingToStop ? _targetNode : null;
 
         /// <summary>True while a stop is planned, being approached or in progress.</summary>
         public bool IsActive => _planned || _goingToStop || _isPausing;
@@ -93,6 +100,25 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                    GeometryHelper.IsOnNode(_targetNode.Position, steeringHandle.Route[0].Edge.From);
         }
 
+        public bool IsAtTarget(SemiTruckSteeringHandle steeringHandle) =>
+            _goingToStop && HasArrivedAtStop(steeringHandle);
+
+        public void ValidateApproach(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
+            SemiTruck truck, FuelConsumptionTracker fuelTracker, DrivingTimeTracker drivingTime)
+        {
+            if (!_goingToStop || IsAtTarget(steeringHandle)) return;
+            var edges = new List<ISpatialEdge>();
+            foreach (var stop in steeringHandle.Route.Stops.Skip(steeringHandle.Route.PassedStops))
+            {
+                edges.Add(stop.Edge);
+                if (stop.Edge.To != _targetNode) continue;
+                if (!StopReachability.CanReach(edges, truck.PositionOnCurrentEdge, truck, fuelTracker,
+                        drivingTime, layer._tickDuration)) CancelPlanned();
+                return;
+            }
+            CancelPlanned(); // a bypass removed the planned facility
+        }
+
         /// <summary>
         /// Handles the pause logic when the truck is at a stop.
         /// Template method that orchestrates the pause workflow.
@@ -109,7 +135,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                 Console.WriteLine(pauseDuration > TimeSpan.Zero
                     ? $"[{GetStopType()}] Arrived at stop. Starting pause ({pauseDuration.TotalMinutes:F0} min)."
                     : $"[{GetStopType()}] Arrived at stop. Starting pause (duration depends on the process).");
-                PostgresDbLogger.Instance.Log(new RestEntity(truck.ID,
+                PostgresDbLogger.Instance?.Log(new RestEntity(truck.ID,
                     layer.Context.CurrentTick,
                     GetStopType(),
                     RestEventType.Start,
@@ -126,6 +152,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                 // A parked truck sits in a bay of the facility, not in the lane: take it out of the traffic so that
                 // trucks passing by or stopping at the same facility neither queue behind it nor see it as occupied.
                 _parkedAtNode = _targetNode;
+                steeringHandle.Stop();
                 truck.Environment.Remove(truck);
                 return true;
             }
@@ -148,7 +175,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                     driver.DrivingTime.RegisterStop(layer._simulationTime - _stopStartTime);
 
                     // logged after OnPauseCompleted so that the event carries the final fuel level
-                    PostgresDbLogger.Instance.Log(new RestEntity(truck.ID,
+                    PostgresDbLogger.Instance?.Log(new RestEntity(truck.ID,
                         layer.Context.CurrentTick,
                         stopType,
                         RestEventType.End,
@@ -164,6 +191,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                     _isPausing = false;
                     return false;
                 }
+
             }
 
             // Truck is still pausing
@@ -198,7 +226,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         /// Template method that orchestrates: already-planned check → condition check → facility search.
         /// </summary>
         public void CheckAndPlan(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
-            SemiTruck truck, FuelConsumptionTracker fuelTracker, Action<double, double, ISpatialNode> planStopCallback)
+            SemiTruck truck, FuelConsumptionTracker fuelTracker, Action<double, double, ISpatialNode> planStopCallback,
+            DrivingTimeTracker? drivingTime = null)
         {
             // Skip if already planned or pausing
             if (_planned || _goingToStop || _isPausing)
@@ -208,13 +237,22 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             if (!ShouldStop(steeringHandle, layer, truck, fuelTracker))
                 return;
 
-            _reachLimitMeters = GetReachLimitMeters(truck, fuelTracker);
+            double legalReach = drivingTime == null ? double.PositiveInfinity :
+                Math.Max(0, (drivingTime.LegalDrivingLeft - layer._tickDuration).TotalSeconds) *
+                Math.Max(1, truck.MaxSpeed * SemiTruckDriverConstants.PlanningSpeedFraction);
+            _reachLimitMeters = Math.Min(GetReachLimitMeters(truck, fuelTracker) ?? double.PositiveInfinity,
+                Math.Min(legalReach, fuelTracker.PlanningRangeKm(truck) * 1000));
+            PlanningFailed = false;
 
             // Condition met → plan the stop
             PostgresDbLogger.Instance?.Log(new RestEntity(truck.ID, layer.Context.CurrentTick, GetStopType(),
                 RestEventType.Planned, steeringHandle.Position.Latitude, steeringHandle.Position.Longitude,
                 fuelTracker.FuelCarrierAmount, steeringHandle.Route.RemainingRouteDistanceToGoal));
-            PlanStop(steeringHandle, layer, planStopCallback);
+            // Failed routed candidates are blacklisted by CancelPlanned; try the next one before moving.
+            do
+            {
+                PlanStop(steeringHandle, layer, planStopCallback);
+            } while (!IsActive && !PlanningFailed);
         }
 
         /// <summary>
@@ -242,7 +280,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             foreach (var routeStep in steeringHandle.Route.Stops.Skip(steeringHandle.Route.PassedStops))
             {
                 var edge = routeStep.Edge;
-                accumulatedDistance += edge.Length;
+                accumulatedDistance += isCurrentEdge && steeringHandle.RemainingDistanceOnEdge >= 0
+                    ? steeringHandle.RemainingDistanceOnEdge : edge.Length;
                 if (accumulatedDistance > searchRadius)
                     break;
 
@@ -259,10 +298,15 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                             if (searchTags.Contains(tagStr))
                             {
                                 var facilityCoord = connectedEdge.To.Position;
+                                if (_rejectedApproaches.Contains((LocationKey(facilityCoord.Latitude, facilityCoord.Longitude), node)))
+                                    continue;
                                 if (!_reachLimitMeters.HasValue)
                                 {
                                     OnFacilityChosen(null);
                                     _lastListFacility = null;
+                                    FacilityLat = facilityCoord.Latitude;
+                                    FacilityLon = facilityCoord.Longitude;
+                                    _lastApproachNode = node;
                                     planStopCallback(facilityCoord.Latitude, facilityCoord.Longitude, node);
                                     return;
                                 }
@@ -279,6 +323,9 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             {
                 OnFacilityChosen(null);
                 _lastListFacility = null;
+                FacilityLat = farthest.Value.Lat;
+                FacilityLon = farthest.Value.Lon;
+                _lastApproachNode = farthest.Value.Node;
                 planStopCallback(farthest.Value.Lat, farthest.Value.Lon, farthest.Value.Node);
                 return;
             }
@@ -296,18 +343,12 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         {
         }
 
-        /// <summary>Whether the stop may take place at a plain route node when no facility is close by.</summary>
-        protected virtual bool AllowRoadsideStop => false;
-
         /// <summary>
         /// Finds nearest facility from external CSV list.
         /// </summary>
         protected void FindNearestFromList(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
             Action<double, double, ISpatialNode> planStopCallback)
         {
-            var currentLat = steeringHandle.Position.Latitude;
-            var currentLon = steeringHandle.Position.Longitude;
-
             var facilityList = GetFacilityList(layer);
 
             // Rank by detour, not by distance to the truck: a facility behind the truck or far off the route would send
@@ -315,14 +356,16 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             dynamic nearest = null;
             ISpatialNode insertFromNode = null;
             double bestCost = double.MaxValue;
-            double bestOffRoute = double.MaxValue;
             if (facilityList != null)
             {
                 var nodes = new List<(ISpatialNode Node, double Along)>();
                 double along = 0;
+                bool first = true;
                 foreach (var step in steeringHandle.Route.Stops.Skip(steeringHandle.Route.PassedStops))
                 {
-                    along += step.Edge.Length;
+                    along += first && steeringHandle.RemainingDistanceOnEdge >= 0
+                        ? steeringHandle.RemainingDistanceOnEdge : step.Edge.Length;
+                    first = false;
                     if (along > (_reachLimitMeters.HasValue
                             ? Math.Min(GetSearchRadius(), _reachLimitMeters.Value) : GetSearchRadius())) break;
                     nodes.Add((step.Edge.To, along));
@@ -333,43 +376,22 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                     if (_unreachableFacilities.Contains(facility)) continue;
                     foreach (var (node, alongRoute) in nodes)
                     {
+                        if (_rejectedApproaches.Contains((LocationKey(facility.Lat, facility.Lon), node))) continue;
                         double offRoute = GeometryHelper.ApproxDistanceMeters(
                             facility.Lat, facility.Lon, node.Position.Latitude, node.Position.Longitude);
+                        if (offRoute > SemiTruckDriverConstants.MaxFacilityDetourMeters ||
+                            (_reachLimitMeters.HasValue && alongRoute + offRoute > _reachLimitMeters.Value)) continue;
                         // with a reach limit the farthest facility is preferred: the detour is a penalty, not the distance
                         double cost = _reachLimitMeters.HasValue && offRoute <= SemiTruckDriverConstants.MaxFacilityDetourMeters
                             ? -alongRoute + 2 * offRoute
                             : alongRoute + 2 * offRoute;
                         if (cost >= bestCost) continue;
                         bestCost = cost;
-                        bestOffRoute = offRoute;
                         nearest = facility;
                         insertFromNode = node;
                     }
                 }
 
-                // The facility lists are sparse; a driver would rather pull over at the roadside than drive a long loop.
-                if (AllowRoadsideStop && bestOffRoute > SemiTruckDriverConstants.MaxFacilityDetourMeters)
-                {
-                    // the stop node needs a following edge on the route, so the last node is excluded
-                    var candidates = nodes.Take(nodes.Count - 1).ToList();
-                    var roadside = candidates.FirstOrDefault(n => n.Along >= SemiTruckDriverConstants.RoadsideStopLookaheadMeters);
-                    var node = roadside.Node ?? candidates.LastOrDefault().Node;
-                    if (node != null)
-                    {
-                        _lastListFacility = null;
-                        Console.WriteLine($"[{GetStopType()}] No facility close to the route – stopping at the roadside.");
-                        planStopCallback(node.Position.Latitude, node.Position.Longitude, node);
-                        return;
-                    }
-                }
-
-                // nothing within reach ahead: fall back to the facility closest to the truck
-                if (nearest == null)
-                {
-                    nearest = facilityList.MinBy(r =>
-                        GeometryHelper.GetSquaredDistance(currentLat, currentLon, r.Lat, r.Lon));
-                    insertFromNode = steeringHandle.Route.Stops[steeringHandle.Route.PassedStops].Edge.To;
-                }
             }
 
             if (nearest != null)
@@ -377,11 +399,15 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                 Console.WriteLine($"Using fallback {GetStopType()} from CSV – ID: {nearest.Id} @ ({nearest.Lat}, {nearest.Lon})");
                 OnFacilityChosen(nearest);
                 _lastListFacility = nearest;
+                FacilityLat = nearest.Lat;
+                FacilityLon = nearest.Lon;
+                _lastApproachNode = insertFromNode;
                 planStopCallback(nearest.Lat, nearest.Lon, insertFromNode);
             }
             else
             {
                 Console.WriteLine($"No fallback {GetStopType()} found in external list.");
+                PlanningFailed = true;
             }
         }
 
@@ -399,11 +425,23 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         /// </summary>
         public void CancelPlanned()
         {
-            if (_lastListFacility != null) _unreachableFacilities.Add(_lastListFacility);
+            if (_lastApproachNode != null)
+                _rejectedApproaches.Add((LocationKey(FacilityLat, FacilityLon), _lastApproachNode));
             _lastListFacility = null;
+            _lastApproachNode = null;
             _goingToStop = false;
             _planned = false;
         }
+
+        protected void ResetFacilitySearch()
+        {
+            PlanningFailed = false;
+            _rejectedApproaches.Clear();
+            _unreachableFacilities.Clear();
+        }
+
+        private static string LocationKey(double lat, double lon) =>
+            FormattableString.Invariant($"{lat:F6}:{lon:F6}");
 
         /// <summary>
         /// Sets the target stop node.
