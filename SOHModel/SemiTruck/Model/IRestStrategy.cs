@@ -44,8 +44,13 @@ namespace SOHModel.SemiTruck.Model
             var due = time.DueStop(planningMargin);
             if (due == null || ArrivesInLegalTime(time, truck, remainingRouteMeters)) return null;
 
-            return new RestRequirement(ChooseFacility(truck, fuel, remainingRouteMeters), due.Value.Duration,
-                due.Value.IsDailyRest);
+            var facility = ChooseFacility(truck, fuel, remainingRouteMeters);
+            // A charging station has to lie within the legal driving time left, otherwise the nearest one found may
+            // be reached only after the 4.5 h (or 9 h) limit is exceeded.
+            double? legalReach = facility == StopFacility.ChargingStation
+                ? Math.Max(0, time.LegalDrivingLeft.TotalSeconds) * PlanningSpeed(truck)
+                : null;
+            return new RestRequirement(facility, due.Value.Duration, due.Value.IsDailyRest, legalReach);
         }
 
         public virtual RestRequirement RequirementAtCharge(DrivingTimeTracker time, SemiTruck truck,
