@@ -7,9 +7,10 @@ namespace SOHModel.SemiTruck.Model
     {
         public FuelStrategyType FuelStrategy => FuelStrategyType.Linear;
 
-        public double CalculateFuelCarrierAmountUsed(SemiTruck truck, double distanceDrivenKm, double timeStepSeconds, double incline)
+        public double CalculateWheelEnergyJoules(SemiTruck truck, double distanceDrivenKm, double timeStepSeconds, double incline)
         {
-            return (truck.FuelConsumptionPer100Km / 100.0) * distanceDrivenKm;
+            double amount = (truck.FuelConsumptionPer100Km / 100.0) * distanceDrivenKm;
+            return Energy.EnergyStore.WheelJoules(truck.FuelCarrierType, amount, truck.Tank2WheelEfficiency);
         }
     }
 }

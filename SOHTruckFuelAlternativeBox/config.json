@@ -18,7 +18,7 @@
   "agents": [
     {
       "name": "SemiTruckDriver",
-      "count": 10,
+      "count": 1,
       "file": "resources/semi_truck_initializer.csv",
       "outputs": [
         {

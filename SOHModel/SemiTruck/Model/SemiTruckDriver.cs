@@ -29,7 +29,7 @@ namespace SOHModel.SemiTruck.Model
         private readonly RestState _restState;
         private readonly RefuelState _refuelState;
         private readonly AccidentState _accidentState;
-        private readonly FuelConsumptionTracker _fuelTracker;
+        private FuelConsumptionTracker _fuelTracker; // created in Init, needs the truck
         private readonly SpeedAdjuster _speedAdjuster;
         private RouteManager _routeManager; // Initialized after truck creation
 
@@ -47,7 +47,6 @@ namespace SOHModel.SemiTruck.Model
             _restState = new RestState();
             _refuelState = new RefuelState();
             _accidentState = new AccidentState();
-            _fuelTracker = new FuelConsumptionTracker();
             _speedAdjuster = new SpeedAdjuster();
         }
 
@@ -68,7 +67,7 @@ namespace SOHModel.SemiTruck.Model
             SemiTruck.InitializeFuelStrategy();
             SemiTruck.InitializeRestStrategy();
             SemiTruck.ApplyLoad(PayloadKg);
-            _fuelTracker.FuelCarrierAmount = SemiTruck.MaxFuelCarrierAmount;
+            _fuelTracker = new FuelConsumptionTracker(SemiTruck);
             DefaultAccidentsPerYear = SemiTruck.AccidentsPerYear;
             _accidentState.DefaultAccidentsPerYear = DefaultAccidentsPerYear;
 

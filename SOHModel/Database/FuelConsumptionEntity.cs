@@ -40,5 +40,5 @@ public record RoadLoadEntity(
     double FTotal,
     
     double PowerWatts,
-    double EnergyJoules
+    double EnergyJoules                       // at the wheels, i.e. before drivetrain losses of any energy store
 );

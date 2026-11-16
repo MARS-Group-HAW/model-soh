@@ -7,6 +7,7 @@ using SOHModel.SemiTruck.Model;
 using SOHModel.SemiTruck.Model.Driver.Services;
 using SOHModel.SemiTruck.Model.Driver.State;
 using SOHModel.SemiTruck.Model.Driver.Utils;
+using SOHModel.SemiTruck.Model.Energy;
 
 namespace SOHTests
 {
@@ -23,7 +24,7 @@ namespace SOHTests
             Assert.Equal(2.0, consumedFuelAmount, 3);
             
             // Range estimate: 100 units / 20 units/100km = 500 km
-            double range = new FuelConsumptionTracker { FuelCarrierAmount = 100.0 }.PlanningRangeKm(truck);
+            double range = new FuelConsumptionTracker(truck) { FuelCarrierAmount = 100.0 }.PlanningRangeKm(truck);
             Assert.Equal(500.0, range, 3);
         }
 
@@ -150,7 +151,7 @@ namespace SOHTests
         {
             var truck = new SemiTruck
                 { FuelCarrierType = FuelCarrierType.Battery, MaxFuelCarrierAmount = 600, FuelConsumptionPer100Km = 100 };
-            var tracker = new FuelConsumptionTracker();
+            var tracker = new FuelConsumptionTracker(truck);
 
             // 200 km * 1.1 + 50 km reserve = 270 km at 1 kWh/km = 270 kWh of 600
             Assert.Equal(0.45, RefuelState.RouteBasedTargetSoc(truck, tracker, 200_000)!.Value, 6);
@@ -235,7 +236,7 @@ namespace SOHTests
             var truck = new SemiTruck { Mass = 40000, Power = 400, MaxSpeed = 25, PositionOnCurrentEdge = 100 };
             var driver = new SemiTruckDriver { SemiTruck = truck };
             var adjuster = new SpeedAdjuster();
-            var tracker = new FuelConsumptionTracker();
+            var tracker = new FuelConsumptionTracker(truck);
 
             ISpatialEdge Edge(double[] elevation)
             {
@@ -333,19 +334,42 @@ namespace SOHTests
             Drive(t, 4.2);
             var margin = System.TimeSpan.FromMinutes(30);
 
-            var low = new FuelConsumptionTracker { FuelCarrierAmount = 100 }; // 100 km range
-            var full = new FuelConsumptionTracker { FuelCarrierAmount = 600 }; // 600 km range
+            var low = new FuelConsumptionTracker(truck) { FuelCarrierAmount = 100 }; // 100 km range
+            var full = new FuelConsumptionTracker(truck) { FuelCarrierAmount = 600 }; // 600 km range
 
             var combined = new ChargeWhileRestingStrategy();
             Assert.Equal(StopFacility.ChargingStation, combined.NextRequirement(t, truck, low, 500_000, margin).Facility);
             Assert.Equal(StopFacility.RestArea, combined.NextRequirement(t, truck, full, 200_000, margin).Facility);
             // enough for 200 km x 1.1 + 50 km reserve (270 kWh): no charging stop although the range is < route + 100 km
-            var enough = new FuelConsumptionTracker { FuelCarrierAmount = 280 };
+            var enough = new FuelConsumptionTracker(truck) { FuelCarrierAmount = 280 };
             Assert.Equal(StopFacility.RestArea, combined.NextRequirement(t, truck, enough, 200_000, margin).Facility);
             Assert.Equal(StopFacility.RestArea, new LegalMinimumRestStrategy().NextRequirement(t, truck, low, 500_000, margin).Facility);
 
             // destination reachable within the legal driving time: no stop
             Assert.Null(combined.NextRequirement(t, truck, low, 10_000, margin));
+        }
+
+        [Fact]
+        public void TestOnlyBatteriesRecuperate()
+        {
+            var battery = new EnergyStore(FuelCarrierType.Battery, 100, 0.9, 50);
+            double used = battery.Draw(-3_600_000); // 1 kWh braking energy at the wheels
+            Assert.Equal(-0.81, used, 6);
+            Assert.Equal(50.81, battery.Amount, 6);
+
+            var diesel = new EnergyStore(FuelCarrierType.Fuel, 100, 0.35, 50);
+            Assert.Equal(0, diesel.Draw(-3_600_000));
+            Assert.Equal(50, diesel.Amount);
+        }
+
+        [Fact]
+        public void TestStoreStaysWithinCapacity()
+        {
+            var store = new EnergyStore(FuelCarrierType.Fuel, 10, 0.35, 1);
+            store.Draw(1e12);
+            Assert.Equal(0, store.Amount);
+            store.Add(100);
+            Assert.Equal(10, store.Amount);
         }
     }
 }

@@ -52,6 +52,10 @@ when `F_total < 0` (e.g. downhill/decelerating), energy is fed back into the bat
 Energy_recuperated = |Power| × η_tank2wheel × 0.9 × delta_t
 ```
 
+The strategies only compute the energy needed **at the wheels**. Drivetrain losses and recuperation (batteries only)
+are handled by the truck's `EnergyStore`. Consequently `road_load.energyjoules` is energy **at the wheels**; the energy
+drawn from the store is in `fuel_consumption.consumed`.
+
 Range estimation for the `RoadLoad` strategy still uses the linear `fuelConsumptionPer100km` fallback for routing
 decisions (see TODO comment in `RoadLoadFuelConsumptionStrategy.cs` for more accurate alternatives).
 

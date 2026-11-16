@@ -18,14 +18,27 @@ namespace SOHModel.SemiTruck.Model
     {
         abstract FuelStrategyType FuelStrategy { get; } 
         /// <summary>
-        /// Calculates the amount of fuel used during the last tick.
+        /// Calculates the energy the truck needs at its wheels during the last tick. Losses and recuperation
+        /// are handled by the truck's <see cref="Energy.EnergyStore"/>.
         /// </summary>
         /// <param name="truck">The SemiTruck instance.</param>
         /// <param name="distanceDrivenKm">The distance driven during the last tick in km.</param>
         /// <param name="timeStepSeconds">The duration of the last tick in seconds.</param>
         /// <param name="incline">The current incline of the road in percent.</param>
-        /// <returns>The amount of fuel used (in the same unit as the <see cref="SOHModel.Domain.Model.RoadUser.FuelCarrierType"/>).</returns>
-        double CalculateFuelCarrierAmountUsed(SemiTruck truck, double distanceDrivenKm, double timeStepSeconds, double incline);
+        /// <returns>Wheel energy in joules; negative if the truck brakes and energy is available for recuperation.</returns>
+        double CalculateWheelEnergyJoules(SemiTruck truck, double distanceDrivenKm, double timeStepSeconds, double incline);
 
+    }
+
+    public static class FuelConsumptionStrategyExtensions
+    {
+        /// <summary>
+        /// Amount of the truck's fuel carrier (see <see cref="SOHModel.Domain.Model.RoadUser.FuelCarrierType"/>)
+        /// used to supply the wheel energy of the last tick.
+        /// </summary>
+        public static double CalculateFuelCarrierAmountUsed(this IFuelConsumptionStrategy strategy, SemiTruck truck,
+            double distanceDrivenKm, double timeStepSeconds, double incline) =>
+            new Energy.EnergyStore(truck.FuelCarrierType, truck.MaxFuelCarrierAmount, truck.Tank2WheelEfficiency, 0)
+                .AmountFor(strategy.CalculateWheelEnergyJoules(truck, distanceDrivenKm, timeStepSeconds, incline));
     }
 }
