@@ -133,7 +133,7 @@ Sources: Mercedes-Benz Trucks eActros 600 specification; ADAC test (Sept 2024).
 Refueling is a process, not a fixed pause: every tick `ChargingProfile` transfers energy at
 `min(station power, vehicle power) × taper(SoC)` until the tank is full, and `fuel_consumption` is logged each tick
 (negative `consumedAmount` = energy added). Battery power is constant up to 80 % SoC and then tapers linearly to 10 %
-of the maximum at 100 % (CC-CV approximation); fuel and hydrogen do not taper. Charging losses are not modelled. A stop ends at `chargeTargetSoc` (default 80 % for batteries, because the CV tail is slow). Without an explicit `chargeTargetSoc`, battery trucks charge only what the remaining route needs (observed consumption × 1.1 plus a 50 km arrival reserve, at most 100 %); if the route needs more than a full battery, the 80 % default applies and another stop follows.
+of the maximum at 100 % (CC-CV approximation); fuel and hydrogen do not taper. Charging losses are not modelled. A stop ends at `chargeTargetSoc` (default 80 % for batteries, because the CV tail is slow). Without an explicit `chargeTargetSoc`, battery trucks charge only what the remaining route needs (observed consumption × 1.1 plus a 50 km arrival reserve, at most 100 %); if the route needs more than a full battery, the 80 % default applies and another stop follows. During a combined rest the battery keeps charging towards 100 % while the rest is still running (no time cost); the charge point is released once charging ends.
 
 | Carrier  | Default station power | Default vehicle power |
 |----------|-----------------------|-----------------------|
@@ -174,13 +174,16 @@ NOW GmbH / Nationale Leitstelle Ladeinfrastruktur, licence CC BY 4.0). Columns: 
 `DrivingTimeTracker` counts driving time (ticks in which the truck is not stopped by a rest, refuel or accident):
 
 - 45 min break after 4.5 h of driving; it may be split into **15 min followed by 30 min**, never 30 then 15.
-- Daily rest (11 h) after 9 h of driving. A daily rest also resets the break.
+- Daily rest (`DailyRestDuration`) after 9 h of driving. A daily rest also resets the break.
 - Every stationary stop, including charging stops, is credited. A charging stop therefore also counts as break or
   rest if it is long enough; the driver is assumed to rest while the truck charges.
 - The driver starts looking at least one facility-search horizon before the limit, or
   `restPlanningMarginMinutes` if larger. No stop is planned if the destination is reached within the legal time.
   The full routed approach, including the detour, road speed limits and tick rounding, must fit the remaining
   legal time and energy. The approach is rechecked as conditions change.
+- If a break is due but a daily rest would be needed before the destination anyway, the daily rest is taken now
+  instead when that does not increase the projected stationary time (strictly less at a rest area), so a break is
+  not followed shortly by a daily rest at the next facility.
 - Not modelled: 10 h driving days, split daily rest, weekly limits.
 
 `restStrategy` selects where the required stop takes place (`IRestStrategy`, analogous to `FuelStrategy`):
@@ -188,20 +191,50 @@ NOW GmbH / Nationale Leitstelle Ladeinfrastruktur, licence CC BY 4.0). Columns: 
 | Strategy             | Behaviour |
 |----------------------|-----------|
 | `LegalMinimum`       | Breaks and rests at rest areas. |
-| `ChargeWhileResting` | Battery trucks that cannot reach the destination with the current charge (the energy for the remaining route × 1.1 plus a 50 km reserve exceeds the current charge) rest at a charging station: the stop lasts at least the required rest and charges to `chargeTargetSoc`, or to 100 % during a daily rest. Otherwise a rest area is used. |
+| `ChargeWhileResting` | Takes a due rest at a charging station whenever a charge is unavoidable before the destination (remaining route beyond the range minus the 50 km reserve), hiding the charging time in the rest. Otherwise a rest area is used. When a charge falls due and the remaining route needs a daily rest before the destination anyway, the daily rest is taken during the charge if the projected stationary time does not increase. |
 
 A combined stop is logged as `RestAndRefuel` in the `rests` table.
 Combining charging with rest is an optimization, not a prerequisite for taking a legal break.
 If no charger has a feasible approach, the driver tries a rest area and defers charging.
-Combined stops may use the optional energy arrival reserve, but never exceed the available energy or legal time.
+The arrival reserve is a planning allowance, not a hard exclusion of an otherwise reachable facility.
 Rejecting one routed approach does not exclude other approaches to the same facility.
+Chargers that leave the 50 km arrival reserve are preferred over ones that would use it.
 
-Rest areas come from `source_tag` edges within 100 km ahead, else from `rest_areas.csv`, within 10 km of the route.
+Rest areas are sparse on some corridors (e.g. 221 sites in `rest_areas.csv`). A required rest is therefore planned
+before the truck passes the last rest facility it can still reach legally, not only shortly before the legal limit.
+
+Reachability checks (planning and the per-tick re-check of an accepted approach) use the planning consumption per
+distance plus the potential energy of the elevation gained along the approach (from the edges' `elevation`
+profiles; descents credited at 50 %, `DescentRecoveryFactor`), evaluated at every elevation sample so that a summit on
+the way must also be reachable. Travel times use the truck's maximum speed without the local incline reduction.
+
+A facility is snapped to the nearest road nodes (up to 8, within 500 m of the nearest one) that have driveable
+incoming and outgoing edges; nodes of the truck's own route are never used, which would mean stopping on the
+carriageway. The network often models a service area only as the motorway passing it: a facility with no off-route
+node within 150 m (`FacilityNodeMatchMeters`) but within 1 km of a route edge (`RoadsideFacilityMeters`) is entered
+from that edge without a detour, the truck stopping at the nearer end node of the edge. Otherwise the nearest node
+of another road (often the opposite carriageway) would force a long detour or U-turn.
+
+After a stop, the truck re-enters the road on the edge leaving the stop node; the edge that led to the stop is not
+driven a second time.
+
+Stop candidates come from graph tags and CSV lists, initially within 100 km ahead and 10 km off the route.
+If that window has no feasible stop, the search expands up to the remaining legal/energy reach.
+Facilities are evaluated using complete, truck-compatible approaches and local rejoin routes.
+The rejoin may be at the departure junction or up to 20 km farther along the original route
+(`ForwardRejoinLookaheadMeters`); the original route beyond that point is preserved.
+This avoids replacing the remaining journey with an unrelated corridor whose rest/fuel coverage may differ.
+Among feasible candidates, the driver minimizes estimated elapsed journey time (driving, service and projected legal
+rests), then the amount charged. Equally costly rests are taken later. This is a rolling-horizon estimate, not a
+globally optimal itinerary; unknown future queues and consumption changes cannot be predicted.
 There is **no roadside/hard-shoulder rest fallback**. If no feasible facility can be reached, the trip ends with an
 explicit `NoLegalStop` or `NoReachableFuel` outcome rather than driving illegally or resting on the shoulder.
 An empty energy store prevents further movement and ends the trip with `ZeroEnergy`, unless the truck has already
 arrived at its planned charging/refueling facility. Consumption is debited immediately after movement, including
 the final movement to the destination; exhaustion is resolved at simulation-tick granularity.
+Routine searches, rejected candidates and stop lifecycle transitions are not printed to the console.
+Terminal failures and actual errors remain visible; failed stop searches include the candidate count, search
+window and routed rejection counts. Structured stop and facility events remain in database output.
 
 ### Trip metrics
 
