@@ -366,6 +366,9 @@ public class SemiTruckFacilityTests
         Assert.Equal(8, fuel.FuelCarrierAmount, 6);
         steering.StopAtNode = null;
         layer._tickDuration = TimeSpan.FromSeconds(1);
+        // The edge leading to the stop is not driven a second time after resuming.
+        Assert.Same(facility, steering.Route[0].Edge.From);
+        Assert.Equal(10, steering.Route.RemainingRouteDistanceToGoal, 6);
         steering.Move();
         Assert.True(steering.Route.RemainingRouteDistanceToGoal < 10, "The return leg must continue from the facility.");
     }

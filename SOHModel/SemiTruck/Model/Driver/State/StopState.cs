@@ -95,10 +95,11 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             if (GeometryHelper.IsOnNode(steeringHandle.Position, _targetNode))
                 return true;
 
-            // At highway speed the truck moves much further than the node tolerance per tick and can skip over the
-            // stop node. Having entered the edge that leaves the stop node (the return leg) means it was reached.
-            return steeringHandle.Route.Count > 0 &&
-                   GeometryHelper.IsOnNode(_targetNode.Position, steeringHandle.Route[0].Edge.From);
+            // At highway speed the truck can skip over the stop node within one tick. Having entered the edge
+            // that leaves the stop node means it was reached.
+            var route = steeringHandle.Route;
+            return route.PassedStops < route.Count && route.PassedStops > 0 &&
+                   route.Stops[route.PassedStops].Edge.From == _targetNode;
         }
 
         public bool IsAtTarget(SemiTruckSteeringHandle steeringHandle) =>
@@ -161,11 +162,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
 
                 if (IsPauseCompleted(layer, truck))
                 {
-                    if (_parkedAtNode != null)
-                    {
-                        truck.Environment.Insert(truck, _parkedAtNode);
-                        _parkedAtNode = null;
-                    }
+                    ReturnToRoad(layer, truck, steeringHandle, driver);
                     var stopType = GetStopType(); // the subclass may reset the stop kind in OnPauseCompleted
                     OnPauseCompleted(layer, truck, fuelTracker, driver);
                     driver.DrivingTime.RegisterStop(layer._simulationTime - _stopStartTime);
@@ -192,6 +189,32 @@ namespace SOHModel.SemiTruck.Model.Driver.State
 
             // Truck is still pausing
             return _isPausing;
+        }
+
+        protected void ReturnToRoad(SemiTruckLayer layer, SemiTruck truck, SemiTruckSteeringHandle steeringHandle,
+            SemiTruckDriver driver)
+        {
+            if (_parkedAtNode == null) return;
+            ContinueFromNode(steeringHandle, layer, driver, _parkedAtNode);
+            truck.Environment.Insert(truck, _parkedAtNode);
+            _parkedAtNode = null;
+        }
+
+        /// <summary>
+        /// The truck arrives at the end of the edge leading to the stop node, so that edge is still the current one.
+        /// Drop it, so that the truck re-enters the road on the edge leaving the stop node instead of driving it twice.
+        /// </summary>
+        internal static void ContinueFromNode(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
+            SemiTruckDriver driver, ISpatialNode node)
+        {
+            var remaining = steeringHandle.Route.Stops.Skip(steeringHandle.Route.PassedStops).ToList();
+            int index = remaining.FindIndex(stop => stop.Edge.From == node);
+            if (index <= 0) return;
+            var route = new Route();
+            foreach (var stop in remaining.Skip(index)) route.Add(stop.Edge, stop.DesiredLane);
+            if (layer.notifyTrucks) layer.UnregisterTruckFromRoute(driver, steeringHandle.Route);
+            steeringHandle.Route = route;
+            if (layer.notifyTrucks) layer.RegisterTruckForRoute(driver, steeringHandle.Route);
         }
 
         protected virtual void LogRestEvent(RestEntity entry) => PostgresDbLogger.Instance?.Log(entry);
