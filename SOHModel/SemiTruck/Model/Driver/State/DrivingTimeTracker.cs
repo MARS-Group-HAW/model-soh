@@ -27,6 +27,30 @@ namespace SOHModel.SemiTruck.Model.Driver.State
 
         public bool CanDrive(TimeSpan duration) => duration >= TimeSpan.Zero && duration <= LegalDrivingLeft;
 
+        internal double EstimateFurtherRestSeconds(double approachSeconds, double stopSeconds, double remainingSeconds)
+        {
+            var projected = new DrivingTimeTracker
+            {
+                DrivingSinceBreak = DrivingSinceBreak,
+                DrivingSinceDailyRest = DrivingSinceDailyRest,
+                FirstBreakPartTaken = FirstBreakPartTaken
+            };
+            projected.AddDriving(TimeSpan.FromSeconds(approachSeconds));
+            projected.RegisterStop(TimeSpan.FromSeconds(stopSeconds));
+            double restSeconds = 0;
+            while (remainingSeconds > projected.LegalDrivingLeft.TotalSeconds)
+            {
+                double legSeconds = Math.Max(0, projected.LegalDrivingLeft.TotalSeconds);
+                projected.AddDriving(TimeSpan.FromSeconds(legSeconds));
+                remainingSeconds -= legSeconds;
+                var rest = projected.DailyDrivingLeft <= TimeSpan.Zero
+                    ? SemiTruckDriverConstants.DailyRestDuration : projected.RemainingBreak;
+                restSeconds += rest.TotalSeconds;
+                projected.RegisterStop(rest);
+            }
+            return restSeconds;
+        }
+
         /// <summary>Credits a stationary period of the given length towards break and daily rest.</summary>
         public void RegisterStop(TimeSpan duration)
         {

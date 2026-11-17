@@ -10,6 +10,28 @@ namespace SOHModel.SemiTruck.Model.Driver.Utils
         // Fuel/Energy thresholds
         public const double LowFuelThreshold = 100; // km
         public const double MaxFacilityDetourMeters = 10_000;
+        public const double ForwardRejoinLookaheadMeters = 20_000;
+
+        /// <summary>Nearby graph nodes tried, closest first, when snapping a facility to the road network.</summary>
+        public const int FacilitySnapCandidates = 8;
+
+        /// <summary>Alternative snap nodes may be at most this much farther from the facility than the nearest.</summary>
+        public const double FacilitySnapToleranceMeters = 500;
+
+        /// <summary>
+        /// A facility at most this far from a route edge (e.g. a service area that the network models only as the
+        /// motorway passing it) is entered from that edge without leaving the route.
+        /// </summary>
+        public const double RoadsideFacilityMeters = 1_000;
+
+        /// <summary>A facility with an off-route network node this close is reached via that node instead.</summary>
+        public const double FacilityNodeMatchMeters = 150;
+
+        /// <summary>A rest is planned once the last reachable rest facility is at most this far ahead.</summary>
+        public const double RestCoverageGuardMeters = 5_000;
+
+        /// <summary>How often (simulation ticks) the reachable rest-facility coverage ahead is recomputed.</summary>
+        public const long RestCoverageRefreshTicks = 60;
         public const double MinObservedDistanceKm = 20; // distance after which the observed consumption is trusted
         public const double RouteChargeReserveKm = 50; // range that should remain on arrival when charging for the route
         public const double RouteChargeSafetyFactor = 1.1; // safety margin on the energy needed for the remaining route
@@ -39,6 +61,12 @@ namespace SOHModel.SemiTruck.Model.Driver.Utils
         public static readonly TimeSpan DailyRestDuration = TimeSpan.FromHours(9); // usually 11, but daily rest may reduced to 9h, twice a week (not modeled)
         public static readonly TimeSpan DefaultRestPlanningMargin = TimeSpan.FromMinutes(30);
         public const double PlanningSpeedFraction = 0.7; // share of max speed assumed to estimate the remaining drive time
+
+        /// <summary>
+        /// Typical average speed relative to the maximum (about 0.9 in the Hamburg-Munich run), used only to
+        /// estimate elapsed time when comparing options; safety checks use <see cref="PlanningSpeedFraction"/>.
+        /// </summary>
+        public const double ExpectedSpeedFraction = 0.9;
         public static readonly TimeSpan DefaultAccidentDuration = TimeSpan.FromMinutes(41);
         public static readonly TimeSpan ShoulderAccidentDuration = TimeSpan.FromMinutes(2);
 
@@ -46,5 +74,11 @@ namespace SOHModel.SemiTruck.Model.Driver.Utils
         public const double AccidentTruckScalingBase = 650000.0; // Base truck count for scaling
         public const double SeccondsPerYear = 365.0 * 24 * 60 * 60;
         public const double SnowWeatherAccidentMultiplier = 2.06;
+
+        /// <summary>
+        /// Share of the potential energy lost on descents that reachability estimates credit back (braking losses,
+        /// no or limited recuperation); climbs are always charged in full.
+        /// </summary>
+        public const double DescentRecoveryFactor = 0.5;
     }
 }

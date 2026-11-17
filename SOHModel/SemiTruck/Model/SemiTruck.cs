@@ -47,6 +47,18 @@ namespace SOHModel.SemiTruck.Model
         [PropertyDescription(Name = "chargeTargetSoc")]
         public double ChargeTargetSoc { get; set; }
 
+        private double _planningMaxSpeed = -1;
+
+        /// <summary>
+        /// Maximum speed for travel-time estimates: <see cref="Vehicle{TSteeringCapable,TPassengerCapable,TSteeringHandle,TPassengerHandle}.MaxSpeed"/>
+        /// without the local incline reduction, which must not shrink the planning horizon.
+        /// </summary>
+        public double PlanningMaxSpeed
+        {
+            get => _planningMaxSpeed > 0 ? _planningMaxSpeed : MaxSpeed;
+            set => _planningMaxSpeed = value;
+        }
+
         /// <summary>
         /// Recomputes <see cref="RoadUser.Mass"/> from tare mass and payload (optionally overriding the payload).
         /// </summary>
@@ -54,7 +66,6 @@ namespace SOHModel.SemiTruck.Model
         {
             if (payloadOverrideKg is >= 0) Payload = payloadOverrideKg.Value;
             if (TareMass > 0) Mass = TareMass + Payload;
-            Console.WriteLine($"[SemiTruck] mass={Mass} kg (tare={TareMass}, payload={Payload})");
         }
 
         /// <summary>

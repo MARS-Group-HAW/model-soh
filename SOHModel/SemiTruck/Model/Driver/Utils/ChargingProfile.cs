@@ -84,5 +84,29 @@ namespace SOHModel.SemiTruck.Model.Driver.Utils
             double joules = PowerKw(truck, soc, stationPowerKw) * 1000.0 * timeStepSeconds;
             return Math.Min(missing, FuelCarrierEnergyConverter.FromJoules(joules, truck.FuelCarrierType));
         }
+
+        internal static double SecondsToTarget(SemiTruck truck, double currentAmount,
+            double? stationPowerKw = null, double? targetSocOverride = null)
+        {
+            double target = TargetAmount(truck, targetSocOverride);
+            if (currentAmount >= target) return 0;
+            double power = PowerKw(truck, 0, stationPowerKw);
+            if (truck.FuelCarrierType != FuelCarrierType.Battery)
+                return FuelCarrierEnergyConverter.ToJoules(target - currentAmount, truck.FuelCarrierType) /
+                       (power * 1000);
+
+            double capacity = truck.MaxFuelCarrierAmount;
+            double taperStart = capacity * TaperStartSoc;
+            double equivalentKwh = Math.Max(0, Math.Min(target, taperStart) - currentAmount);
+            if (target > taperStart)
+            {
+                double startSoc = Math.Max(currentAmount, taperStart) / capacity;
+                double slope = (1 - TaperEndPowerFraction) / (1 - TaperStartSoc);
+                equivalentKwh += capacity / slope * Math.Log(
+                    TaperFactor(FuelCarrierType.Battery, startSoc) /
+                    TaperFactor(FuelCarrierType.Battery, target / capacity));
+            }
+            return equivalentKwh / power * 3600;
+        }
     }
 }

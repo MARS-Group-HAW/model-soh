@@ -71,6 +71,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         public void AdjustForIncline(ISpatialEdge currentEdge, SemiTruck truck, SemiTruckDriver driver, FuelConsumptionTracker fuelTracker)
         {
             double? incline = GetGradeFromElevation(currentEdge, truck.PositionOnCurrentEdge);
+            truck.PlanningMaxSpeed = driver.MaxSpeed; // weather-adjusted, before the incline reduction
 
             if (incline == null && currentEdge.Attributes.TryGetValue("incline", out var inclineValue))
                 incline = ParseIncline(inclineValue?.ToString());
@@ -142,7 +143,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         /// </summary>
         internal static double[] ParseElevationProfile(ISpatialEdge edge)
         {
-            if (!edge.Attributes.TryGetValue("elevation", out var value) || value == null)
+            if (edge.Attributes == null || !edge.Attributes.TryGetValue("elevation", out var value) || value == null)
                 return null;
 
             var str = value.ToString()?.Trim();

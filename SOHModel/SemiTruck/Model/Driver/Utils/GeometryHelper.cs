@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Mars.Interfaces.Environments;
 
 namespace SOHModel.SemiTruck.Model.Driver.Utils
@@ -31,6 +32,37 @@ namespace SOHModel.SemiTruck.Model.Driver.Utils
             double dLat = (lat1 - lat2) * metersPerDegree;
             double dLon = (lon1 - lon2) * metersPerDegree * Math.Cos((lat1 + lat2) / 2 * Math.PI / 180.0);
             return Math.Sqrt(dLat * dLat + dLon * dLon);
+        }
+
+        /// <summary>
+        /// Approximate distance in meters from a point to a polyline, and the fraction of the polyline length at
+        /// which the closest point lies.
+        /// </summary>
+        public static (double Meters, double Fraction) DistanceToPolyline(double lat, double lon,
+            IReadOnlyList<Position> line)
+        {
+            if (line.Count == 0) return (double.PositiveInfinity, 0);
+            double cos = Math.Cos(lat * Math.PI / 180.0);
+            const double m = 111_320.0;
+            double best = double.PositiveInfinity, bestAlong = 0, total = 0;
+            for (int i = 0; i < line.Count; i++)
+            {
+                double ax = (line[i].Longitude - lon) * m * cos, ay = (line[i].Latitude - lat) * m;
+                if (i == line.Count - 1)
+                {
+                    double d = Math.Sqrt(ax * ax + ay * ay);
+                    if (d < best) { best = d; bestAlong = total; }
+                    break;
+                }
+                double bx = (line[i + 1].Longitude - lon) * m * cos, by = (line[i + 1].Latitude - lat) * m;
+                double sx = bx - ax, sy = by - ay, len2 = sx * sx + sy * sy;
+                double t = len2 > 0 ? Math.Clamp(-(ax * sx + ay * sy) / len2, 0, 1) : 0;
+                double px = ax + t * sx, py = ay + t * sy, dist = Math.Sqrt(px * px + py * py);
+                double len = Math.Sqrt(len2);
+                if (dist < best) { best = dist; bestAlong = total + t * len; }
+                total += len;
+            }
+            return (best, total > 0 ? bestAlong / total : 0);
         }
 
         /// <summary>
