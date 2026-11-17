@@ -131,10 +131,8 @@ public class SemiTruckFacilityTests
             new DrivingTimeTracker(), TimeSpan.FromSeconds(1)));
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void MissingRestFacilitiesNeverFallBackToShoulder(bool routed)
+    [Fact]
+    public void MissingRestFacilitiesNeverFallBackToShoulder()
     {
         var graph = new SpatialGraphEnvironment();
         var from = graph.AddNode(new Dictionary<string, object> { ["x"] = 10.0, ["y"] = 53.0 });
@@ -147,16 +145,12 @@ public class SemiTruckFacilityTests
         steering.Route.Add(edge);
         var state = new RestState();
         state.Request(new RestRequirement(StopFacility.RestArea, TimeSpan.FromMinutes(45), false));
-        state.CheckAndPlan(steering, layer, driver.SemiTruck, fuel,
-            (_, _, _) => Assert.Fail("A roadside rest must not be planned."), driver.DrivingTime,
-            routed ? driver.CreateStopSearch(state) : null);
+        state.CheckAndPlan(steering, layer, driver.SemiTruck, fuel, driver.DrivingTime,
+            new StopRoutePlanner(layer, graph, driver.SemiTruck).CreateSearch(steering, driver, state));
         Assert.True(state.PlanningFailed);
         Assert.False(state.IsActive);
-        if (routed)
-        {
-            Assert.Contains("0 candidate approaches", state.PlanningFailureDetails);
-            Assert.DoesNotContain("Rejections:", state.PlanningFailureDetails);
-        }
+        Assert.Contains("0 candidate approaches", state.PlanningFailureDetails);
+        Assert.DoesNotContain("Rejections:", state.PlanningFailureDetails);
     }
 
     [Theory]
@@ -194,6 +188,7 @@ public class SemiTruckFacilityTests
         SetDriverField(driver, "_environment", graph);
         SetDriverField(driver, "_layer", layer);
         SetDriverField(driver, "_routeManager", new RouteManager(layer, graph, truck, 3, null));
+        SetDriverField(driver, "_stopRoutes", new StopRoutePlanner(layer, graph, truck));
         SetDriverField(driver, "_unregister", new UnregisterAgent((_, _) => { }));
         driver.DrivingTime.AddDriving(TimeSpan.FromHours(3));
         var restState = new RecordingRestState();
@@ -257,45 +252,47 @@ public class SemiTruckFacilityTests
         var stop = new TestRefuelState();
         var requirement = new RestRequirement(StopFacility.ChargingStation, TimeSpan.FromMinutes(45), false);
         stop.RequestCombinedRest(requirement);
-        ISpatialNode rejected = null;
-        ISpatialNode accepted = null;
-        stop.CheckAndPlan(steering, layer, driver.SemiTruck, fuel, (_, _, approach) =>
-        {
-            if (rejected == null)
+        // Every approach is routable; the plan's stop node records which approach was used.
+        var applied = new List<ISpatialNode>();
+        var acceptAll = new StopRouteSearch(
+            (_, _, approach) => new StopRoutePlan(route, approach, new RouteEstimate(1000, 60),
+                new RouteEstimate(1000, 60)),
+            plan =>
             {
-                rejected = approach;
-                stop.CancelPlanned();
-            }
-            else
-            {
-                accepted = approach;
+                applied.Add(plan.StopNode);
+                stop.SetTargetNode(plan.StopNode);
                 stop.MarkPlanned();
-            }
-        }, driver.DrivingTime);
+            });
+        var rejectAll = new StopRouteSearch((_, _, _) => null, _ => Assert.Fail("No route was found."));
 
-        Assert.NotNull(rejected);
-        Assert.NotNull(accepted);
-        Assert.NotSame(rejected, accepted);
+        stop.CheckAndPlan(steering, layer, driver.SemiTruck, fuel, driver.DrivingTime, acceptAll);
+        var rejected = Assert.Single(applied);
+        stop.CancelPlanned();
+        stop.CheckAndPlan(steering, layer, driver.SemiTruck, fuel, driver.DrivingTime, acceptAll);
+
+        Assert.Equal(2, applied.Count);
+        Assert.NotSame(rejected, applied[1]);
         Assert.False(stop.PlanningFailed);
-        var planned = Assert.Single(stop.Events);
-        Assert.Equal(RestEventType.Planned, planned.EventType);
-        Assert.Equal(RestStateType.RestAndRefuel, planned.StateType);
-        stop.CheckAndPlan(steering, layer, driver.SemiTruck, fuel,
-            (_, _, _) => Assert.Fail("An accepted stop must not be planned again."), driver.DrivingTime);
-        Assert.Single(stop.Events);
+        Assert.Equal(2, stop.Events.Count);
+        Assert.All(stop.Events, planned =>
+        {
+            Assert.Equal(RestEventType.Planned, planned.EventType);
+            Assert.Equal(RestStateType.RestAndRefuel, planned.StateType);
+        });
+        stop.CheckAndPlan(steering, layer, driver.SemiTruck, fuel, driver.DrivingTime,
+            new StopRouteSearch((_, _, _) => null, _ => Assert.Fail("An accepted stop must not be planned again.")));
+        Assert.Equal(2, stop.Events.Count);
 
         stop.CancelPlanned();
-        stop.CheckAndPlan(steering, layer, driver.SemiTruck, fuel,
-            (_, _, _) => stop.CancelPlanned(), driver.DrivingTime);
+        stop.CheckAndPlan(steering, layer, driver.SemiTruck, fuel, driver.DrivingTime, rejectAll);
         Assert.True(stop.PlanningFailed);
-        Assert.Single(stop.Events);
+        Assert.Equal(2, stop.Events.Count);
         Assert.Equal(requirement with { Facility = StopFacility.RestArea }, stop.TakeRestAreaFallback());
         Assert.False(stop.PlanningFailed);
         Assert.False(stop.HasCombinedRestRequest);
 
         stop.RequestCombinedRest(requirement);
-        stop.CheckAndPlan(steering, layer, driver.SemiTruck, fuel,
-            (_, _, _) => stop.MarkPlanned(), driver.DrivingTime);
+        stop.CheckAndPlan(steering, layer, driver.SemiTruck, fuel, driver.DrivingTime, acceptAll);
         Assert.True(stop.IsActive);
         Assert.False(stop.PlanningFailed);
     }
@@ -320,7 +317,17 @@ public class SemiTruckFacilityTests
         var steering = new SemiTruckSteeringHandle(graph, driver.SemiTruck) { Route = route };
         var stop = new RefuelState();
         stop.RequestCombinedRest(new RestRequirement(StopFacility.ChargingStation, TimeSpan.FromMinutes(45), false, 50000));
-        stop.CheckAndPlan(steering, layer, driver.SemiTruck, fuel, (_, _, _) => stop.MarkPlanned(), driver.DrivingTime);
+        var routing = new StopRouteSearch(
+            (_, _, approach) => approach == charger
+                ? new StopRoutePlan(route, charger, RouteEstimate.Of(new[] { route[0].Edge }, 0, driver.SemiTruck),
+                    RouteEstimate.Of(new[] { route[1].Edge }, 0, driver.SemiTruck))
+                : null,
+            plan =>
+            {
+                stop.SetTargetNode(plan.StopNode);
+                stop.MarkPlanned();
+            });
+        stop.CheckAndPlan(steering, layer, driver.SemiTruck, fuel, driver.DrivingTime, routing);
         Assert.True(stop.IsActive);
         Assert.False(stop.PlanningFailed);
     }
@@ -401,9 +408,7 @@ public class SemiTruckFacilityTests
         truck.FuelConsumptionPer100Km = 5;
         truck.CurrentEdge = first;
         var steering = new SemiTruckSteeringHandle(graph, truck) { Route = new Route { first, beside, last } };
-        var manager = new RouteManager(layer, graph, truck, 3, null);
-
-        var plan = manager.CreateStopRoute(facilityLat, 10.017, exit, steering, driver);
+        var plan = new StopRoutePlanner(layer, graph, truck).Create(facilityLat, 10.017, exit, steering, driver);
 
         Assert.NotNull(plan);
         Assert.Same(roadside ? passing : far, plan.StopNode);
@@ -435,6 +440,7 @@ public class SemiTruckFacilityTests
         SetDriverField(driver, "_environment", graph);
         SetDriverField(driver, "_layer", layer);
         SetDriverField(driver, "_routeManager", new RouteManager(layer, graph, truck, 3, null));
+        SetDriverField(driver, "_stopRoutes", new StopRoutePlanner(layer, graph, truck));
         int unregistered = 0;
         SetDriverField(driver, "_unregister", new UnregisterAgent((_, _) => unregistered++));
         for (int tick = 0; tick < 100 && !driver.TripOutcome.HasValue; tick++)
@@ -491,10 +497,10 @@ public class SemiTruckFacilityTests
             driver.DrivingTime.AddDriving(TimeSpan.FromHours(4.5) - TimeSpan.FromSeconds(10));
         var original = new Route { first, skipped, last };
         var steering = new SemiTruckSteeringHandle(graph, truck) { Route = original };
-        var manager = new RouteManager(layer, graph, truck, 3, null);
+        var planner = new StopRoutePlanner(layer, graph, truck);
 
         var rejections = new List<StopRouteRejection>();
-        var plan = manager.CreateStopRoute(facility.Position.Latitude, facility.Position.Longitude,
+        var plan = planner.Create(facility.Position.Latitude, facility.Position.Longitude,
             exit, steering, driver, reportRejection: rejections.Add);
 
         Assert.Same(original, steering.Route);
@@ -516,9 +522,8 @@ public class SemiTruckFacilityTests
             new[] { first, entry, forward, last }, plan.Route.Stops.Select(step => step.Edge));
         Assert.Equal(scenario == "corridor" ? 201100 : scenario == "return" ? 3100 : 2100,
             plan.Route.RemainingRouteDistanceToGoal, 6);
-        ISpatialNode accepted = null;
-        manager.ApplyStopRoute(plan, steering, driver, node => accepted = node);
-        Assert.Same(facility, accepted);
+        planner.Apply(plan, steering, driver);
+        Assert.Same(plan.Route, steering.Route);
         Assert.Same(first, steering.Route[0].Edge);
         Assert.Equal(100, truck.PositionOnCurrentEdge);
     }
@@ -548,7 +553,7 @@ public class SemiTruckFacilityTests
         var routing = new StopRouteSearch((_, lon, node) =>
         {
             if (node.Position.Longitude != lon) return null;
-            return new StopRoutePlan(route, node, 60, 1000, 60, 1000);
+            return new StopRoutePlan(route, node, new RouteEstimate(1000, 60), new RouteEstimate(1000, 60));
         }, plan =>
         {
             chosen = plan;
@@ -556,9 +561,7 @@ public class SemiTruckFacilityTests
             state.MarkPlanned();
         });
 
-        state.CheckAndPlan(steering, layer, driver.SemiTruck, fuel,
-            (_, _, _) => Assert.Fail("Only the selected, evaluated route should be applied."),
-            driver.DrivingTime, routing);
+        state.CheckAndPlan(steering, layer, driver.SemiTruck, fuel, driver.DrivingTime, routing);
 
         Assert.NotNull(chosen);
         Assert.Equal(expectedLongitude, chosen.StopNode.Position.Longitude);
@@ -607,19 +610,11 @@ public class SemiTruckFacilityTests
         var (driver, fuel) = MakeDriver(layer, 5);
         driver.DrivingTime.AddDriving(TimeSpan.FromHours(3));
         var steering = new SemiTruckSteeringHandle(graph, driver.SemiTruck) { Route = route };
-        var manager = new RouteManager(layer, graph, driver.SemiTruck, 3, null);
         var state = new RecordingRestState();
         state.Request(new RestRequirement(StopFacility.RestArea, TimeSpan.FromMinutes(45), false));
-        var routing = new StopRouteSearch(
-            (lat, lon, node) => manager.CreateStopRoute(lat, lon, node, steering, driver),
-            plan => manager.ApplyStopRoute(plan, steering, driver, node =>
-            {
-                state.SetTargetNode(node);
-                state.MarkPlanned();
-            }));
+        var routing = new StopRoutePlanner(layer, graph, driver.SemiTruck).CreateSearch(steering, driver, state);
 
-        state.CheckAndPlan(steering, layer, driver.SemiTruck, fuel,
-            (_, _, _) => Assert.Fail("Only an evaluated route should be applied."), driver.DrivingTime, routing);
+        state.CheckAndPlan(steering, layer, driver.SemiTruck, fuel, driver.DrivingTime, routing);
 
         Assert.Same(quickRest, state.TargetNode);
         Assert.Equal(201200, steering.Route.RemainingRouteDistanceToGoal, 6);
@@ -645,18 +640,10 @@ public class SemiTruckFacilityTests
         var (driver, fuel) = MakeDriver(layer, 7);
         driver.SemiTruck.FuelConsumptionPer100Km = 5; // 140 km range
         var steering = new SemiTruckSteeringHandle(graph, driver.SemiTruck) { Route = route };
-        var manager = new RouteManager(layer, graph, driver.SemiTruck, 3, null);
         var state = new TestRefuelState();
-        var routing = new StopRouteSearch(
-            (lat, lon, node) => manager.CreateStopRoute(lat, lon, node, steering, driver),
-            plan => manager.ApplyStopRoute(plan, steering, driver, node =>
-            {
-                state.SetTargetNode(node);
-                state.MarkPlanned();
-            }));
+        var routing = new StopRoutePlanner(layer, graph, driver.SemiTruck).CreateSearch(steering, driver, state);
 
-        state.CheckAndPlan(steering, layer, driver.SemiTruck, fuel,
-            (_, _, _) => Assert.Fail("Only an evaluated route should be applied."), driver.DrivingTime, routing);
+        state.CheckAndPlan(steering, layer, driver.SemiTruck, fuel, driver.DrivingTime, routing);
 
         Assert.False(state.PlanningFailed);
         Assert.Same(charger, state.TargetNode);

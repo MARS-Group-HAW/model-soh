@@ -19,6 +19,7 @@ using NetTopologySuite.GeometriesGraph;
 using ServiceStack;
 using SOHModel.SemiTruck.Common;
 using SOHModel.SemiTruck.RealTimeData;
+using SOHModel.SemiTruck.Steering;
 using Position = Mars.Interfaces.Environments.Position;
 
 namespace SOHModel.SemiTruck.Model
@@ -479,6 +480,14 @@ namespace SOHModel.SemiTruck.Model
 
                 trucks.Add(truck);
             }
+        }
+
+        /// <summary>Replaces the truck's route, keeping the edge registrations in sync.</summary>
+        internal void ReplaceRoute(SemiTruckDriver truck, SemiTruckSteeringHandle steering, Route route)
+        {
+            if (notifyTrucks) UnregisterTruckFromRoute(truck, steering.Route);
+            steering.Route = route;
+            if (notifyTrucks) RegisterTruckForRoute(truck, route);
         }
 
         /// <summary>

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Mars.Interfaces.Environments;
 using SOHModel.Database;
 using SOHModel.Domain.Model;
 using SOHModel.SemiTruck.Model.Energy;
@@ -61,6 +63,66 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         {
             double perKm = PlanningWheelJoulesPerKm(truck);
             return perKm > 0 ? Store.WheelJoulesAvailable / perKm : double.PositiveInfinity;
+        }
+
+        /// <summary>Amount (carrier unit) expected to be left after driving <paramref name="meters"/>.</summary>
+        public double EstimatedAmountAfter(double meters, SemiTruck truck) =>
+            Math.Max(0, FuelCarrierAmount - meters / 100_000 * PlanningConsumptionPer100Km(truck));
+
+        /// <summary>
+        /// True if the energy on board covers the edges: their distance lies within the planning range, and the
+        /// wheel energy suffices up to every point on the way (see <see cref="RequiredWheelJoules"/>).
+        /// </summary>
+        public bool CanCover(IEnumerable<ISpatialEdge> edges, double positionOnFirstEdge, SemiTruck truck)
+        {
+            var (meters, joules) = Requirement(edges, positionOnFirstEdge, truck);
+            return meters <= PlanningRangeKm(truck) * 1000 && joules <= Store.WheelJoulesAvailable;
+        }
+
+        /// <summary>
+        /// Wheel energy needed to drive the edges: the planning consumption per distance plus the potential energy of
+        /// the elevation gained (descents are credited only partially). Taken as the maximum over every elevation
+        /// sample, so the truck must also be able to reach the highest point on the way.
+        /// </summary>
+        internal double RequiredWheelJoules(IEnumerable<ISpatialEdge> edges, double positionOnFirstEdge,
+            SemiTruck truck) => Requirement(edges, positionOnFirstEdge, truck).WheelJoules;
+
+        private (double Meters, double WheelJoules) Requirement(IEnumerable<ISpatialEdge> edges,
+            double positionOnFirstEdge, SemiTruck truck)
+        {
+            double perMeter = PlanningWheelJoulesPerKm(truck) / 1000.0;
+            double weight = Math.Max(0, truck.Mass) * 9.81;
+            double along = 0;
+            double potential = 0;
+            double worst = 0;
+            bool first = true;
+            foreach (var edge in edges)
+            {
+                double start = first ? Math.Clamp(positionOnFirstEdge, 0, edge.Length) : 0;
+                first = false;
+                var profile = ElevationProfile.Of(edge);
+                if (profile == null || edge.Length <= 0)
+                {
+                    along += edge.Length - start;
+                    worst = Math.Max(worst, perMeter * along + potential);
+                    continue;
+                }
+
+                double step = edge.Length / (profile.Length - 1);
+                double previousX = start;
+                double previousH = ElevationProfile.At(profile, edge.Length, start);
+                for (int i = (int)Math.Floor(start / step) + 1; i < profile.Length; i++)
+                {
+                    double x = i * step;
+                    double rise = profile[i] - previousH;
+                    along += x - previousX;
+                    potential += weight * (rise >= 0 ? rise : rise * SemiTruckDriverConstants.DescentRecoveryFactor);
+                    worst = Math.Max(worst, perMeter * along + potential);
+                    previousX = x;
+                    previousH = profile[i];
+                }
+            }
+            return (along, worst);
         }
 
         /// <summary>

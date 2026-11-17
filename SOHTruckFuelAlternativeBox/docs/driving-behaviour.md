@@ -96,9 +96,11 @@ A short break is preferred over daily rest when the remaining drive fits the dai
 Otherwise a due break is upgraded to the daily rest when that does not increase the projected stationary time
 (strictly less at a rest area, equal suffices at a charger), so a break is not followed shortly by a daily rest.
 
-Planning speed: `PlanningSpeedFraction` (0.7) times `maxSpeed`, deliberately pessimistic. `maxSpeed` here excludes the
-local incline reduction (`SemiTruck.PlanningMaxSpeed`), so a climb does not cancel an accepted plan. Projections of
-the total trip time (daily-rest merge, section 6) use the expected `ExpectedSpeedFraction` (0.9) instead.
+Planning speed (`PlanningSpeed.Conservative`): `PlanningSpeedFraction` (0.7) times `maxSpeed`, deliberately
+pessimistic. `maxSpeed` here excludes the local incline reduction (`SemiTruck.PlanningMaxSpeed`), so a climb does not
+cancel an accepted plan. Projections of the total trip time (daily-rest merge, section 6) use
+`PlanningSpeed.Expected` (`ExpectedSpeedFraction`, 0.9) instead. Routed estimates (`RouteEstimate`) cap the speed by
+each edge's limit (`PlanningSpeed.OnEdge`).
 
 Coverage trigger: besides the regular trigger, a required rest is planned when the truck is about to pass
 (`RestCoverageGuardMeters`, 5 km) the last route position with a rest facility within its legal reach, so sparse
@@ -128,7 +130,8 @@ target = needed / capacity       if 0 < target <= 1
 While a combined rest is still running, a battery whose route needs more than the default target keeps charging
 towards 100 %, which costs no time. A fixed `chargeTargetSoc` in the CSV overrides the automatic target.
 
-Energy reachability of a stop (`StopReachability.CanReach`) also requires
+Reachability of a stop (`StopReachability.CanReach`) combines the legal driving time left with the energy check
+(`FuelConsumptionTracker.CanCover`). The latter also requires
 `consumption x distance + m g x elevation gain <= available energy` at every elevation sample of the approach
 (descents credited at `DescentRecoveryFactor`, 0.5). Chargers keeping the 50 km arrival reserve rank first.
 The charging power follows `ChargingProfile` (station power, truck `maxChargePowerKw`, taper near full).
@@ -183,7 +186,7 @@ A facility the network does not model (no off-route node within 150 m) but lying
 service area beside the motorway, is entered from that edge without detour; the stop node is the nearer end of the
 edge. After the stop, the truck continues on the edge leaving the stop node rather than re-driving the approach edge.
 Charging-time estimates include station/vehicle power and taper; future breaks/rests use the current legal budgets.
-This rolling-horizon ranking does not claim global optimality or predict unknown future queues.
+This rolling-horizon ranking does not claim global optimality.
 
 Facility lists: battery trucks use the charging list, other carriers the fuel list, rests use the rest area list.
 Neighbour-country charging stations are appended if `resources/charging_stations_neighbors.csv` exists (see the README).

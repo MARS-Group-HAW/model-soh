@@ -70,12 +70,12 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         protected abstract void OnPauseCompleted(SemiTruckLayer layer, SemiTruck truck,
             FuelConsumptionTracker fuelTracker, SemiTruckDriver driver);
 
-        // Set when planning starts: how far ahead the stop may be placed; null = take the first facility found.
-        private double? _reachLimitMeters;
+        // Set when planning starts: how far ahead the stop may be placed.
+        private double _reachLimitMeters;
 
         /// <summary>
-        /// Distance ahead up to which the truck can still reach a stop. If set, the farthest facility within it is
-        /// chosen (as late as possible), otherwise the nearest one.
+        /// Distance ahead up to which this stop type wants its stop, in addition to the energy and legal driving
+        /// limits; <c>null</c> for no further limit.
         /// </summary>
         protected virtual double? GetReachLimitMeters(SemiTruck truck, FuelConsumptionTracker fuelTracker) => null;
 
@@ -110,7 +110,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         {
             if (!_goingToStop || IsAtTarget(steeringHandle)) return;
             var edges = new List<ISpatialEdge>();
-            foreach (var stop in steeringHandle.Route.Stops.Skip(steeringHandle.Route.PassedStops))
+            foreach (var stop in steeringHandle.RemainingSteps)
             {
                 edges.Add(stop.Edge);
                 if (stop.Edge.To != _targetNode) continue;
@@ -207,14 +207,12 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         internal static void ContinueFromNode(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
             SemiTruckDriver driver, ISpatialNode node)
         {
-            var remaining = steeringHandle.Route.Stops.Skip(steeringHandle.Route.PassedStops).ToList();
+            var remaining = steeringHandle.RemainingSteps.ToList();
             int index = remaining.FindIndex(stop => stop.Edge.From == node);
             if (index <= 0) return;
             var route = new Route();
             foreach (var stop in remaining.Skip(index)) route.Add(stop.Edge, stop.DesiredLane);
-            if (layer.notifyTrucks) layer.UnregisterTruckFromRoute(driver, steeringHandle.Route);
-            steeringHandle.Route = route;
-            if (layer.notifyTrucks) layer.RegisterTruckForRoute(driver, steeringHandle.Route);
+            layer.ReplaceRoute(driver, steeringHandle, route);
         }
 
         protected virtual void LogRestEvent(RestEntity entry) => PostgresDbLogger.Instance?.Log(entry);
@@ -247,8 +245,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         /// Template method that orchestrates: already-planned check -> condition check -> facility search.
         /// </summary>
         public void CheckAndPlan(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
-            SemiTruck truck, FuelConsumptionTracker fuelTracker, Action<double, double, ISpatialNode> planStopCallback,
-            DrivingTimeTracker? drivingTime = null, StopRouteSearch? routing = null)
+            SemiTruck truck, FuelConsumptionTracker fuelTracker, DrivingTimeTracker drivingTime, StopRouteSearch routing)
         {
             // Skip if already planned or pausing
             if (_planned || _goingToStop || _isPausing)
@@ -258,26 +255,14 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             if (!ShouldStop(steeringHandle, layer, truck, fuelTracker))
                 return;
 
-            double legalReach = drivingTime == null ? double.PositiveInfinity :
-                Math.Max(0, (drivingTime.LegalDrivingLeft - layer._tickDuration).TotalSeconds) *
-                Math.Max(1, truck.PlanningMaxSpeed * SemiTruckDriverConstants.PlanningSpeedFraction);
+            double legalReach = Math.Max(0, (drivingTime.LegalDrivingLeft - layer._tickDuration).TotalSeconds) *
+                PlanningSpeed.Conservative(truck);
             _reachLimitMeters = Math.Min(GetReachLimitMeters(truck, fuelTracker) ?? double.PositiveInfinity,
                 Math.Min(legalReach, fuelTracker.PlanningRangeKm(truck) * 1000));
             PlanningFailed = false;
             PlanningFailureDetails = null;
 
-            if (routing != null && drivingTime != null)
-            {
-                PlanBestStop(steeringHandle, layer, truck, fuelTracker, drivingTime, routing);
-            }
-            else
-            {
-                // Failed routed candidates are blacklisted by CancelPlanned; try the next one before moving.
-                do
-                {
-                    PlanStop(steeringHandle, layer, planStopCallback);
-                } while (!IsActive && !PlanningFailed);
-            }
+            PlanBestStop(steeringHandle, layer, truck, fuelTracker, drivingTime, routing);
 
             if (_goingToStop)
                 LogRestEvent(new RestEntity(truck.ID, layer.Context.CurrentTick, GetStopType(),
@@ -302,14 +287,9 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             var facilities = GetFacilityList(layer).Select(f => ((double)f.Lat, (double)f.Lon)).ToList();
             var tags = GetSearchTags();
             double remaining = steering.Route.RemainingRouteDistanceToGoal;
-            double along = 0;
-            bool first = true;
             double? last = null;
-            foreach (var step in steering.Route.Stops.Skip(steering.Route.PassedStops))
+            foreach (var (step, along) in steering.StepsAhead())
             {
-                along += first && steering.RemainingDistanceOnEdge >= 0
-                    ? steering.RemainingDistanceOnEdge : step.Edge.Length;
-                first = false;
                 if (along > reachMeters) break;
                 var node = step.Edge.To;
                 double lat = node.Position.Latitude;
@@ -330,19 +310,9 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             FuelConsumptionTracker fuel, DrivingTimeTracker drivingTime, StopRouteSearch routing,
             bool extendSearch = false)
         {
-            var nodes = new List<ISpatialNode>();
-            double along = 0;
-            bool first = true;
-            double horizon = extendSearch ? _reachLimitMeters ?? GetSearchRadius()
-                : Math.Min(GetSearchRadius(), _reachLimitMeters ?? double.PositiveInfinity);
-            foreach (var step in steering.Route.Stops.Skip(steering.Route.PassedStops))
-            {
-                along += first && steering.RemainingDistanceOnEdge >= 0
-                    ? steering.RemainingDistanceOnEdge : step.Edge.Length;
-                first = false;
-                if (along > horizon) break;
-                nodes.Add(step.Edge.To);
-            }
+            double horizon = extendSearch ? _reachLimitMeters : Math.Min(GetSearchRadius(), _reachLimitMeters);
+            var nodes = steering.StepsAhead().TakeWhile(ahead => ahead.Along <= horizon)
+                .Select(ahead => ahead.Step.Edge.To).ToList();
 
             var candidates = new Dictionary<(string Location, ISpatialNode Node),
                 (double Lat, double Lon, object? Facility)>();
@@ -383,16 +353,16 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                 var plan = routing.Create(candidate.Lat, candidate.Lon, key.Node);
                 if (plan == null) continue;
                 var cost = EstimateStopCost(plan, layer, truck, fuel, candidate.Facility);
-                double seconds = plan.ApproachSeconds + plan.RemainingSeconds + cost.Seconds +
-                    drivingTime.EstimateFurtherRestSeconds(plan.ApproachSeconds, cost.Seconds, plan.RemainingSeconds);
+                double seconds = plan.Approach.Seconds + plan.Onward.Seconds + cost.Seconds +
+                    drivingTime.EstimateFurtherRestSeconds(plan.Approach.Seconds, cost.Seconds, plan.Onward.Seconds);
                 // Candidates keeping the arrival reserve come first: consumption may exceed the estimate on the way.
-                bool usesReserve = plan.ApproachMeters + ArrivalReserveMeters() > rangeMeters;
+                bool usesReserve = plan.Approach.Meters + ArrivalReserveMeters() > rangeMeters;
                 if (usesReserve && !bestUsesReserve) continue;
                 if (usesReserve == bestUsesReserve && (seconds > bestSeconds + 1e-6 ||
                     (Math.Abs(seconds - bestSeconds) <= 1e-6 &&
                      (cost.Charge > bestCharge + 1e-6 ||
                       (Math.Abs(cost.Charge - bestCharge) <= 1e-6 &&
-                       best != null && plan.ApproachSeconds <= best.ApproachSeconds))))) continue;
+                       best != null && plan.Approach.Seconds <= best.Approach.Seconds))))) continue;
                 best = plan;
                 bestUsesReserve = usesReserve;
                 chosen = candidate;
@@ -422,156 +392,11 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         }
 
         /// <summary>
-        /// Plans route to facility. Does not check conditions - assumes caller has already determined a stop is needed.
-        /// Called internally by CheckAndPlan() after condition check passes.
-        /// </summary>
-        protected void PlanStop(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
-            Action<double, double, ISpatialNode> planStopCallback)
-        {
-            // Skip if already planned or pausing
-            if (_planned || _goingToStop || _isPausing)
-                return;
-
-            double accumulatedDistance = 0;
-            var searchRadius = _reachLimitMeters.HasValue
-                ? Math.Min(GetSearchRadius(), _reachLimitMeters.Value)
-                : GetSearchRadius();
-            var searchTags = GetSearchTags();
-            (double Lat, double Lon, ISpatialNode Node)? farthest = null;
-
-            // Search along the route for a facility
-            // Only look ahead: skip passed edges, and for the edge the truck is on only consider its end node,
-            // otherwise the detour would be inserted behind the truck.
-            bool isCurrentEdge = true;
-            foreach (var routeStep in steeringHandle.Route.Stops.Skip(steeringHandle.Route.PassedStops))
-            {
-                var edge = routeStep.Edge;
-                accumulatedDistance += isCurrentEdge && steeringHandle.RemainingDistanceOnEdge >= 0
-                    ? steeringHandle.RemainingDistanceOnEdge : edge.Length;
-                if (accumulatedDistance > searchRadius)
-                    break;
-
-                var nodesToCheck = isCurrentEdge ? new[] { edge.To } : new[] { edge.From, edge.To };
-                isCurrentEdge = false;
-
-                foreach (ISpatialNode node in nodesToCheck)
-                {
-                    foreach (var connectedEdge in node.OutgoingEdges.Values)
-                    {
-                        if (connectedEdge.Attributes.TryGetValue("source_tag", out var tag))
-                        {
-                            var tagStr = tag?.ToString()?.ToLowerInvariant();
-                            if (searchTags.Contains(tagStr))
-                            {
-                                var facilityCoord = connectedEdge.To.Position;
-                                if (_rejectedApproaches.Contains((LocationKey(facilityCoord.Latitude, facilityCoord.Longitude), node)))
-                                    continue;
-                                if (!_reachLimitMeters.HasValue)
-                                {
-                                    OnFacilityChosen(null);
-                                    _lastListFacility = null;
-                                    FacilityLat = facilityCoord.Latitude;
-                                    FacilityLon = facilityCoord.Longitude;
-                                    _lastApproachNode = node;
-                                    planStopCallback(facilityCoord.Latitude, facilityCoord.Longitude, node);
-                                    return;
-                                }
-                                farthest = (facilityCoord.Latitude, facilityCoord.Longitude, node);
-                                goto nextStep;
-                            }
-                        }
-                    }
-                }
-                nextStep:;
-            }
-
-            if (farthest.HasValue)
-            {
-                OnFacilityChosen(null);
-                _lastListFacility = null;
-                FacilityLat = farthest.Value.Lat;
-                FacilityLon = farthest.Value.Lon;
-                _lastApproachNode = farthest.Value.Node;
-                planStopCallback(farthest.Value.Lat, farthest.Value.Lon, farthest.Value.Node);
-                return;
-            }
-
-            // No facility found on the way → fallback to external list
-            FindNearestFromList(steeringHandle, layer, planStopCallback);
-        }
-
-        /// <summary>
         /// Called when a stop location has been chosen; <paramref name="facility"/> is the entry of the facility list,
         /// or <c>null</c> if the facility comes from the map (tagged edge) and has no further data.
         /// </summary>
         protected virtual void OnFacilityChosen(dynamic facility)
         {
-        }
-
-        /// <summary>
-        /// Finds nearest facility from external CSV list.
-        /// </summary>
-        protected void FindNearestFromList(SemiTruckSteeringHandle steeringHandle, SemiTruckLayer layer,
-            Action<double, double, ISpatialNode> planStopCallback)
-        {
-            var facilityList = GetFacilityList(layer);
-
-            // Rank by detour, not by distance to the truck: a facility behind the truck or far off the route would send
-            // it on a loop. Cost = distance along the route to the closest route node ahead + twice the way off the route.
-            dynamic nearest = null;
-            ISpatialNode insertFromNode = null;
-            double bestCost = double.MaxValue;
-            if (facilityList != null)
-            {
-                var nodes = new List<(ISpatialNode Node, double Along)>();
-                double along = 0;
-                bool first = true;
-                foreach (var step in steeringHandle.Route.Stops.Skip(steeringHandle.Route.PassedStops))
-                {
-                    along += first && steeringHandle.RemainingDistanceOnEdge >= 0
-                        ? steeringHandle.RemainingDistanceOnEdge : step.Edge.Length;
-                    first = false;
-                    if (along > (_reachLimitMeters.HasValue
-                            ? Math.Min(GetSearchRadius(), _reachLimitMeters.Value) : GetSearchRadius())) break;
-                    nodes.Add((step.Edge.To, along));
-                }
-
-                foreach (var facility in facilityList)
-                {
-                    if (_unreachableFacilities.Contains(facility)) continue;
-                    foreach (var (node, alongRoute) in nodes)
-                    {
-                        if (_rejectedApproaches.Contains((LocationKey(facility.Lat, facility.Lon), node))) continue;
-                        double offRoute = GeometryHelper.ApproxDistanceMeters(
-                            facility.Lat, facility.Lon, node.Position.Latitude, node.Position.Longitude);
-                        if (offRoute > SemiTruckDriverConstants.MaxFacilityDetourMeters ||
-                            (_reachLimitMeters.HasValue && alongRoute + offRoute > _reachLimitMeters.Value)) continue;
-                        // with a reach limit the farthest facility is preferred: the detour is a penalty, not the distance
-                        double cost = _reachLimitMeters.HasValue && offRoute <= SemiTruckDriverConstants.MaxFacilityDetourMeters
-                            ? -alongRoute + 2 * offRoute
-                            : alongRoute + 2 * offRoute;
-                        if (cost >= bestCost) continue;
-                        bestCost = cost;
-                        nearest = facility;
-                        insertFromNode = node;
-                    }
-                }
-
-            }
-
-            if (nearest != null)
-            {
-                OnFacilityChosen(nearest);
-                _lastListFacility = nearest;
-                FacilityLat = nearest.Lat;
-                FacilityLon = nearest.Lon;
-                _lastApproachNode = insertFromNode;
-                planStopCallback(nearest.Lat, nearest.Lon, insertFromNode);
-            }
-            else
-            {
-                PlanningFailed = true;
-            }
         }
 
         /// <summary>

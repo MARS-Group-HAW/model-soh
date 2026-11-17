@@ -49,7 +49,7 @@ namespace SOHModel.SemiTruck.Model
             double remainingRouteMeters, TimeSpan planningMargin)
         {
             // Search early enough to cover the facility-search horizon, not just a fixed 30-minute margin.
-            var searchHorizon = TimeSpan.FromSeconds(SemiTruckDriverConstants.RestAreaSearchRadius / PlanningSpeed(truck));
+            var searchHorizon = TimeSpan.FromSeconds(SemiTruckDriverConstants.RestAreaSearchRadius / PlanningSpeed.Conservative(truck));
             return Build(time.DueStop(searchHorizon > planningMargin ? searchHorizon : planningMargin),
                 time, truck, fuel, remainingRouteMeters);
         }
@@ -64,12 +64,12 @@ namespace SOHModel.SemiTruck.Model
             if (due == null || ArrivesInLegalTime(time, truck, remainingRouteMeters)) return null;
 
             bool daily = due.Value.IsDailyRest &&
-                TimeSpan.FromSeconds(remainingRouteMeters / PlanningSpeed(truck)) > time.DailyDrivingLeft;
+                TimeSpan.FromSeconds(remainingRouteMeters / PlanningSpeed.Conservative(truck)) > time.DailyDrivingLeft;
             var facility = ChooseFacility(truck, fuel, remainingRouteMeters);
             if (!daily && PrefersDailyRestNow(time, truck, remainingRouteMeters, facility)) daily = true;
             // A charging station has to lie within the legal driving time left, otherwise the nearest one found may
             // be reached only after the 4.5 h (or 9 h) limit is exceeded.
-            double legalReach = Math.Max(0, time.LegalDrivingLeft.TotalSeconds) * PlanningSpeed(truck);
+            double legalReach = Math.Max(0, time.LegalDrivingLeft.TotalSeconds) * PlanningSpeed.Conservative(truck);
             return new RestRequirement(facility,
                 daily ? SemiTruckDriverConstants.DailyRestDuration : time.RemainingBreak, daily, legalReach);
         }
@@ -82,8 +82,7 @@ namespace SOHModel.SemiTruck.Model
         protected static bool PrefersDailyRestNow(DrivingTimeTracker time, SemiTruck truck,
             double remainingRouteMeters, StopFacility facility)
         {
-            double drive = remainingRouteMeters /
-                Math.Max(1.0, truck.PlanningMaxSpeed * SemiTruckDriverConstants.ExpectedSpeedFraction);
+            double drive = remainingRouteMeters / PlanningSpeed.Expected(truck);
             if (TimeSpan.FromSeconds(drive) <= time.DailyDrivingLeft) return false;
             double rest = SemiTruckDriverConstants.DailyRestDuration.TotalSeconds;
             double brk = time.RemainingBreak.TotalSeconds;
@@ -99,11 +98,8 @@ namespace SOHModel.SemiTruck.Model
             double remainingRouteMeters) => StopFacility.RestArea;
 
         // No stop is needed if the destination is reached within the legal driving time (conservative speed estimate).
-        protected static double PlanningSpeed(SemiTruck truck) =>
-            Math.Max(1.0, truck.PlanningMaxSpeed * SemiTruckDriverConstants.PlanningSpeedFraction);
-
         protected static bool ArrivesInLegalTime(DrivingTimeTracker time, SemiTruck truck, double remainingRouteMeters) =>
-            TimeSpan.FromSeconds(remainingRouteMeters / PlanningSpeed(truck)) <= time.LegalDrivingLeft;
+            TimeSpan.FromSeconds(remainingRouteMeters / PlanningSpeed.Conservative(truck)) <= time.LegalDrivingLeft;
     }
 
     /// <summary>
@@ -126,7 +122,7 @@ namespace SOHModel.SemiTruck.Model
             // Take a daily rest needed before the destination during this charge if that does not add stationary
             // time: the charge (at least a break long) would otherwise be followed by a separate daily rest later.
             if (!PrefersDailyRestNow(time, truck, remainingRouteMeters, StopFacility.ChargingStation)) return null;
-            double legalReach = Math.Max(0, time.LegalDrivingLeft.TotalSeconds) * PlanningSpeed(truck);
+            double legalReach = Math.Max(0, time.LegalDrivingLeft.TotalSeconds) * PlanningSpeed.Conservative(truck);
             return new RestRequirement(StopFacility.ChargingStation, SemiTruckDriverConstants.DailyRestDuration, true,
                 legalReach);
         }

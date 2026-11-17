@@ -185,10 +185,10 @@ namespace SOHTests
         {
             var edge = new Mock<ISpatialEdge>();
             edge.Setup(e => e.Attributes).Returns(new Dictionary<string, object> { ["elevation"] = "[1.5, 2.5,3]" });
-            Assert.Equal(new[] { 1.5, 2.5, 3.0 }, SpeedAdjuster.ParseElevationProfile(edge.Object));
+            Assert.Equal(new[] { 1.5, 2.5, 3.0 }, ElevationProfile.Parse(edge.Object));
 
             edge.Setup(e => e.Attributes).Returns(new Dictionary<string, object> { ["elevation"] = "[1.5,null]" });
-            Assert.Null(SpeedAdjuster.ParseElevationProfile(edge.Object));
+            Assert.Null(ElevationProfile.Parse(edge.Object));
         }
 
         // Hand-calculated reference case (not derived from the implementation):

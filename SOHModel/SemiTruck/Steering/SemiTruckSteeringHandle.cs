@@ -73,11 +73,27 @@ namespace SOHModel.SemiTruck.Steering
             return Math.Min(KinematicDistance(v0, vNew), remaining);
         }
 
+        /// <summary>Route steps not yet passed, starting with the current edge.</summary>
+        public IEnumerable<EdgeStop> RemainingSteps => Route.Stops.Skip(Route.PassedStops);
+
+        /// <summary>The remaining steps with the driving distance from the truck to the end node of each.</summary>
+        public IEnumerable<(EdgeStop Step, double Along)> StepsAhead()
+        {
+            double along = 0;
+            bool first = true;
+            foreach (var step in RemainingSteps)
+            {
+                along += first && RemainingDistanceOnEdge >= 0 ? RemainingDistanceOnEdge : step.Edge.Length;
+                first = false;
+                yield return (step, along);
+            }
+        }
+
         private double DistanceToNextStop()
         {
             if (StopAtNode == null) return Route.RemainingRouteDistanceToGoal;
             double distance = -Vehicle.PositionOnCurrentEdge;
-            foreach (var stop in Route.Stops.Skip(Route.PassedStops))
+            foreach (var stop in RemainingSteps)
             {
                 distance += stop.Edge.Length;
                 if (stop.Edge.To == StopAtNode) return Math.Max(0, distance);

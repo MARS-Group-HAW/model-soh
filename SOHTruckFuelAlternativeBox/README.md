@@ -226,7 +226,7 @@ The rejoin may be at the departure junction or up to 20 km farther along the ori
 This avoids replacing the remaining journey with an unrelated corridor whose rest/fuel coverage may differ.
 Among feasible candidates, the driver minimizes estimated elapsed journey time (driving, service and projected legal
 rests), then the amount charged. Equally costly rests are taken later. This is a rolling-horizon estimate, not a
-globally optimal itinerary; unknown future queues and consumption changes cannot be predicted.
+globally optimal itinerary; unknown future consumption changes cannot be predicted.
 There is **no roadside/hard-shoulder rest fallback**. If no feasible facility can be reached, the trip ends with an
 explicit `NoLegalStop` or `NoReachableFuel` outcome rather than driving illegally or resting on the shoulder.
 An empty energy store prevents further movement and ends the trip with `ZeroEnergy`, unless the truck has already

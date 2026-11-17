@@ -3,6 +3,7 @@ using Mars.Common.Core.Collections;
 using Mars.Components.Environments;
 using NetTopologySuite.Planargraph;
 using ServiceStack;
+using SOHModel.SemiTruck.Model.Driver.Utils;
 
 namespace SOHModel.SemiTruck.Common;
 
@@ -28,8 +29,7 @@ public static class SemiTruckRouteFinder
         if (start == goal) return new Route();
         bool Usable(ISpatialEdge edge) => IsUsableEdge(edge, truck, removedEdges);
         var route = environment.FindRoute(start, goal,
-            (_, edge, _) => edge.Length / Math.Max(1, edge.MaxSpeed > 0
-                ? Math.Min(truck.PlanningMaxSpeed, edge.MaxSpeed) : truck.PlanningMaxSpeed), Usable);
+            (_, edge, _) => edge.Length / Math.Max(1, PlanningSpeed.OnEdge(truck, edge)), Usable);
         if (route == null || route.Count == 0) return null;
         var node = start;
         foreach (var step in route)

@@ -33,6 +33,7 @@ namespace SOHModel.SemiTruck.Model
         private FuelConsumptionTracker _fuelTracker; // created in Init, needs the truck
         private readonly SpeedAdjuster _speedAdjuster;
         private RouteManager _routeManager; // Initialized after truck creation
+        private StopRoutePlanner _stopRoutes;
 
         // Properties required for initialization
         [PropertyDescription] public SemiTruckWeatherLayer WeatherLayer { get; set; }
@@ -76,6 +77,7 @@ namespace SOHModel.SemiTruck.Model
 
             // Initialize route manager now that we have the truck
             _routeManager = new RouteManager(_layer, _environment, SemiTruck, DriveMode, _unregister);
+            _stopRoutes = new StopRoutePlanner(_layer, _environment, SemiTruck);
 
             // Find initial route
             var route = SemiTruckRouteFinder.Find(_environment, DriveMode, StartLat, StartLon, DestLat, DestLon,
@@ -162,7 +164,7 @@ namespace SOHModel.SemiTruck.Model
             RequestDueRest();
             RequestRestAtCharge();
             if (!_restState.IsActive && !_restState.HasRequest)
-                _refuelState.CheckAndPlan(_steeringHandle, _layer, SemiTruck, _fuelTracker, PlanRefuelStop, DrivingTime,
+                _refuelState.CheckAndPlan(_steeringHandle, _layer, SemiTruck, _fuelTracker, DrivingTime,
                     CreateStopSearch(_refuelState));
 
             if (_refuelState.TakeRestAreaFallback() is { } restFallback)
@@ -172,7 +174,7 @@ namespace SOHModel.SemiTruck.Model
 
             // Plan the requested rest stop
             if (!_refuelState.IsActive)
-                _restState.CheckAndPlan(_steeringHandle, _layer, SemiTruck, _fuelTracker, PlanRestStop, DrivingTime,
+                _restState.CheckAndPlan(_steeringHandle, _layer, SemiTruck, _fuelTracker, DrivingTime,
                     CreateStopSearch(_restState));
 
             if (_restState.PlanningFailed || _refuelState.PlanningFailed ||
@@ -284,8 +286,7 @@ namespace SOHModel.SemiTruck.Model
             if (!ReferenceEquals(_coverageRoute, _steeringHandle.Route) ||
                 tick - _coverageTick >= SemiTruckDriverConstants.RestCoverageRefreshTicks)
             {
-                double reach = DrivingTime.LegalDrivingLeft.TotalSeconds *
-                    Math.Max(1, SemiTruck.PlanningMaxSpeed * SemiTruckDriverConstants.PlanningSpeedFraction);
+                double reach = DrivingTime.LegalDrivingLeft.TotalSeconds * PlanningSpeed.Conservative(SemiTruck);
                 _coverageRemaining = _restState.LastApproachRemaining(_steeringHandle, _layer, reach);
                 _coverageRoute = _steeringHandle.Route;
                 _coverageTick = tick;
@@ -312,47 +313,8 @@ namespace SOHModel.SemiTruck.Model
             if (requirement != null) _refuelState.RequestCombinedRest(requirement);
         }
 
-        private void PlanRestStop(double lat, double lon, ISpatialNode insertFromNode)
-        {
-            _routeManager.PlanRouteWithStop(lat, lon, insertFromNode, _steeringHandle, this, StopType.Rest,
-                onSuccess: (restNode) =>
-                {
-                    _restState.MarkPlanned();
-                    _restState.SetTargetNode(restNode);
-                    _fuelTracker.MarkRouteChanged();
-                },
-                onFailure: () => _restState.CancelPlanned()
-            );
-        }
-
-        private void PlanRefuelStop(double lat, double lon, ISpatialNode insertFromNode)
-        {
-            _routeManager.PlanRouteWithStop(lat, lon, insertFromNode, _steeringHandle, this, StopType.Refuel,
-                onSuccess: (refuelNode) =>
-                {
-                    _refuelState.MarkPlanned();
-                    _refuelState.SetTargetNode(refuelNode);
-                    _fuelTracker.MarkRouteChanged();
-                },
-                onFailure: () => _refuelState.CancelPlanned()
-            );
-        }
-
-        internal StopRouteSearch CreateStopSearch(StopState state)
-        {
-            var connectors = new Dictionary<(ISpatialNode Stop, ISpatialNode Rejoin), Route?>();
-            var rejections = new Dictionary<StopRouteRejection, int>();
-            return new StopRouteSearch(
-                (lat, lon, node) => _routeManager.CreateStopRoute(lat, lon, node, _steeringHandle, this, connectors,
-                    reason => rejections[reason] = rejections.GetValueOrDefault(reason) + 1),
-                plan => _routeManager.ApplyStopRoute(plan, _steeringHandle, this, node =>
-                {
-                    state.MarkPlanned();
-                    state.SetTargetNode(node);
-                    _fuelTracker.MarkRouteChanged();
-                }),
-                () => string.Join(", ", rejections.OrderBy(pair => pair.Key).Select(pair => $"{pair.Key}={pair.Value}")));
-        }
+        internal StopRouteSearch CreateStopSearch(StopState state) =>
+            _stopRoutes.CreateSearch(_steeringHandle, this, state);
 
         private SemiTruck CreateSemiTruck()
         {

@@ -94,16 +94,9 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             driver.MaxSpeed = adjustedSpeed < _originalMaxSpeed ? adjustedSpeed : _originalMaxSpeed;
         }
 
-        private readonly Dictionary<ISpatialEdge, double[]> _elevationCache = new();
-
-        private double? GetGradeFromElevation(ISpatialEdge edge, double positionOnEdge)
+        private static double? GetGradeFromElevation(ISpatialEdge edge, double positionOnEdge)
         {
-            if (!_elevationCache.TryGetValue(edge, out var profile))
-            {
-                profile = ParseElevationProfile(edge);
-                _elevationCache[edge] = profile;
-            }
-
+            var profile = ElevationProfile.Of(edge);
             return profile == null ? null : ComputeGradePercent(profile, edge.Length, positionOnEdge);
         }
 
@@ -123,45 +116,11 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             double start = Math.Clamp(positionOnEdge - window / 2, 0, edgeLengthMeters - window);
             double end = start + window;
 
-            double grade = (ElevationAt(elevations, edgeLengthMeters, end) - ElevationAt(elevations, edgeLengthMeters, start))
+            double grade = (ElevationProfile.At(elevations, edgeLengthMeters, end) -
+                            ElevationProfile.At(elevations, edgeLengthMeters, start))
                            / window * 100.0;
             double max = SemiTruckDriverConstants.MaxPlausibleGradePercent;
             return Math.Clamp(grade, -max, max);
-        }
-
-        private static double ElevationAt(double[] elevations, double edgeLengthMeters, double position)
-        {
-            double idx = position / edgeLengthMeters * (elevations.Length - 1);
-            int lo = Math.Clamp((int)Math.Floor(idx), 0, elevations.Length - 1);
-            int hi = Math.Min(lo + 1, elevations.Length - 1);
-            return elevations[lo] + (elevations[hi] - elevations[lo]) * (idx - lo);
-        }
-
-        /// <summary>
-        /// Parses the <c>elevation</c> edge attribute, a JSON array string such as "[724.5,723.1,...]".
-        /// Returns null if missing, malformed or containing null entries.
-        /// </summary>
-        internal static double[] ParseElevationProfile(ISpatialEdge edge)
-        {
-            if (edge.Attributes == null || !edge.Attributes.TryGetValue("elevation", out var value) || value == null)
-                return null;
-
-            var str = value.ToString()?.Trim();
-            if (string.IsNullOrEmpty(str) || !str.StartsWith('[') || !str.EndsWith(']'))
-                return null;
-
-            var parts = str[1..^1].Split(',', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length < 2)
-                return null;
-
-            var result = new double[parts.Length];
-            for (int i = 0; i < parts.Length; i++)
-            {
-                if (!double.TryParse(parts[i].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out result[i]))
-                    return null;
-            }
-
-            return result;
         }
 
         /// <summary>

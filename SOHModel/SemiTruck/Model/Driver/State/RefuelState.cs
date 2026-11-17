@@ -76,9 +76,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
                 .FirstOrDefault(s => GeometryHelper.ApproxDistanceMeters(s.Lat, s.Lon,
                     plan.StopNode.Position.Latitude, plan.StopNode.Position.Longitude) < 100);
             double? power = station?.PowerKw;
-            double arrivalAmount = Math.Max(0, fuel.FuelCarrierAmount -
-                plan.ApproachMeters / 100_000 * fuel.PlanningConsumptionPer100Km(truck));
-            double? target = RouteBasedTargetSoc(truck, fuel, plan.RemainingMeters);
+            double arrivalAmount = fuel.EstimatedAmountAfter(plan.Approach.Meters, truck);
+            double? target = RouteBasedTargetSoc(truck, fuel, plan.Onward.Meters);
             double seconds = ChargingProfile.SecondsToTarget(truck, arrivalAmount, power, target);
             return (Math.Max(seconds, _combinedRest?.Duration.TotalSeconds ?? 0),
                 Math.Max(0, ChargingProfile.TargetAmount(truck, target) - arrivalAmount));
