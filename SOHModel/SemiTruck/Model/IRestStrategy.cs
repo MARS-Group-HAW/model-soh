@@ -33,6 +33,13 @@ namespace SOHModel.SemiTruck.Model
         /// </summary>
         RestRequirement RequirementAtCharge(DrivingTimeTracker time, SemiTruck truck, FuelConsumptionTracker fuel,
             double remainingRouteMeters, TimeSpan planningMargin);
+
+        /// <summary>
+        /// The next stop required before the destination, regardless of the planning horizon; <c>null</c> if the
+        /// destination is reached within the legal driving time. Used when no later facility is reachable.
+        /// </summary>
+        RestRequirement RequirementBeforeDestination(DrivingTimeTracker time, SemiTruck truck,
+            FuelConsumptionTracker fuel, double remainingRouteMeters);
     }
 
     /// <summary>Takes every break and rest at a rest area, as late as legally possible.</summary>
@@ -43,14 +50,46 @@ namespace SOHModel.SemiTruck.Model
         {
             // Search early enough to cover the facility-search horizon, not just a fixed 30-minute margin.
             var searchHorizon = TimeSpan.FromSeconds(SemiTruckDriverConstants.RestAreaSearchRadius / PlanningSpeed(truck));
-            var due = time.DueStop(searchHorizon > planningMargin ? searchHorizon : planningMargin);
+            return Build(time.DueStop(searchHorizon > planningMargin ? searchHorizon : planningMargin),
+                time, truck, fuel, remainingRouteMeters);
+        }
+
+        public RestRequirement RequirementBeforeDestination(DrivingTimeTracker time, SemiTruck truck,
+            FuelConsumptionTracker fuel, double remainingRouteMeters) =>
+            Build(time.DueStop(time.LegalDrivingLeft), time, truck, fuel, remainingRouteMeters);
+
+        private RestRequirement Build((TimeSpan Duration, bool IsDailyRest)? due, DrivingTimeTracker time,
+            SemiTruck truck, FuelConsumptionTracker fuel, double remainingRouteMeters)
+        {
             if (due == null || ArrivesInLegalTime(time, truck, remainingRouteMeters)) return null;
 
+            bool daily = due.Value.IsDailyRest &&
+                TimeSpan.FromSeconds(remainingRouteMeters / PlanningSpeed(truck)) > time.DailyDrivingLeft;
             var facility = ChooseFacility(truck, fuel, remainingRouteMeters);
+            if (!daily && PrefersDailyRestNow(time, truck, remainingRouteMeters, facility)) daily = true;
             // A charging station has to lie within the legal driving time left, otherwise the nearest one found may
             // be reached only after the 4.5 h (or 9 h) limit is exceeded.
             double legalReach = Math.Max(0, time.LegalDrivingLeft.TotalSeconds) * PlanningSpeed(truck);
-            return new RestRequirement(facility, due.Value.Duration, due.Value.IsDailyRest, legalReach);
+            return new RestRequirement(facility,
+                daily ? SemiTruckDriverConstants.DailyRestDuration : time.RemainingBreak, daily, legalReach);
+        }
+
+        /// <summary>
+        /// A break is due, but a daily rest is needed before the destination as well: taking the daily rest now
+        /// instead avoids a break followed shortly by a daily rest, if that does not increase the projected
+        /// stationary time (at a charging station equal time is enough, as the longer stop also charges more).
+        /// </summary>
+        protected static bool PrefersDailyRestNow(DrivingTimeTracker time, SemiTruck truck,
+            double remainingRouteMeters, StopFacility facility)
+        {
+            double drive = remainingRouteMeters /
+                Math.Max(1.0, truck.PlanningMaxSpeed * SemiTruckDriverConstants.ExpectedSpeedFraction);
+            if (TimeSpan.FromSeconds(drive) <= time.DailyDrivingLeft) return false;
+            double rest = SemiTruckDriverConstants.DailyRestDuration.TotalSeconds;
+            double brk = time.RemainingBreak.TotalSeconds;
+            double daily = rest + time.EstimateFurtherRestSeconds(0, rest, drive);
+            double separate = brk + time.EstimateFurtherRestSeconds(0, brk, drive);
+            return facility == StopFacility.ChargingStation ? daily <= separate : daily < separate;
         }
 
         public virtual RestRequirement RequirementAtCharge(DrivingTimeTracker time, SemiTruck truck,
@@ -61,7 +100,7 @@ namespace SOHModel.SemiTruck.Model
 
         // No stop is needed if the destination is reached within the legal driving time (conservative speed estimate).
         protected static double PlanningSpeed(SemiTruck truck) =>
-            Math.Max(1.0, truck.MaxSpeed * SemiTruckDriverConstants.PlanningSpeedFraction);
+            Math.Max(1.0, truck.PlanningMaxSpeed * SemiTruckDriverConstants.PlanningSpeedFraction);
 
         protected static bool ArrivesInLegalTime(DrivingTimeTracker time, SemiTruck truck, double remainingRouteMeters) =>
             TimeSpan.FromSeconds(remainingRouteMeters / PlanningSpeed(truck)) <= time.LegalDrivingLeft;
@@ -74,28 +113,22 @@ namespace SOHModel.SemiTruck.Model
     public class ChargeWhileRestingStrategy : LegalMinimumRestStrategy
     {
         /// <summary>
-        /// If this charge is the last one for the route (it covers the rest of the trip) but the destination cannot be
-        /// reached within the legal driving time, the rest that will be needed anyway is taken during this charge.
+        /// Merges a due rest, or a daily rest needed before the destination when merging it does not increase the
+        /// projected stationary time.
         /// </summary>
         public override RestRequirement RequirementAtCharge(DrivingTimeTracker time, SemiTruck truck,
             FuelConsumptionTracker fuel, double remainingRouteMeters, TimeSpan planningMargin)
         {
             if (truck.FuelCarrierType != FuelCarrierType.Battery) return null;
+            var due = NextRequirement(time, truck, fuel, remainingRouteMeters, planningMargin);
+            if (due != null) return due;
 
-            // Evaluate at the station, which is up to the reachable distance ahead.
-            double reachMeters = Math.Min(SemiTruckDriverConstants.RefuelStationSearchRadius,
-                (fuel.PlanningRangeKm(truck) - SemiTruckDriverConstants.RouteChargeReserveKm) * 1000.0);
-            double remainingAtStation = Math.Max(0, remainingRouteMeters - Math.Max(0, reachMeters));
-            if (!RefuelState.RouteBasedTargetSoc(truck, fuel, remainingAtStation).HasValue) return null;
-
-            var needed = TimeSpan.FromSeconds(remainingAtStation / PlanningSpeed(truck)) + planningMargin;
-            var drivingLeftAtStation = time.LegalDrivingLeft - TimeSpan.FromSeconds(Math.Max(0, reachMeters) / PlanningSpeed(truck));
-            if (needed <= drivingLeftAtStation) return null;
-
-            double legalReach = Math.Max(0, (time.LegalDrivingLeft - planningMargin).TotalSeconds) * PlanningSpeed(truck);
-            bool daily = needed > time.DailyDrivingLeft - TimeSpan.FromSeconds(Math.Max(0, reachMeters) / PlanningSpeed(truck));
-            return new RestRequirement(StopFacility.ChargingStation,
-                daily ? SemiTruckDriverConstants.DailyRestDuration : time.RemainingBreak, daily, legalReach);
+            // Take a daily rest needed before the destination during this charge if that does not add stationary
+            // time: the charge (at least a break long) would otherwise be followed by a separate daily rest later.
+            if (!PrefersDailyRestNow(time, truck, remainingRouteMeters, StopFacility.ChargingStation)) return null;
+            double legalReach = Math.Max(0, time.LegalDrivingLeft.TotalSeconds) * PlanningSpeed(truck);
+            return new RestRequirement(StopFacility.ChargingStation, SemiTruckDriverConstants.DailyRestDuration, true,
+                legalReach);
         }
 
         protected override StopFacility ChooseFacility(SemiTruck truck, FuelConsumptionTracker fuel,
@@ -103,11 +136,9 @@ namespace SOHModel.SemiTruck.Model
         {
             if (truck.FuelCarrierType != FuelCarrierType.Battery) return StopFacility.RestArea;
 
-            // Same criterion the charging state applies: charge only if the energy for the rest of the route is missing.
-            var targetSoc = RefuelState.RouteBasedTargetSoc(truck, fuel, remainingRouteMeters);
-            bool needsCharge = targetSoc.HasValue
-                ? fuel.FuelCarrierAmount < targetSoc.Value * truck.MaxFuelCarrierAmount
-                : fuel.PlanningRangeKm(truck) < remainingRouteMeters / 1000.0 + SemiTruckDriverConstants.LowFuelThreshold;
+            // A charge is unavoidable before the destination: taking it during the rest hides the charging time.
+            double range = fuel.PlanningRangeKm(truck);
+            bool needsCharge = remainingRouteMeters > (range - SemiTruckDriverConstants.RouteChargeReserveKm) * 1000;
             return needsCharge ? StopFacility.ChargingStation : StopFacility.RestArea;
         }
     }

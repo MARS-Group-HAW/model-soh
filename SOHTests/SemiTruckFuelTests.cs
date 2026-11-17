@@ -18,11 +18,11 @@ namespace SOHTests
         {
             var strategy = new LinearFuelConsumptionStrategy();
             var truck = new SemiTruck { FuelConsumptionPer100Km = 20 };
-            
+
             // 10 km should use 2 units
             double consumedFuelAmount = strategy.CalculateFuelCarrierAmountUsed(truck, 10.0, 1.0, 0.0);
             Assert.Equal(2.0, consumedFuelAmount, 3);
-            
+
             // Range estimate: 100 units / 20 units/100km = 500 km
             double range = new FuelConsumptionTracker(truck) { FuelCarrierAmount = 100.0 }.PlanningRangeKm(truck);
             Assert.Equal(500.0, range, 3);
@@ -48,9 +48,9 @@ namespace SOHTests
             // Energy for 1 second at 80 km/h (approx 22.22 m)
             double distanceKm = (22.22 * 1.0) / 1000.0;
             double consumedFuelAmount = strategy.CalculateFuelCarrierAmountUsed(truck, distanceKm, 1.0, 0.0);
-            
+
             Assert.True(consumedFuelAmount > 0);
-            
+
             // Check if incline increases consumption
             double consumedFuelAmountWithIncline = strategy.CalculateFuelCarrierAmountUsed(truck, distanceKm, 1.0, 5.0);
             Assert.True(consumedFuelAmountWithIncline > consumedFuelAmount);
@@ -353,6 +353,84 @@ namespace SOHTests
 
             // destination reachable within the legal driving time: no stop
             Assert.Null(combined.NextRequirement(t, truck, low, 10_000, margin));
+        }
+
+        [Fact]
+        public void ChargingTakesTheDailyRestOnlyIfItIsNeededBeforeTheDestination()
+        {
+            var truck = new SemiTruck
+            {
+                FuelCarrierType = FuelCarrierType.Battery,
+                MaxFuelCarrierAmount = 600,
+                FuelConsumptionPer100Km = 100,
+                MaxSpeed = 25
+            };
+            truck.InitializeFuelStrategy();
+            var fuel = new FuelConsumptionTracker(truck) { FuelCarrierAmount = 100 };
+            var time = new DrivingTimeTracker();
+            Drive(time, 3.5);
+            time.RegisterStop(SemiTruckDriverConstants.BreakDuration);
+            Drive(time, 2.5);
+
+            var strategy = new ChargeWhileRestingStrategy();
+            // 3 h of daily driving left: a 60 km destination needs no daily rest, a 400 km one does.
+            Assert.Null(strategy.RequirementAtCharge(time, truck, fuel, 60_000, System.TimeSpan.FromMinutes(30)));
+            var merged = strategy.RequirementAtCharge(time, truck, fuel, 400_000, System.TimeSpan.FromMinutes(30));
+            Assert.True(merged.IsDailyRest);
+            Assert.Equal(StopFacility.ChargingStation, merged.Facility);
+
+            Drive(time, 1.7);
+            var requirement = strategy.NextRequirement(time, truck, fuel, 400_000, System.TimeSpan.FromMinutes(30));
+            Assert.True(requirement.IsDailyRest);
+            Assert.Equal(SemiTruckDriverConstants.DailyRestDuration, requirement.Duration);
+        }
+
+        [Fact]
+        public void ADueBreakBecomesTheDailyRestWhenTheDailyRestWouldFollowShortlyAfter()
+        {
+            var truck = new SemiTruck { FuelCarrierType = FuelCarrierType.Fuel, MaxSpeed = 25 };
+            var fuel = new FuelConsumptionTracker(truck);
+            var time = new DrivingTimeTracker();
+            Drive(time, 3.5);
+            time.RegisterStop(SemiTruckDriverConstants.BreakDuration);
+            Drive(time, 4.2);
+
+            // 1.3 h of daily driving left, the 150 km rest of the route needs about 1.9 h: a break now would be
+            // followed by the daily rest an hour later.
+            var rest = new LegalMinimumRestStrategy().NextRequirement(time, truck, fuel, 150_000,
+                System.TimeSpan.FromMinutes(30));
+            Assert.True(rest.IsDailyRest);
+            Assert.Equal(SemiTruckDriverConstants.DailyRestDuration, rest.Duration);
+        }
+
+        [Fact]
+        public void AShortBreakIsEnoughWhenDestinationFitsDailyDrivingBudget()
+        {
+            var truck = new SemiTruck
+            {
+                FuelCarrierType = FuelCarrierType.Battery,
+                MaxFuelCarrierAmount = 600,
+                FuelConsumptionPer100Km = 100,
+                MaxSpeed = 25
+            };
+            truck.InitializeFuelStrategy();
+            var fuel = new FuelConsumptionTracker(truck);
+            var time = new DrivingTimeTracker();
+            Drive(time, 3.5);
+            time.RegisterStop(SemiTruckDriverConstants.BreakDuration);
+            Drive(time, 4);
+
+            var strategy = new LegalMinimumRestStrategy();
+            var rest = strategy.NextRequirement(time, truck, fuel, 63_000, System.TimeSpan.FromMinutes(30));
+            Assert.False(rest.IsDailyRest);
+            Assert.Equal(SemiTruckDriverConstants.BreakDuration, rest.Duration);
+
+            var combined = new ChargeWhileRestingStrategy();
+            // Full battery (600 km): a 500 km rest of the route needs no charge, an 800 km one does anyway.
+            Assert.Equal(StopFacility.RestArea, combined.NextRequirement(time, truck, fuel, 500_000,
+                System.TimeSpan.FromMinutes(30)).Facility);
+            Assert.Equal(StopFacility.ChargingStation, combined.NextRequirement(time, truck, fuel, 800_000,
+                System.TimeSpan.FromMinutes(30)).Facility);
         }
 
         [Fact]
