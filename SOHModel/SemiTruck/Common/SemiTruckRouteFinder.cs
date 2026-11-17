@@ -22,6 +22,28 @@ public static class SemiTruckRouteFinder
         routeCache = new SemiTruckRouteCacheManager("route_cache.db");
     }
 
+    internal static Route? FindFastestComplete(ISpatialGraphEnvironment environment, ISpatialNode start,
+        ISpatialNode goal, SOHModel.SemiTruck.Model.SemiTruck truck, List<ISpatialEdge> removedEdges)
+    {
+        if (start == goal) return new Route();
+        bool Usable(ISpatialEdge edge) => IsUsableEdge(edge, truck, removedEdges);
+        var route = environment.FindRoute(start, goal,
+            (_, edge, _) => edge.Length / Math.Max(1, edge.MaxSpeed > 0
+                ? Math.Min(truck.PlanningMaxSpeed, edge.MaxSpeed) : truck.PlanningMaxSpeed), Usable);
+        if (route == null || route.Count == 0) return null;
+        var node = start;
+        foreach (var step in route)
+        {
+            if (step.Edge.From != node || !Usable(step.Edge)) return null;
+            node = step.Edge.To;
+        }
+        return node == goal ? route : null;
+    }
+
+    internal static bool IsUsableEdge(ISpatialEdge edge, SOHModel.SemiTruck.Model.SemiTruck truck,
+        List<ISpatialEdge> removedEdges) => !removedEdges.Contains(edge) &&
+        CheckValidEdge(edge, truck.Height, truck.Mass / 1000.0, truck.Width, truck.Length, truck.MaxIncline);
+
     /// <summary>
     ///     Finds a route based on the specified driveMode and parameters.
     /// </summary>
@@ -56,7 +78,6 @@ public static class SemiTruckRouteFinder
                         var edgeCount = last.Edge.To.OutgoingEdges.Count;
                         if (edgeCount == 0)
                         {
-                            //_logger.LogWarning("Dead end found");
                             routeComplete = false;
                             break;
                         }
@@ -91,14 +112,8 @@ public static class SemiTruckRouteFinder
                     // Filter: Use CheckValidEdge method
                     Func<ISpatialEdge, bool> filter = edge =>
                     {
-                        bool isValid = CheckValidEdge(edge, truckHeight, truckWeight, truckWidth, truckLength,
+                        return CheckValidEdge(edge, truckHeight, truckWeight, truckWidth, truckLength,
                             truckMaxIncline);
-                        if (!isValid)
-                        {
-                            Console.WriteLine($"Route blocked: Edge {edge.GetId()} does not meet constraints.");
-                        }
-
-                        return isValid;
                     };
 
                     // Apply the heuristic and filter when finding a route
@@ -154,15 +169,10 @@ public static class SemiTruckRouteFinder
                         // If the cached route is valid and either exact or acceptable, use it
                         if ((!wasSuboptimal || exactConstraintMatch) && !hasRemovedEdge)
                         {
-                            // Console.WriteLine("Route from cache used.");
                             route = candidateRoute;
                             break;
                         }
 
-                        if (hasRemovedEdge)
-                        {
-                            Console.WriteLine("Cached route contains removed edges – skipping cache.");
-                        }
                     }
                 }
 
@@ -206,8 +216,6 @@ public static class SemiTruckRouteFinder
                 // If a full route could not be computed, try to extract a partial route to the last valid point
                 if (!isByPassRoute && (route == null || route.Count == 0) && closestNode != null)
                 {
-                    // Console.WriteLine("No complete route found, but closest partial point is available.");
-                    // Console.WriteLine($"Closest reachable node: {closestNode} (distance: {closestDistance:F1} km)");
 
                     //Attempt to compute a shorter route from the start to the last reachable node
                     route = environment.FindShortestRoute(currentNode, closestNode, edge =>
@@ -426,7 +434,6 @@ public static class SemiTruckRouteFinder
         // Reject route if it includes any edge currently marked as removed
         if (edgeIds.Any(id => RemovedEdges.Any(e => e.GetId().ToString() == id)))
         {
-            Console.WriteLine("Cached route contains a removed edge – discarding.");
             return null;
         }
 

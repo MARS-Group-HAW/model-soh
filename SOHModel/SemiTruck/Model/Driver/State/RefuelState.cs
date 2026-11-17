@@ -26,7 +26,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
 
         /// <summary>
         /// Requests a stop at a charging station that also serves as the driver's break or daily rest: the stop lasts
-        /// at least the required rest time, and during a daily rest the battery is charged to 100 %.
+        /// at least the required rest time and uses the normal route-based or configured charge target.
         /// </summary>
         public void RequestCombinedRest(RestRequirement requirement) => _combinedRest = requirement;
 
@@ -68,13 +68,27 @@ namespace SOHModel.SemiTruck.Model.Driver.State
 
         protected override double GetSearchRadius() => SemiTruckDriverConstants.RefuelStationSearchRadius;
 
-        // Drive as far as the range allows (keeping the arrival reserve) before charging, unless a legal rest is due.
+        protected override (double Seconds, double Charge) EstimateStopCost(StopRoutePlan plan,
+            SemiTruckLayer layer, SemiTruck truck, FuelConsumptionTracker fuel, object? facility)
+        {
+            var station = facility as SemiTruckLayer.RefuelStation;
+            station ??= GetFacilityList(layer).OfType<SemiTruckLayer.RefuelStation>()
+                .FirstOrDefault(s => GeometryHelper.ApproxDistanceMeters(s.Lat, s.Lon,
+                    plan.StopNode.Position.Latitude, plan.StopNode.Position.Longitude) < 100);
+            double? power = station?.PowerKw;
+            double arrivalAmount = Math.Max(0, fuel.FuelCarrierAmount -
+                plan.ApproachMeters / 100_000 * fuel.PlanningConsumptionPer100Km(truck));
+            double? target = RouteBasedTargetSoc(truck, fuel, plan.RemainingMeters);
+            double seconds = ChargingProfile.SecondsToTarget(truck, arrivalAmount, power, target);
+            return (Math.Max(seconds, _combinedRest?.Duration.TotalSeconds ?? 0),
+                Math.Max(0, ChargingProfile.TargetAmount(truck, target) - arrivalAmount));
+        }
+
+        protected override double ArrivalReserveMeters() => SemiTruckDriverConstants.RouteChargeReserveKm * 1000;
+
         protected override double? GetReachLimitMeters(SemiTruck truck, FuelConsumptionTracker fuelTracker)
         {
-            double range = fuelTracker.PlanningRangeKm(truck);
-            double reachKm = _combinedRest == null && range > SemiTruckDriverConstants.RouteChargeReserveKm
-                ? range - SemiTruckDriverConstants.RouteChargeReserveKm : range;
-            double reach = Math.Max(reachKm * 1000.0, 0);
+            double reach = Math.Max(fuelTracker.PlanningRangeKm(truck) * 1000, 0);
             return _combinedRest?.MaxReachMeters is { } legalReach
                 ? Math.Min(reach, legalReach)
                 : reach;
@@ -98,13 +112,8 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             double triggerRangeKm = SemiTruckDriverConstants.RefuelStationSearchRadius / 1000.0
                                     + SemiTruckDriverConstants.RouteChargeReserveKm;
 
-            if (availableRangeKm < triggerRangeKm &&
-                steeringHandle.Route.RemainingRouteDistanceToGoal > availableRangeKm * 1000.0)
-            {
-                Console.WriteLine($"[Truck {truck.ID}] Energy low: {availableRangeKm:F1} km remaining – searching for refuel station...");
-                return true;
-            }
-            return false;
+            return availableRangeKm < triggerRangeKm &&
+                   steeringHandle.Route.RemainingRouteDistanceToGoal > availableRangeKm * 1000.0;
         }
 
         protected override void OnPauseCompleted(SemiTruckLayer layer, SemiTruck truck,
@@ -127,9 +136,12 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             FuelConsumptionTracker fuelTracker, SemiTruckDriver driver)
         {
             if (_targetReached) return;
-            _chargeTargetOverride = _combinedRest is { IsDailyRest: true }
-                ? 1.0
-                : RouteBasedTargetSoc(truck, fuelTracker, driver.RemainingRouteDistanceToGoal);
+            // While a combined rest is still running, charging beyond the default target costs no time.
+            bool restRunning = _combinedRest != null &&
+                               layer._simulationTime < _stopStartTime + _combinedRest.Duration;
+            _chargeTargetOverride = RouteBasedTargetSoc(truck, fuelTracker, driver.RemainingRouteDistanceToGoal) ??
+                (restRunning && truck.FuelCarrierType == FuelCarrierType.Battery && truck.ChargeTargetSoc <= 0
+                    ? 1.0 : null);
             double added = ChargingProfile.AmountAdded(truck, fuelTracker.FuelCarrierAmount,
                 layer._tickDuration.TotalSeconds, StationPowerKw, _chargeTargetOverride);
             fuelTracker.Charge(truck, added);

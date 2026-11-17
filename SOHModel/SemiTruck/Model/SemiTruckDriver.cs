@@ -162,17 +162,18 @@ namespace SOHModel.SemiTruck.Model
             RequestDueRest();
             RequestRestAtCharge();
             if (!_restState.IsActive && !_restState.HasRequest)
-                _refuelState.CheckAndPlan(_steeringHandle, _layer, SemiTruck, _fuelTracker, PlanRefuelStop, DrivingTime);
+                _refuelState.CheckAndPlan(_steeringHandle, _layer, SemiTruck, _fuelTracker, PlanRefuelStop, DrivingTime,
+                    CreateStopSearch(_refuelState));
 
             if (_refuelState.TakeRestAreaFallback() is { } restFallback)
             {
-                Console.WriteLine("[RestAndRefuel] No feasible refuel/recharge facility found. Planning a legal rest area stop instead.");
                 _restState.Request(restFallback);
             }
 
             // Plan the requested rest stop
             if (!_refuelState.IsActive)
-                _restState.CheckAndPlan(_steeringHandle, _layer, SemiTruck, _fuelTracker, PlanRestStop, DrivingTime);
+                _restState.CheckAndPlan(_steeringHandle, _layer, SemiTruck, _fuelTracker, PlanRestStop, DrivingTime,
+                    CreateStopSearch(_restState));
 
             if (_restState.PlanningFailed || _refuelState.PlanningFailed ||
                 !DrivingTime.CanDrive(_layer._tickDuration))
@@ -238,7 +239,12 @@ namespace SOHModel.SemiTruck.Model
             _steeringHandle.Stop();
             LogOutcome(outcome);
             if (outcome != TruckTripOutcome.Completed)
-                Console.WriteLine($"Truck {ID} could not complete its trip: {outcome}.");
+            {
+                var details = _restState.PlanningFailed ? _restState.PlanningFailureDetails :
+                    _refuelState.PlanningFailureDetails;
+                Console.WriteLine($"Truck {ID} could not complete its trip: {outcome}." +
+                    (details == null ? "" : $" {details}"));
+            }
             RemoveFromSimulation();
         }
 
@@ -256,12 +262,42 @@ namespace SOHModel.SemiTruck.Model
                 ? TimeSpan.FromMinutes(SemiTruck.RestPlanningMarginMinutes)
                 : SemiTruckDriverConstants.DefaultRestPlanningMargin;
             var requirement = SemiTruck.RestPlanningStrategy.NextRequirement(DrivingTime, SemiTruck, _fuelTracker,
-                _steeringHandle.Route.RemainingRouteDistanceToGoal, margin);
+                _steeringHandle.Route.RemainingRouteDistanceToGoal, margin) ?? CoverageRequirement();
             if (requirement == null) return;
 
             if (requirement.Facility == StopFacility.ChargingStation) _refuelState.RequestCombinedRest(requirement);
             else _restState.Request(requirement);
         }
+
+        /// <summary>
+        /// Plans the next required rest before the truck passes the last rest facility it can still legally reach,
+        /// so that a sparse corridor ahead cannot leave it without any legal stop.
+        /// </summary>
+        private RestRequirement CoverageRequirement()
+        {
+            double remaining = _steeringHandle.Route.RemainingRouteDistanceToGoal;
+            var strategy = SemiTruck.RestPlanningStrategy;
+            var requirement = strategy.RequirementBeforeDestination(DrivingTime, SemiTruck, _fuelTracker, remaining);
+            if (requirement == null) return null;
+
+            long tick = _layer.GetCurrentTick();
+            if (!ReferenceEquals(_coverageRoute, _steeringHandle.Route) ||
+                tick - _coverageTick >= SemiTruckDriverConstants.RestCoverageRefreshTicks)
+            {
+                double reach = DrivingTime.LegalDrivingLeft.TotalSeconds *
+                    Math.Max(1, SemiTruck.PlanningMaxSpeed * SemiTruckDriverConstants.PlanningSpeedFraction);
+                _coverageRemaining = _restState.LastApproachRemaining(_steeringHandle, _layer, reach);
+                _coverageRoute = _steeringHandle.Route;
+                _coverageTick = tick;
+            }
+            // Without any facility in reach, keep the regular trigger: the reach may still grow at actual speed.
+            return _coverageRemaining is { } last &&
+                remaining - last <= SemiTruckDriverConstants.RestCoverageGuardMeters ? requirement : null;
+        }
+
+        private Route _coverageRoute;
+        private long _coverageTick;
+        private double? _coverageRemaining;
 
         private void RequestRestAtCharge()
         {
@@ -300,6 +336,22 @@ namespace SOHModel.SemiTruck.Model
                 },
                 onFailure: () => _refuelState.CancelPlanned()
             );
+        }
+
+        internal StopRouteSearch CreateStopSearch(StopState state)
+        {
+            var connectors = new Dictionary<(ISpatialNode Stop, ISpatialNode Rejoin), Route?>();
+            var rejections = new Dictionary<StopRouteRejection, int>();
+            return new StopRouteSearch(
+                (lat, lon, node) => _routeManager.CreateStopRoute(lat, lon, node, _steeringHandle, this, connectors,
+                    reason => rejections[reason] = rejections.GetValueOrDefault(reason) + 1),
+                plan => _routeManager.ApplyStopRoute(plan, _steeringHandle, this, node =>
+                {
+                    state.MarkPlanned();
+                    state.SetTargetNode(node);
+                    _fuelTracker.MarkRouteChanged();
+                }),
+                () => string.Join(", ", rejections.OrderBy(pair => pair.Key).Select(pair => $"{pair.Key}={pair.Value}")));
         }
 
         private SemiTruck CreateSemiTruck()

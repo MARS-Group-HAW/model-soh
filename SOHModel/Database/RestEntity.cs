@@ -9,7 +9,7 @@ public record RestEntity(
     Guid AgentId,
     long Tick,
     RestStateType StateType, // "Rest", "Refuel" or "RestAndRefuel" (legal break/rest combined with charging)
-    RestEventType EventType, // "Planned" (stop decided, facility search triggered), "Start" or "End"
+    RestEventType EventType, // "Planned" (facility route accepted), "Start" or "End"
     double Latitude,
     double Longitude,
     double? CurrentFuel = null,

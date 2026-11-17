@@ -22,8 +22,6 @@ namespace SOHModel.SemiTruck.Model.Driver.Services
         private readonly int _driveMode;
         private readonly UnregisterAgent _unregister;
 
-        private Route _originalRoute;
-
         public RouteManager(SemiTruckLayer layer, ISpatialGraphEnvironment environment, SemiTruck truck,
             int driveMode, UnregisterAgent unregister)
         {
@@ -152,148 +150,198 @@ namespace SOHModel.SemiTruck.Model.Driver.Services
             SemiTruckSteeringHandle steeringHandle, SemiTruckDriver driver, StopType stopType,
             Action<ISpatialNode> onSuccess, Action onFailure)
         {
-            // Unregister from current route tracking if applicable
-            if (_layer.notifyTrucks)
-                _layer.UnregisterTruckFromRoute(driver, steeringHandle.Route);
+            var plan = CreateStopRoute(targetLat, targetLon, insertFromNode, steeringHandle, driver);
+            if (plan == null) onFailure();
+            else ApplyStopRoute(plan, steeringHandle, driver, onSuccess);
+        }
 
-            // Backup current route
-            _originalRoute = new Route();
-            foreach (var stop in steeringHandle.Route)
-                _originalRoute.Add(stop.Edge, stop.DesiredLane);
-
-            // Identify position to split the route
-            var insertIndex = steeringHandle.Route.Stops
-                .Skip(steeringHandle.Route.PassedStops)
-                .ToList()
-                .FindIndex(stop => stop.Edge.From == insertFromNode);
-
-            // index 0 would put the detour behind the truck (its current edge is the first one of the route)
-            if (insertIndex < 1)
+        public StopRoutePlan? CreateStopRoute(double targetLat, double targetLon, ISpatialNode insertFromNode,
+            SemiTruckSteeringHandle steeringHandle, SemiTruckDriver driver,
+            Dictionary<(ISpatialNode Stop, ISpatialNode Rejoin), Route?>? connectors = null,
+            Action<StopRouteRejection>? reportRejection = null)
+        {
+            StopRoutePlan? Reject(StopRouteRejection reason)
             {
-                Console.WriteLine("Could not find valid insertion point for detour.");
-                onFailure();
-                return;
+                reportRejection?.Invoke(reason);
+                return null;
             }
 
-            var splitStop = steeringHandle.Route.Stops[steeringHandle.Route.PassedStops + insertIndex];
-            var splitNode = (splitStop.Edge.From == insertFromNode) ? splitStop.Edge.From : splitStop.Edge.To;
+            var remaining = steeringHandle.Route.Stops.Skip(steeringHandle.Route.PassedStops).ToList();
+            int insertIndex = remaining.FindIndex(stop => stop.Edge.From == insertFromNode);
+            if (insertIndex < 1) return Reject(StopRouteRejection.InvalidApproach);
 
-            // A known facility can itself be a route node; no detour is needed in that case.
-            if (GeometryHelper.ApproxDistanceMeters(targetLat, targetLon,
-                    splitNode.Position.Latitude, splitNode.Position.Longitude) < 1.0)
+            var facilityPosition = Position.CreateGeoPosition(targetLon, targetLat);
+            // Snapping to a node of the route itself would be a stop on the carriageway; a facility right beside the
+            // route is entered from it instead (CreateRoadsideStop).
+            var routeNodes = remaining.Select(stop => stop.Edge.To).ToHashSet();
+            var stopNodes = GeometryHelper.ApproxDistanceMeters(targetLat, targetLon,
+                insertFromNode.Position.Latitude, insertFromNode.Position.Longitude) < 1
+                ? new List<ISpatialNode> { insertFromNode }
+                : _environment.NearestNodes(facilityPosition, double.MaxValue, SemiTruckDriverConstants.FacilitySnapCandidates)
+                    .Where(node => !routeNodes.Contains(node) && node.IncomingEdges.Values.Any(e => e.Modalities.Contains(SpatialModalityType.CarDriving)) &&
+                                   node.OutgoingEdges.Values.Any(e => e.Modalities.Contains(SpatialModalityType.CarDriving)))
+                    .Select(node => (Node: node, Meters: GeometryHelper.ApproxDistanceMeters(targetLat, targetLon,
+                        node.Position.Latitude, node.Position.Longitude)))
+                    .Where(c => c.Meters <= SemiTruckDriverConstants.MaxFacilityDetourMeters)
+                    .OrderBy(c => c.Meters).ToList() is var near && near.Count > 0
+                    ? near.Where(c => c.Meters <= near[0].Meters + SemiTruckDriverConstants.FacilitySnapToleranceMeters)
+                        .Select(c => c.Node).ToList()
+                    : new List<ISpatialNode>();
+            // A facility without an own node nearby is not modelled by the network; enter it from the route.
+            bool modelled = stopNodes.Count > 0 && stopNodes.Any(node => GeometryHelper.ApproxDistanceMeters(
+                targetLat, targetLon, node.Position.Latitude, node.Position.Longitude) <=
+                SemiTruckDriverConstants.FacilityNodeMatchMeters);
+            if (!modelled)
             {
-                var approach = steeringHandle.Route.Stops.Skip(steeringHandle.Route.PassedStops)
-                    .Take(insertIndex).Select(s => s.Edge);
+                var roadside = CreateRoadsideStop(targetLat, targetLon, remaining, insertIndex, driver);
+                if (roadside != null) return roadside;
+            }
+            if (stopNodes.Count == 0) return Reject(StopRouteRejection.UnusableFacility);
+
+            // The nearest node may lie on the opposite carriageway or a disconnected stub; try nearby alternatives.
+            StopRouteRejection? lastRejection = null;
+            foreach (var stopNode in stopNodes)
+            {
+                var plan = CreateStopRouteVia(stopNode, remaining, insertIndex, insertFromNode, driver, connectors,
+                    out var rejection);
+                if (plan != null) return plan;
+                lastRejection = rejection;
+            }
+            return Reject(lastRejection ?? StopRouteRejection.UnusableFacility);
+        }
+
+        /// <summary>
+        /// The network often models a service area only as the motorway passing it. A facility right beside a
+        /// route edge is then entered from that edge, stopping at the nearer end node, instead of being snapped to
+        /// a node of another road (which typically means a long detour or a U-turn on the opposite carriageway).
+        /// </summary>
+        private StopRoutePlan? CreateRoadsideStop(double targetLat, double targetLon, List<EdgeStop> remaining,
+            int insertIndex, SemiTruckDriver driver)
+        {
+            for (int j = insertIndex; j < remaining.Count - 1; j++)
+            {
+                var edge = remaining[j].Edge;
+                var geometry = edge.Geometry is { Length: > 1 } g ? g : new[] { edge.From.Position, edge.To.Position };
+                var (meters, fraction) = GeometryHelper.DistanceToPolyline(targetLat, targetLon, geometry);
+                if (meters > SemiTruckDriverConstants.RoadsideFacilityMeters) continue;
+
+                int stopIndex = fraction < 0.5 ? j : j + 1;
+                var approach = remaining.Take(stopIndex).Select(step => step.Edge).ToList();
+                var onward = remaining.Skip(stopIndex).ToList();
                 if (!StopReachability.CanReach(approach, _truck.PositionOnCurrentEdge, _truck,
                         driver.FuelTracker, driver.DrivingTime, _layer._tickDuration))
-                {
-                    onFailure();
-                    return;
-                }
-                if (_layer.notifyTrucks)
-                    _layer.RegisterTruckForRoute(driver, steeringHandle.Route);
-                Console.WriteLine($"Truck stops at facility ({stopType}) at ({targetLat}, {targetLon}).");
-                onSuccess(splitNode);
-                return;
+                    return null;
+                var route = new Route();
+                foreach (var step in remaining) route.Add(step.Edge, step.DesiredLane);
+                RouteDistanceHelper.Discount(route, _truck.PositionOnCurrentEdge);
+                var onwardEdges = onward.Select(step => step.Edge).ToList();
+                return new StopRoutePlan(route, remaining[stopIndex].Edge.From,
+                    StopReachability.EstimateSeconds(approach, _truck.PositionOnCurrentEdge, _truck),
+                    Math.Max(0, approach.Sum(e => e.Length) - _truck.PositionOnCurrentEdge),
+                    StopReachability.EstimateSeconds(onwardEdges, 0, _truck), onwardEdges.Sum(e => e.Length));
             }
-
-            // Build route to stop location
-            var toStopRoute = SemiTruckRouteFinder.Find(
-                _environment, _driveMode,
-                splitNode.Position.Latitude, splitNode.Position.Longitude,
-                targetLat, targetLon,
-                null, "", _truck.Height, _truck.Mass,
-                _truck.Width, _truck.Length, _truck.MaxIncline,
-                _layer.RemovedEdges, false
-            );
-
-            if (toStopRoute == null || toStopRoute.Count == 0)
-            {
-                Console.WriteLine("Failed to compute detour or return route.");
-                onFailure();
-                return;
-            }
-
-            // The return route must start where the outbound route ends. Start and goal coordinates are snapped to
-            // different nodes (start: has outgoing edges, goal: has incoming edges), so the outbound route is
-            // recomputed to the node the return route actually starts at; a mismatch would leave a gap in the route.
-            var stopNode = toStopRoute.Stops[^1].Edge.To;
-            var backRoute = SemiTruckRouteFinder.Find(
-                _environment, _driveMode,
-                stopNode.Position.Latitude, stopNode.Position.Longitude,
-                splitNode.Position.Latitude, splitNode.Position.Longitude,
-                null, "", _truck.Height, _truck.Mass,
-                _truck.Width, _truck.Length, _truck.MaxIncline,
-                _layer.RemovedEdges, false
-            );
-
-            if (backRoute != null && backRoute.Count > 0 && backRoute.Stops[0].Edge.From != stopNode)
-            {
-                var backStart = backRoute.Stops[0].Edge.From;
-                toStopRoute = SemiTruckRouteFinder.Find(
-                    _environment, _driveMode,
-                    splitNode.Position.Latitude, splitNode.Position.Longitude,
-                    backStart.Position.Latitude, backStart.Position.Longitude,
-                    null, "", _truck.Height, _truck.Mass,
-                    _truck.Width, _truck.Length, _truck.MaxIncline,
-                    _layer.RemovedEdges, false
-                );
-                if (toStopRoute == null || toStopRoute.Count == 0 || toStopRoute.Stops[^1].Edge.To != backStart)
-                {
-                    Console.WriteLine("Detour to the stop and the way back do not connect.");
-                    onFailure();
-                    return;
-                }
-            }
-
-            if (backRoute == null || backRoute.Count == 0)
-            {
-                Console.WriteLine("Failed to compute detour or return route.");
-                onFailure();
-                return;
-            }
-
-            // Remember destination node (done via callback/onSuccess)
-            var destinationNode = toStopRoute.Stops[^1].Edge.To;
-
-            var approachEdges = steeringHandle.Route.Stops.Skip(steeringHandle.Route.PassedStops)
-                .Take(insertIndex).Select(s => s.Edge).Concat(toStopRoute.Select(s => s.Edge));
-            if (!StopReachability.CanReach(approachEdges, _truck.PositionOnCurrentEdge, _truck,
-                    driver.FuelTracker, driver.DrivingTime, _layer._tickDuration))
-            {
-                Console.WriteLine("Facility cannot be reached within the remaining legal driving time or energy.");
-                onFailure();
-                return;
-            }
-
-            // Merge routes: pre-stop Route + detour + return-detour + remaining Route
-            var newRoute = new Route();
-
-            for (int i = steeringHandle.Route.PassedStops; i < steeringHandle.Route.PassedStops + insertIndex; i++)
-                newRoute.Add(steeringHandle.Route.Stops[i].Edge, steeringHandle.Route.Stops[i].DesiredLane);
-
-            foreach (var stop in toStopRoute)
-                newRoute.Add(stop.Edge, stop.DesiredLane);
-
-            foreach (var stop in backRoute)
-                newRoute.Add(stop.Edge, stop.DesiredLane);
-
-            for (int i = steeringHandle.Route.PassedStops + insertIndex;
-                 i < steeringHandle.Route.Stops.Count;
-                 i++)
-                newRoute.Add(steeringHandle.Route.Stops[i].Edge, steeringHandle.Route.Stops[i].DesiredLane);
-
-            // Route.Add accounts for the whole current edge, although the truck already travelled part of it.
-            RouteDistanceHelper.Discount(newRoute, _truck.PositionOnCurrentEdge);
-            steeringHandle.Route = newRoute;
-
-            if (_layer.notifyTrucks)
-                _layer.RegisterTruckForRoute(driver, steeringHandle.Route);
-
-            Console.WriteLine($"Truck diverts to stop ({stopType}) at ({targetLat}, {targetLon}) and continues.");
-
-            onSuccess(destinationNode);
+            return null;
         }
+
+        private StopRoutePlan? CreateStopRouteVia(ISpatialNode stopNode, List<EdgeStop> remaining, int insertIndex,
+            ISpatialNode insertFromNode, SemiTruckDriver driver,
+            Dictionary<(ISpatialNode Stop, ISpatialNode Rejoin), Route?>? connectors,
+            out StopRouteRejection? rejection)
+        {
+            var plan = BuildStopRouteVia(stopNode, remaining, insertIndex, insertFromNode, driver, connectors,
+                out var reason);
+            rejection = plan == null ? reason : null;
+            return plan;
+        }
+
+        private StopRoutePlan? BuildStopRouteVia(ISpatialNode stopNode, List<EdgeStop> remaining, int insertIndex,
+            ISpatialNode insertFromNode, SemiTruckDriver driver,
+            Dictionary<(ISpatialNode Stop, ISpatialNode Rejoin), Route?>? connectors,
+            out StopRouteRejection reason)
+        {
+            reason = StopRouteRejection.NoApproachRoute;
+
+            var toStop = SemiTruckRouteFinder.FindFastestComplete(_environment, insertFromNode, stopNode,
+                _truck, _layer.RemovedEdges);
+            if (toStop == null) { reason = StopRouteRejection.NoApproachRoute; return null; }
+            var approach = remaining.Take(insertIndex).Select(step => step.Edge)
+                .Concat(toStop.Select(step => step.Edge)).ToList();
+            if (approach.Any(edge => !SemiTruckRouteFinder.IsUsableEdge(edge, _truck, _layer.RemovedEdges)))
+                { reason = StopRouteRejection.InvalidApproach; return null; }
+            if (!StopReachability.CanReach(approach, _truck.PositionOnCurrentEdge, _truck,
+                    driver.FuelTracker, driver.DrivingTime, _layer._tickDuration))
+                { reason = StopRouteRejection.EnergyOrDrivingLimit; return null; }
+
+            Route? onward = null;
+            double bestSeconds = double.PositiveInfinity;
+            double bestMeters = double.PositiveInfinity;
+            double along = 0;
+            // Rejoin locally rather than replacing the entire onward corridor.
+            for (int rejoinIndex = insertIndex; rejoinIndex <= remaining.Count; rejoinIndex++)
+            {
+                if (along > SemiTruckDriverConstants.ForwardRejoinLookaheadMeters) break;
+                var rejoinNode = rejoinIndex < remaining.Count ? remaining[rejoinIndex].Edge.From : remaining[^1].Edge.To;
+                var suffix = remaining.Skip(rejoinIndex).ToList();
+                if (suffix.All(step => SemiTruckRouteFinder.IsUsableEdge(step.Edge, _truck, _layer.RemovedEdges)))
+                {
+                    Route? connector;
+                    if (connectors == null || !connectors.TryGetValue((stopNode, rejoinNode), out connector))
+                    {
+                        connector = SemiTruckRouteFinder.FindFastestComplete(_environment, stopNode, rejoinNode,
+                            _truck, _layer.RemovedEdges);
+                        if (connectors != null) connectors[(stopNode, rejoinNode)] = connector;
+                    }
+                    if (connector != null)
+                    {
+                        var edges = connector.Select(step => step.Edge).Concat(suffix.Select(step => step.Edge)).ToList();
+                        double seconds = StopReachability.EstimateSeconds(edges, 0, _truck);
+                        double meters = edges.Sum(edge => edge.Length);
+                        if (seconds < bestSeconds - 1e-6 ||
+                            (Math.Abs(seconds - bestSeconds) <= 1e-6 && meters < bestMeters))
+                        {
+                            onward = new Route();
+                            foreach (var step in connector) onward.Add(step.Edge, step.DesiredLane);
+                            foreach (var step in suffix) onward.Add(step.Edge, step.DesiredLane);
+                            bestSeconds = seconds;
+                            bestMeters = meters;
+                        }
+                    }
+                }
+                if (rejoinIndex < remaining.Count) along += remaining[rejoinIndex].Edge.Length;
+            }
+            if (onward == null) { reason = StopRouteRejection.NoRejoinRoute; return null; }
+            var route = new Route();
+            foreach (var step in remaining.Take(insertIndex)) route.Add(step.Edge, step.DesiredLane);
+            foreach (var step in toStop) route.Add(step.Edge, step.DesiredLane);
+            foreach (var step in onward) route.Add(step.Edge, step.DesiredLane);
+            RouteDistanceHelper.Discount(route, _truck.PositionOnCurrentEdge);
+            return new StopRoutePlan(route, stopNode,
+                StopReachability.EstimateSeconds(approach, _truck.PositionOnCurrentEdge, _truck),
+                Math.Max(0, approach.Sum(edge => edge.Length) - _truck.PositionOnCurrentEdge),
+                bestSeconds, bestMeters);
+        }
+
+        public void ApplyStopRoute(StopRoutePlan plan, SemiTruckSteeringHandle steeringHandle,
+            SemiTruckDriver driver, Action<ISpatialNode> onSuccess)
+        {
+            if (_layer.notifyTrucks) _layer.UnregisterTruckFromRoute(driver, steeringHandle.Route);
+            steeringHandle.Route = plan.Route;
+            if (_layer.notifyTrucks) _layer.RegisterTruckForRoute(driver, steeringHandle.Route);
+            onSuccess(plan.StopNode);
+        }
+    }
+
+    public sealed record StopRoutePlan(Route Route, ISpatialNode StopNode,
+        double ApproachSeconds, double ApproachMeters, double RemainingSeconds, double RemainingMeters);
+
+    public sealed record StopRouteSearch(
+        Func<double, double, ISpatialNode, StopRoutePlan?> Create,
+        Action<StopRoutePlan> Apply,
+        Func<string>? ExplainFailure = null);
+
+    public enum StopRouteRejection
+    {
+        InvalidApproach, UnusableFacility, NoApproachRoute, EnergyOrDrivingLimit, NoRejoinRoute
     }
 
     /// <summary>
