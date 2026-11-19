@@ -7,6 +7,7 @@ public enum RestEventType { Planned, Start, End }
 
 public record RestEntity(
     Guid AgentId,
+    Guid PhaseId,
     long Tick,
     RestStateType StateType, // "Rest", "Refuel" or "RestAndRefuel" (legal break/rest combined with charging)
     RestEventType EventType, // "Planned" (facility route accepted), "Start" or "End"

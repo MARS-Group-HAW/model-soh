@@ -221,6 +221,9 @@ public class SemiTruckFacilityTests
                 entry => Assert.Equal(RestEventType.Start, entry.EventType),
                 entry => Assert.Equal(RestEventType.End, entry.EventType));
             Assert.All(restState.Events, entry => Assert.Equal(RestStateType.Rest, entry.StateType));
+            Assert.NotEqual(Guid.Empty, planned.PhaseId);
+            Assert.All(restState.Events, entry => Assert.Equal(planned.PhaseId, entry.PhaseId));
+            Assert.Null(restState.PhaseId);
         }
         else
         {
@@ -274,6 +277,8 @@ public class SemiTruckFacilityTests
         Assert.NotSame(rejected, applied[1]);
         Assert.False(stop.PlanningFailed);
         Assert.Equal(2, stop.Events.Count);
+        Assert.All(stop.Events, entry => Assert.NotEqual(Guid.Empty, entry.PhaseId));
+        Assert.NotEqual(stop.Events[0].PhaseId, stop.Events[1].PhaseId);
         Assert.All(stop.Events, planned =>
         {
             Assert.Equal(RestEventType.Planned, planned.EventType);

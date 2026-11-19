@@ -31,6 +31,9 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         protected double FacilityLon;
         public bool PlanningFailed { get; private set; }
         public string? PlanningFailureDetails { get; private set; }
+        public Guid? PhaseId { get; private set; }
+        private Guid ActivePhaseId => PhaseId ??
+            throw new InvalidOperationException("A stop event requires an active phase.");
         public bool IsPausing => _isPausing;
         public ISpatialNode? TargetNode => _goingToStop ? _targetNode : null;
 
@@ -134,14 +137,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             if (_goingToStop && HasArrivedAtStop(steeringHandle))
             {
                 LogRestEvent(new RestEntity(truck.ID,
-                    layer.Context.CurrentTick,
-                    GetStopType(),
-                    RestEventType.Start,
-                    driver.Position.Latitude,
-                    driver.Position.Longitude, 
-                    driver.FuelCarrierAmount,
-                    driver.RemainingRouteDistanceToGoal
-                    )
+                    ActivePhaseId, layer.Context.CurrentTick, GetStopType(), RestEventType.Start, driver.Position.Latitude, driver.Position.Longitude, driver.FuelCarrierAmount, driver.RemainingRouteDistanceToGoal)
                 );
                 _stopStartTime = layer._simulationTime;
                 OnArrival(layer);
@@ -169,19 +165,13 @@ namespace SOHModel.SemiTruck.Model.Driver.State
 
                     // logged after OnPauseCompleted so that the event carries the final fuel level
                     LogRestEvent(new RestEntity(truck.ID,
-                        layer.Context.CurrentTick,
-                        stopType,
-                        RestEventType.End,
-                        driver.Position.Latitude,
-                        driver.Position.Longitude,
-                        driver.FuelCarrierAmount,
-                        driver.RemainingRouteDistanceToGoal
-                        )
+                        ActivePhaseId, layer.Context.CurrentTick, stopType, RestEventType.End, driver.Position.Latitude, driver.Position.Longitude, driver.FuelCarrierAmount, driver.RemainingRouteDistanceToGoal)
                     );
 
                     _planned = false;
                     _targetNode = null;
                     _isPausing = false;
+                    PhaseId = null;
                     return false;
                 }
 
@@ -265,9 +255,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             PlanBestStop(steeringHandle, layer, truck, fuelTracker, drivingTime, routing);
 
             if (_goingToStop)
-                LogRestEvent(new RestEntity(truck.ID, layer.Context.CurrentTick, GetStopType(),
-                    RestEventType.Planned, steeringHandle.Position.Latitude, steeringHandle.Position.Longitude,
-                    fuelTracker.FuelCarrierAmount, steeringHandle.Route.RemainingRouteDistanceToGoal));
+                LogRestEvent(new RestEntity(truck.ID, ActivePhaseId, layer.Context.CurrentTick, GetStopType(), RestEventType.Planned, steeringHandle.Position.Latitude, steeringHandle.Position.Longitude, fuelTracker.FuelCarrierAmount, steeringHandle.Route.RemainingRouteDistanceToGoal));
         }
 
         /// <summary>Energy reserve (as distance) a candidate should leave on arrival; preferred, not required.</summary>
@@ -404,6 +392,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
         /// </summary>
         public void MarkPlanned()
         {
+            if (!_planned) PhaseId = Guid.NewGuid();
             _planned = true;
             _goingToStop = true;
         }
@@ -419,6 +408,7 @@ namespace SOHModel.SemiTruck.Model.Driver.State
             _lastApproachNode = null;
             _goingToStop = false;
             _planned = false;
+            PhaseId = null;
         }
 
         protected void ResetFacilitySearch()
