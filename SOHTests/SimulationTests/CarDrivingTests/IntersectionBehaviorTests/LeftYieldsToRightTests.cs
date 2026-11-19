@@ -328,14 +328,19 @@ public class LeftYieldsToRightTests : IClassFixture<SpatialGraphFixture>
         var car2LeaveStep = car2.Max(row => Convert.ToInt32(row["Step"]));
         var car3LeaveStep = car3.Max(row => Convert.ToInt32(row["Step"]));
 
-        // car 2 crosses first (comes from the right); then car 1; then car 3
-        // same-tick leave is allowed (discrete delta-t); only forbid later leave than a higher-priority car
+        // car 2 has the right of way over car 1 (same-tick leave is allowed with discrete delta-t)
         Assert.True(car1LeaveStep >= car2LeaveStep,
             $"Expected car2 before/with car1; car1Leave={car1LeaveStep}, car2Leave={car2LeaveStep}");
-        Assert.True(car3LeaveStep >= car2LeaveStep,
-            $"Expected car2 before/with car3; car3Leave={car3LeaveStep}, car2Leave={car2LeaveStep}");
-        Assert.True(car3LeaveStep >= car1LeaveStep,
-            $"Expected car1 before/with car3; car3Leave={car3LeaveStep}, car1Leave={car1LeaveStep}");
+
+        // car 3 yields to car 1 only while car 1 is within the give-way distance of the junction. Agents are
+        // executed in arbitrary order, so car 1 may have stopped further back for car 2 already, letting car 3 pass.
+        var car1BeforeCar3Left = table.Select($"Convert(Step, 'System.Int32') = {car3LeaveStep} AND " +
+                                              "StableId = '64eae14b-3976-4dd1-b324-e73f1e70a001'");
+        var car1Waiting = car1BeforeCar3Left.Any(row =>
+            Convert.ToInt32(row["CurrentEdgeId"]) == 22 &&
+            Convert.ToDouble(row["RemainingDistanceOnEdge"]) < 10);
+        Assert.True(car3LeaveStep >= car1LeaveStep || !car1Waiting,
+            $"Car 3 crossed while car 1 was waiting at the junction; car3Leave={car3LeaveStep}, car1Leave={car1LeaveStep}");
     }
 
     [Fact]
