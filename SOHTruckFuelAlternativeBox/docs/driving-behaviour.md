@@ -36,7 +36,7 @@ Consumption is debited immediately after each movement. `RequestRestAtCharge` ru
 
 Only one stop is in flight at a time (`IsActive`, `HasRequest`, `HasCombinedRestRequest`).
 
-While pausing, the truck is removed from the road network and re-inserted at the stop node when it resumes. Facilities have no capacity limit: any number of trucks can use the same rest area or charging station, and a parked truck never blocks the lane or makes a facility look occupied to others.
+See [facilities](facilities.md) for facility data and charging.
 
 ## 2. Stop types
 
@@ -186,16 +186,17 @@ A facility the network does not model (no off-route node within 150 m) but lying
 service area beside the motorway, is entered from that edge without detour; the stop node is the nearer end of the
 edge. After the stop, the truck continues on the edge leaving the stop node rather than re-driving the approach edge.
 Charging-time estimates include station/vehicle power and taper; future breaks/rests use the current legal budgets.
-This rolling-horizon ranking does not claim global optimality.
+This rolling-horizon ranking does not claim global optimality or predict unknown future conditions.
 
 Facility lists: battery trucks use the charging list, other carriers the fuel list, rests use the rest area list.
-Neighbour-country charging stations are appended if `resources/charging_stations_neighbors.csv` exists (see the README).
+Neighbour-country charging stations are appended if `resources/charging_stations_neighbors.csv` exists
+(see [facilities](facilities.md)).
 
 ## 8. Tuning reference
 
 | What you want to change | Where | Effect |
 |---|---|---|
-| Start energy | `FuelConsumptionTracker` (currently full) | timing of all stops |
+| Start energy | `FuelConsumptionTracker` constructor | timing of all stops; see [configuration](configuration.md) |
 | Arrival reserve at a stop | `RouteChargeReserveKm` (50) | later or earlier trigger, safer or riskier arrival |
 | How far ahead a station is searched | `RefuelStationSearchRadius`, `RestAreaSearchRadius` (100 km) | initial search window; expanded to legal/energy reach if needed |
 | Safety margin on the route energy | `RouteChargeSafetyFactor` (1.1) | charge target |
@@ -213,20 +214,11 @@ New strategies: implement `IRestStrategy` (`NextRequirement`, `RequirementAtChar
 
 ## 9. Reading a run
 
-The `rests` table logs every stop (`Planned`, `Start`, `End`) with tick, position, energy and remaining route; `road_load` and `fuel_consumption` hold the micro layer.
+See [output and analysis](output.md) for database tables, phase UUIDs, and queries that group events per agent.
 `Planned` is emitted only after a facility route is accepted, not for rejected candidates or failed searches.
 A combined-stop search that falls back to a rest area therefore records only the accepted `Rest` decision.
-Terminal stop-planning failures print the number of candidate approaches, search window and route rejection counts,
-distinguishing missing facilities from incompatible approaches, energy/time limits and unavailable rejoin routes.
-`truck_trips` records completion/failure.
-See `facility_metrics.sql` for stop and stranded-truck counts.
 
-```sql
-select tick, statetype, eventtype, round(currentfuel::numeric,1) as kwh, round(remainingroutemeters::numeric) as remaining_m
-from rests order by id;
-```
-
-- `Planned` shortly before `Start` at the same place: the first facility ahead was taken (no reach limit), or the planned one failed to route and was replaced.
+- Accepted plans are retained while feasible; an unsafe approach can be replaced, leaving the old phase without a start/end.
 - Energy at `Planned` of about 150 km times the planning consumption: the trigger of section 5.
 - `RestAndRefuel` duration at least `DailyRestDuration`: a combined daily rest; charge amount alone does not identify it.
 - Console output is reserved for failures and actual errors, not normal planning attempts or stop transitions.
